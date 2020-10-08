@@ -1,4 +1,4 @@
-package api;
+package components;
 
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -34,5 +34,10 @@ public class MessageStore {
     public boolean hasUUID(String uuid) {
         logger.traceEntry(() -> uuid);
         return logger.traceExit(messages.containsKey(uuid));
+    }
+
+    public int getNumberOfMessages() {
+        logger.traceEntry();
+        return logger.traceExit(messages.size());
     }
 }

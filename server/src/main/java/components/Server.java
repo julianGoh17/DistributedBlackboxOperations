@@ -1,29 +1,33 @@
-package api;
+package components;
 
 import endpoints.ErrorHandler;
 import endpoints.PostMessageHandler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
+import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+@Getter
 public class Server {
     private static final Logger logger = LogManager.getLogger(Server.class);
     private OpenAPI3RouterFactory routerFactory;
     private final MessageStore messages;
+    private final String[] operationIds = new String[]{"postMessage"};
 
     public static final int DEFAULT_SERVER_PORT = 8888;
     public static final String DEFAULT_HOST = "localhost";
+    public static final String OPENAPI_SPEC_LOCATION = "src/main/resources/ServerEndpoints.yaml";
 
     public Server() {
         this.messages = new MessageStore();
     }
 
-    public Promise<Boolean> startServer(Vertx vertx) {
+    public Promise<Boolean> startServer(Vertx vertx, String specLocation) {
         logger.traceEntry(() -> vertx);
         Promise<Boolean> hasDeployed = Promise.promise();
-        OpenAPI3RouterFactory.create(vertx, "src/main/resources/ServerEndpoints.yaml", ar -> {
+        OpenAPI3RouterFactory.create(vertx, specLocation, ar -> {
             if (ar.succeeded()) {
                 logger.info("Successfully created server");
                 routerFactory = ar.result();
@@ -43,19 +47,19 @@ public class Server {
         logger.traceEntry();
         logger.info("Adding handlers");
         PostMessageHandler postMessageHandler = new PostMessageHandler();
-        ErrorHandler errorHandler = new ErrorHandler();
         routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.handle(routingContext, messages));
-        routerFactory.getRouter().errorHandler(404, errorHandler::handle);
+
+        addFailureHandlers();
         logger.traceExit();
     }
 
-    public MessageStore getMessageStore() {
+    private void addFailureHandlers() {
         logger.traceEntry();
-        return logger.traceExit(messages);
-    }
-
-    public OpenAPI3RouterFactory getRouterFactory() {
-        logger.traceEntry();
-        return logger.traceExit(this.routerFactory);
+        ErrorHandler errorHandler = new ErrorHandler();
+        for (String operationId : operationIds) {
+            logger.trace(String.format("Adding failure handler for operation '%s'", operationId));
+            routerFactory.addFailureHandlerByOperationId(operationId, errorHandler::handle);
+        }
+        logger.traceExit();
     }
 }

@@ -6,8 +6,8 @@
         </Console>
     </Appenders>
     <Loggers>
-        <Root>
-            <AppenderRef ref="STDOUT" />
+        <Root level="all">
+            <AppenderRef ref="STDOUT"/>
         </Root>
     </Loggers>
 </Configuration>

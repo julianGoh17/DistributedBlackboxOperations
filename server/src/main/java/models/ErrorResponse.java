@@ -1,7 +1,11 @@
 package models;
 
 import io.vertx.core.json.JsonObject;
+import lombok.Getter;
+import lombok.Setter;
 
+@Getter
+@Setter
 public class ErrorResponse {
     private final int statusCode;
     private final Throwable exception;
@@ -16,7 +20,7 @@ public class ErrorResponse {
 
     public JsonObject toJson() {
         return new JsonObject()
-                .put(STATUS_CODE_KEY, this.statusCode)
-                .put(ERROR_KEY, this.exception.toString());
+            .put(STATUS_CODE_KEY, this.statusCode)
+            .put(ERROR_KEY, this.exception.getMessage());
     }
 }

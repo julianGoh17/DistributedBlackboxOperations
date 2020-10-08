@@ -15,7 +15,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              $ref: "#/components/schemas/PostedMessage"
       responses:
         '200':
           description: Successfully sent message to the api.Server
@@ -163,6 +163,13 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
+    PostedMessage:
+      type: object
+      properties:
+        message:
+          type: object
+      required:
+        - message
     MessageIDResponse:
       type: object
       properties:
