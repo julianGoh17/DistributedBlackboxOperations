@@ -17,7 +17,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import static components.Server.*;
+import static components.Server.DEFAULT_HOST;
+import static components.Server.DEFAULT_SERVER_PORT;
+import static components.Server.OPENAPI_SPEC_LOCATION;
 
 @RunWith(VertxUnitRunner.class)
 public class PostMessageHandlerTest {
