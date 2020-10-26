@@ -48,8 +48,8 @@ public class PostMessageHandlerTest {
             .post(DEFAULT_SERVER_PORT, DEFAULT_HOST, PostMessageHandler.URI)
             .sendJson(message, context.asyncAssertSuccess(res -> {
                 context.assertNotNull(res);
-                context.assertNotNull(res.bodyAsJsonObject().getString(MessageIDResponse.messageIdKey));
-                uuid.complete(res.bodyAsJsonObject().getString(MessageIDResponse.messageIdKey));
+                context.assertNotNull(res.bodyAsJsonObject().getString(MessageIDResponse.MESSAGE_ID_KEY));
+                uuid.complete(res.bodyAsJsonObject().getString(MessageIDResponse.MESSAGE_ID_KEY));
             }));
 
         uuid.future().onComplete(id -> {

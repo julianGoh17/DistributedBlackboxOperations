@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MessageStore {
-    private static final Logger logger = LogManager.getLogger(MessageStore.class.getName());
+    private static final Logger log = LogManager.getLogger(MessageStore.class.getName());
     private final Map<String, JsonObject> messages;
 
     public MessageStore() {
@@ -16,28 +16,28 @@ public class MessageStore {
     }
 
     public JsonObject getMessage(String uuid) {
-        logger.traceEntry(() -> uuid);
-        logger.info("Getting message from Message Store");
+        log.traceEntry(() -> uuid);
+        log.info("Getting message from Message Store");
         if (messages.containsKey(uuid)) {
-            return logger.traceExit(messages.get(uuid));
+            return log.traceExit(messages.get(uuid));
         }
-        logger.traceExit();
+        log.traceExit();
         return null;
     }
 
     public void putMessage(String uuid, JsonObject message) {
-        logger.traceEntry(() -> uuid, () -> message);
+        log.traceEntry(() -> uuid, () -> message);
         messages.put(uuid, message);
-        logger.traceExit();
+        log.traceExit();
     }
 
     public boolean hasUUID(String uuid) {
-        logger.traceEntry(() -> uuid);
-        return logger.traceExit(messages.containsKey(uuid));
+        log.traceEntry(() -> uuid);
+        return log.traceExit(messages.containsKey(uuid));
     }
 
     public int getNumberOfMessages() {
-        logger.traceEntry();
-        return logger.traceExit(messages.size());
+        log.traceEntry();
+        return log.traceExit(messages.size());
     }
 }

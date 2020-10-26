@@ -9,17 +9,17 @@ import org.apache.logging.log4j.Logger;
 @Getter
 @Setter
 public class MessageIDResponse {
-    private final static Logger logger = LogManager.getLogger(MessageIDResponse.class.getName());
+    private final static Logger log = LogManager.getLogger(MessageIDResponse.class.getName());
     private final String uuid;
-    public static final String messageIdKey = "messageId";
+    public static final String MESSAGE_ID_KEY = "messageId";
 
     public MessageIDResponse(String uuid) {
         this.uuid = uuid;
     }
 
     public JsonObject toJson() {
-        logger.traceEntry();
-        return logger.traceExit(new JsonObject()
-            .put(messageIdKey, this.uuid));
+        log.traceEntry();
+        return log.traceExit(new JsonObject()
+            .put(MESSAGE_ID_KEY, this.uuid));
     }
 }

@@ -11,7 +11,7 @@ import org.apache.logging.log4j.Logger;
 
 @Getter
 public class Server {
-    private static final Logger logger = LogManager.getLogger(Server.class);
+    private static final Logger log = LogManager.getLogger(Server.class);
     private OpenAPI3RouterFactory routerFactory;
     private final MessageStore messages;
     private final String[] operationIds = new String[]{"postMessage"};
@@ -25,17 +25,17 @@ public class Server {
     }
 
     public Promise<Boolean> startServer(Vertx vertx, String specLocation) {
-        logger.traceEntry(() -> vertx);
+        log.traceEntry(() -> vertx);
         Promise<Boolean> hasDeployed = Promise.promise();
         OpenAPI3RouterFactory.create(vertx, specLocation, ar -> {
             if (ar.succeeded()) {
-                logger.info("Successfully created server");
+                log.info("Successfully created server");
                 routerFactory = ar.result();
                 addHandlers();
                 hasDeployed.complete(true);
             } else {
                 Throwable exception = ar.cause();
-                logger.error(exception);
+                log.error(exception);
                 hasDeployed.fail(exception);
             }
         });
@@ -44,22 +44,22 @@ public class Server {
     }
 
     public void addHandlers() {
-        logger.traceEntry();
-        logger.info("Adding handlers");
+        log.traceEntry();
+        log.info("Adding handlers");
         PostMessageHandler postMessageHandler = new PostMessageHandler();
         routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.handle(routingContext, messages));
 
         addFailureHandlers();
-        logger.traceExit();
+        log.traceExit();
     }
 
     private void addFailureHandlers() {
-        logger.traceEntry();
+        log.traceEntry();
         ErrorHandler errorHandler = new ErrorHandler();
         for (String operationId : operationIds) {
-            logger.trace(String.format("Adding failure handler for operation '%s'", operationId));
+            log.trace(String.format("Adding failure handler for operation '%s'", operationId));
             routerFactory.addFailureHandlerByOperationId(operationId, errorHandler::handle);
         }
-        logger.traceExit();
+        log.traceExit();
     }
 }
