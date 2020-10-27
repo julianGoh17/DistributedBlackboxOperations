@@ -1,11 +1,8 @@
 package endpoints;
 
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
-import models.MessageIDResponse;
 import org.junit.Test;
 
 import static components.Server.DEFAULT_HOST;
@@ -22,7 +19,8 @@ public class PutMessageHandlerTest extends AbstractHandlerTest {
             .sendJson(new JsonObject(), context.asyncAssertSuccess(res -> {
                 context.assertEquals(res.statusCode(), 404);
                 context.assertEquals(res.bodyAsJsonObject().getInteger("statusCode"), 404);
-                context.assertEquals(res.bodyAsJsonObject().getString("error"), String.format("Could not find entry for uuid '%s'", invalidID));
+                context.assertEquals(res.bodyAsJsonObject().getString("error"),
+                    String.format("Could not find entry for uuid '%s'", invalidID));
             }));
     }
 
@@ -32,48 +30,12 @@ public class PutMessageHandlerTest extends AbstractHandlerTest {
         WebClient client = WebClient.create(this.vertx);
 
         JsonObject originalMessage = new JsonObject().put("test", "message");
-        JsonObject postedOriginalMessage = createPostMessage(originalMessage);
-
         JsonObject newMessage = new JsonObject().put("new", "key");
-        JsonObject postedNewMessage = createPostMessage(newMessage);
 
-        Promise<String> uuid = Promise.promise();
-        client
-            .post(DEFAULT_SERVER_PORT, DEFAULT_HOST, CLIENT_URI)
-            .sendJson(postedOriginalMessage, context.asyncAssertSuccess(res -> {
-                context.assertNotNull(res);
-                context.assertEquals(200, res.statusCode());
-                context.assertNotNull(res.bodyAsJsonObject().getString(MessageIDResponse.MESSAGE_ID_KEY));
-                uuid.complete(res.bodyAsJsonObject().getString(MessageIDResponse.MESSAGE_ID_KEY));
-            }));
-
-        uuid.future().compose(messageID -> {
-            client
-                .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", CLIENT_URI, messageID))
-                .send(context.asyncAssertSuccess(res -> {
-                    context.assertNotNull(res);
-                    context.assertEquals(200, res.statusCode());
-                    context.assertEquals(res.bodyAsJsonObject().encodePrettily(), originalMessage.encodePrettily());
-                }));
-            return Future.succeededFuture(messageID);
-        }).compose(messageId -> {
-            client
-                .put(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", CLIENT_URI, messageId))
-                .sendJson(postedNewMessage, context.asyncAssertSuccess(res -> {
-                    context.assertEquals(res.statusCode(), 200);
-                    context.assertEquals(res.bodyAsJsonObject().getString(MessageIDResponse.MESSAGE_ID_KEY), messageId);
-                }));
-            return Future.succeededFuture(messageId);
-        }).compose(messageId -> {
-            client
-                .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", CLIENT_URI, messageId))
-                .send(context.asyncAssertSuccess(res -> {
-                    context.assertNotNull(res);
-                    context.assertEquals(200, res.statusCode());
-                    context.assertEquals(res.bodyAsJsonObject().encodePrettily(), newMessage.encodePrettily());
-                }));
-            return Future.succeededFuture();
-        });
+        sendSuccessfulPOSTMessage(context, client, originalMessage)
+            .compose(messageId -> sendSuccessfulGETMessage(context, client, messageId, originalMessage))
+            .compose(messageId -> sendSuccessfulPUTMessage(context, client, messageId, newMessage))
+            .compose(messageId -> sendSuccessfulGETMessage(context, client, messageId, newMessage));
     }
 
     @Test
