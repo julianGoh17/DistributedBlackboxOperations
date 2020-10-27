@@ -12,14 +12,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 public class PostMessageHandler {
-    public static final String messageKey = "message";
-    public static final String URI = "/client";
+    public static final String MESSAGE_KEY = "message";
 
-    private static final Logger logger = LogManager.getLogger(PostMessageHandler.class);
+    private static final Logger log = LogManager.getLogger(PostMessageHandler.class);
 
     public void handle(final RoutingContext context, final MessageStore messages) {
-        logger.traceEntry(() -> context, () -> messages);
-        logger.info("Entering PostMessageHandler");
+        log.traceEntry(() -> context, () -> messages);
+        log.info("Entering PostMessageHandler");
         JsonObject message = context.getBodyAsJson();
         UUID uuid = UUID.randomUUID();
         while (messages.hasUUID(uuid.toString())) {
@@ -27,7 +26,7 @@ public class PostMessageHandler {
         }
 
         messages.putMessage(uuid.toString(), Optional.ofNullable(message)
-            .map(mes -> mes.getJsonObject(messageKey))
+            .map(mes -> mes.getJsonObject(MESSAGE_KEY))
             .orElse(new JsonObject()));
 
         context.response()
@@ -35,6 +34,6 @@ public class PostMessageHandler {
             .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
             .end(new MessageIDResponse(uuid.toString()).toJson().encodePrettily());
 
-        logger.traceExit();
+        log.traceExit();
     }
 }

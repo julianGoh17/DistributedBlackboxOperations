@@ -4,9 +4,11 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 
-import static components.Server.*;
+import static components.Server.DEFAULT_HOST;
+import static components.Server.DEFAULT_SERVER_PORT;
+import static components.Server.OPENAPI_SPEC_LOCATION;
 
-public class main {
+public class Main {
     public static void main(String[] args) {
         Vertx vertx = Vertx.vertx();
         Server server = new Server();
