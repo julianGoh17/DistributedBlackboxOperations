@@ -14,7 +14,6 @@ import static endpoints.PostMessageHandler.MESSAGE_KEY;
 
 public class PutMessageHandler {
     private static final Logger log = LogManager.getLogger(PutMessageHandler.class);
-    public static final String URI = "/client";
 
     public void handle(final RoutingContext context, final MessageStore messageStore) {
         log.traceEntry(() -> context, () -> messageStore);

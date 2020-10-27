@@ -13,7 +13,6 @@ import java.util.UUID;
 
 public class PostMessageHandler {
     public static final String MESSAGE_KEY = "message";
-    public static final String URI = "/client";
 
     private static final Logger log = LogManager.getLogger(PostMessageHandler.class);
 

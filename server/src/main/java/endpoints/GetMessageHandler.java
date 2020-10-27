@@ -8,7 +8,6 @@ import org.apache.logging.log4j.Logger;
 
 public class GetMessageHandler {
     private static final Logger log = LogManager.getLogger(GetMessageHandler.class);
-    public static final String URI = "/client";
 
     public void handle(final RoutingContext context, final MessageStore messageStore) {
         log.traceEntry(() -> context, () -> messageStore);

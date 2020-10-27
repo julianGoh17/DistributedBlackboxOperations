@@ -20,7 +20,7 @@ public class PostMessageHandlerTest extends AbstractHandlerTest {
         JsonObject message = createPostMessage(new JsonObject().put("test", "message"));
         Promise<String> uuid = Promise.promise();
         client
-            .post(DEFAULT_SERVER_PORT, DEFAULT_HOST, PostMessageHandler.URI)
+            .post(DEFAULT_SERVER_PORT, DEFAULT_HOST, CLIENT_URI)
             .sendJson(message, context.asyncAssertSuccess(res -> {
                 context.assertNotNull(res);
                 context.assertEquals(200, res.statusCode());
@@ -42,7 +42,7 @@ public class PostMessageHandlerTest extends AbstractHandlerTest {
         ErrorResponse expectedError = new ErrorResponse(400, new Exception("$.message: is missing but it is required"));
         WebClient client = WebClient.create(this.vertx);
         client
-            .post(DEFAULT_SERVER_PORT, DEFAULT_HOST, PostMessageHandler.URI)
+            .post(DEFAULT_SERVER_PORT, DEFAULT_HOST, CLIENT_URI)
             .sendJson(new JsonObject(), context.asyncAssertSuccess(res -> {
                 context.assertNotNull(res);
                 context.assertEquals(400, res.statusCode());
@@ -56,7 +56,7 @@ public class PostMessageHandlerTest extends AbstractHandlerTest {
         WebClient client = WebClient.create(this.vertx);
 
         client
-            .put(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/random", PostMessageHandler.URI))
+            .put(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/random", CLIENT_URI))
             .send(context.asyncAssertSuccess(res -> {
                 context.assertEquals(res.statusCode(), 400);
                 context.assertNull(res.body());

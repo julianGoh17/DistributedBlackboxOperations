@@ -19,6 +19,8 @@ import static components.Server.OPENAPI_SPEC_LOCATION;
 
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractHandlerTest {
+    public static final String CLIENT_URI = "/client";
+
     Server server;
     HttpServer api;
     Vertx vertx;

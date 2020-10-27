@@ -18,7 +18,7 @@ public class PutMessageHandlerTest extends AbstractHandlerTest {
         setUpApiServer(context);
         WebClient client = WebClient.create(this.vertx);
         client
-            .put(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", PutMessageHandler.URI, invalidID))
+            .put(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", CLIENT_URI, invalidID))
             .sendJson(new JsonObject(), context.asyncAssertSuccess(res -> {
                 context.assertEquals(res.statusCode(), 404);
                 context.assertEquals(res.bodyAsJsonObject().getInteger("statusCode"), 404);
@@ -39,7 +39,7 @@ public class PutMessageHandlerTest extends AbstractHandlerTest {
 
         Promise<String> uuid = Promise.promise();
         client
-            .post(DEFAULT_SERVER_PORT, DEFAULT_HOST, PostMessageHandler.URI)
+            .post(DEFAULT_SERVER_PORT, DEFAULT_HOST, CLIENT_URI)
             .sendJson(postedOriginalMessage, context.asyncAssertSuccess(res -> {
                 context.assertNotNull(res);
                 context.assertEquals(200, res.statusCode());
@@ -49,7 +49,7 @@ public class PutMessageHandlerTest extends AbstractHandlerTest {
 
         uuid.future().compose(messageID -> {
             client
-                .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", GetMessageHandler.URI, messageID))
+                .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", CLIENT_URI, messageID))
                 .send(context.asyncAssertSuccess(res -> {
                     context.assertNotNull(res);
                     context.assertEquals(200, res.statusCode());
@@ -58,7 +58,7 @@ public class PutMessageHandlerTest extends AbstractHandlerTest {
             return Future.succeededFuture(messageID);
         }).compose(messageId -> {
             client
-                .put(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", PutMessageHandler.URI, messageId))
+                .put(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", CLIENT_URI, messageId))
                 .sendJson(postedNewMessage, context.asyncAssertSuccess(res -> {
                     context.assertEquals(res.statusCode(), 200);
                     context.assertEquals(res.bodyAsJsonObject().getString(MessageIDResponse.MESSAGE_ID_KEY), messageId);
@@ -66,7 +66,7 @@ public class PutMessageHandlerTest extends AbstractHandlerTest {
             return Future.succeededFuture(messageId);
         }).compose(messageId -> {
             client
-                .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", GetMessageHandler.URI, messageId))
+                .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", CLIENT_URI, messageId))
                 .send(context.asyncAssertSuccess(res -> {
                     context.assertNotNull(res);
                     context.assertEquals(200, res.statusCode());
@@ -82,7 +82,7 @@ public class PutMessageHandlerTest extends AbstractHandlerTest {
         WebClient client = WebClient.create(this.vertx);
 
         client
-            .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, PutMessageHandler.URI)
+            .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, CLIENT_URI)
             .send(context.asyncAssertSuccess(res -> {
                 context.assertEquals(res.statusCode(), 405);
                 context.assertNull(res.body());
@@ -95,7 +95,7 @@ public class PutMessageHandlerTest extends AbstractHandlerTest {
         WebClient client = WebClient.create(this.vertx);
 
         client
-            .put(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/random", PutMessageHandler.URI))
+            .put(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/random", CLIENT_URI))
             .send(context.asyncAssertSuccess(res -> {
                 context.assertEquals(res.statusCode(), 400);
                 context.assertNull(res.body());
