@@ -77,9 +77,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-    patch:
-      operationId: patchMessage
-      description: Patch message content stored in the Server for a given UUID
+    put:
+      operationId: putMessage
+      description: Put message content stored in the Server for a given UUID
       requestBody:
         required: true
         content:
@@ -102,12 +102,6 @@ paths:
                 $ref: "#/components/schemas/MessageIDResponse"
         '404':
           description: Could not find message with UUID
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        '504':
-          description: Operation timeout
           content:
             application/json:
               schema:

@@ -3,6 +3,7 @@ package components;
 import endpoints.ErrorHandler;
 import endpoints.GetMessageHandler;
 import endpoints.PostMessageHandler;
+import endpoints.PutMessageHandler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
@@ -15,7 +16,7 @@ public class Server {
     private static final Logger log = LogManager.getLogger(Server.class);
     private OpenAPI3RouterFactory routerFactory;
     private final MessageStore messages;
-    private final static String[] OPERATION_IDS = new String[]{"postMessage", "getMessage"};
+    private final static String[] OPERATION_IDS = new String[]{"postMessage", "getMessage", "putMessage"};
 
     public static final int DEFAULT_SERVER_PORT = 8888;
     public static final String DEFAULT_HOST = "localhost";
@@ -49,8 +50,10 @@ public class Server {
         log.info("Adding handlers");
         PostMessageHandler postMessageHandler = new PostMessageHandler();
         GetMessageHandler getMessageHandler = new GetMessageHandler();
+        PutMessageHandler putMessageHandler = new PutMessageHandler();
         routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.handle(routingContext, messages));
         routerFactory.addHandlerByOperationId("getMessage", routingContext -> getMessageHandler.handle(routingContext, messages));
+        routerFactory.addHandlerByOperationId("putMessage", routingContext -> putMessageHandler.handle(routingContext, messages));
         addFailureHandlers();
         log.traceExit();
     }

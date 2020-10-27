@@ -21,7 +21,7 @@ public class GetMessageHandlerTest extends AbstractHandlerTest {
             .send(context.asyncAssertSuccess(res -> {
                 context.assertEquals(res.statusCode(), 404);
                 context.assertEquals(res.bodyAsJsonObject().getInteger("statusCode"), 404);
-                context.assertEquals(res.bodyAsJsonObject().getString("error"), String.format("Could not find message with id '%s'", invalidID));
+                context.assertEquals(res.bodyAsJsonObject().getString("error"), String.format("Could not find entry for uuid '%s'", invalidID));
             }));
     }
 
@@ -42,14 +42,12 @@ public class GetMessageHandlerTest extends AbstractHandlerTest {
                 uuid.complete(res.bodyAsJsonObject().getString(MessageIDResponse.MESSAGE_ID_KEY));
             }));
 
-        uuid.future().onSuccess(messageId -> {
-            client
-                .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", GetMessageHandler.URI, messageId))
-                .send(context.asyncAssertSuccess(res -> {
-                    context.assertEquals(res.statusCode(), 200);
-                    context.assertEquals(res.bodyAsJsonObject().encodePrettily(), message.encodePrettily());
-                }));
-        });
+        uuid.future().onSuccess(messageId -> client
+            .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", GetMessageHandler.URI, messageId))
+            .send(context.asyncAssertSuccess(res -> {
+                context.assertEquals(res.statusCode(), 200);
+                context.assertEquals(res.bodyAsJsonObject().encodePrettily(), message.encodePrettily());
+            })));
     }
 
     @Test
@@ -64,5 +62,4 @@ public class GetMessageHandlerTest extends AbstractHandlerTest {
                 context.assertNull(res.body());
             }));
     }
-
 }

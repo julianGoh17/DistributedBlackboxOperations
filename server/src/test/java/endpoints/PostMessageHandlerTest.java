@@ -49,4 +49,17 @@ public class PostMessageHandlerTest extends AbstractHandlerTest {
                 context.assertEquals(expectedError.toJson().encodePrettily(), res.bodyAsString());
             }));
     }
+
+    @Test
+    public void TestPostMessageFailsWhenNoBodySent(TestContext context) {
+        setUpApiServer(context);
+        WebClient client = WebClient.create(this.vertx);
+
+        client
+            .put(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/random", PostMessageHandler.URI))
+            .send(context.asyncAssertSuccess(res -> {
+                context.assertEquals(res.statusCode(), 400);
+                context.assertNull(res.body());
+            }));
+    }
 }
