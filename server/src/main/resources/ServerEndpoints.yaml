@@ -1,6 +1,6 @@
 openapi: "3.0.0"
 info:
-  title: api.Server Endpoints
+  title: Server Endpoints
   version: 1.0.0
 paths:
   ####################
@@ -9,7 +9,7 @@ paths:
   /client:
     post:
       operationId: postMessage
-      description: Send a message to be stored in the api.Server
+      description: Send a message to be stored in the Server
       requestBody:
         required: true
         content:
@@ -18,7 +18,7 @@ paths:
               $ref: "#/components/schemas/PostedMessage"
       responses:
         '200':
-          description: Successfully sent message to the api.Server
+          description: Successfully sent message to the Server
           content:
             application/json:
               schema:
@@ -27,7 +27,7 @@ paths:
   /client/{message_id}:
     get:
       operationId: getMessage
-      description: Retrieve the message stored in the api.Server for a given UUID
+      description: Retrieve the message stored in the Server for a given UUID
       parameters:
         - name: message_id
           in: path
@@ -50,7 +50,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
     delete:
       operationId: deleteMessage
-      description: Delete message stored in the api.Server for a given UUID
+      description: Delete message stored in the Server for a given UUID
       parameters:
         - name: message_id
           in: path
@@ -79,7 +79,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
     patch:
       operationId: patchMessage
-      description: Patch message content stored in the api.Server for a given UUID
+      description: Patch message content stored in the Server for a given UUID
       requestBody:
         required: true
         content:
@@ -118,7 +118,7 @@ paths:
   /coordinate/mark:
     post:
       operationId: "markServer"
-      description: Allows a user to mark the api.Server with a label
+      description: Allows a user to mark the Server with a label
       requestBody:
         required: true
         content:
@@ -130,13 +130,13 @@ paths:
                   type: string
       responses:
         '202':
-          description: Successfully labeled the api.Server
+          description: Successfully labeled the Server
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ServerStatus"
         '504':
-          description: Timed out trying to label the api.Server
+          description: Timed out trying to label the Server
           content:
             application/json:
               schema:
@@ -145,7 +145,7 @@ paths:
   /coordinate/message:
     post:
       operationId: "sendCoordinationMessage"
-      description: Another api.Server sends a coordination message to this api.Server which will land in the Coordination queue.
+      description: Another Server sends a coordination message to this Server which will land in the Coordination queue.
       requestBody:
         required: true
         content:
