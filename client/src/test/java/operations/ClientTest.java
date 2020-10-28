@@ -44,9 +44,9 @@ public class ClientTest {
     @Test
     public void TestSuccessfulPostMessage(TestContext context) {
         setUpApiServer(context);
-
         JsonObject message = new JsonObject()
             .put("this", "message");
+
         client.POSTMessage(message)
             .onComplete(context.asyncAssertSuccess(context::assertNotNull));
     }
@@ -54,8 +54,8 @@ public class ClientTest {
     @Test
     public void TestSuccessfulGetMessage(TestContext context) {
         setUpApiServer(context);
-
         JsonObject message = new JsonObject().put("this", "message");
+
         client.POSTMessage(message)
             .compose(client::GETMessage)
             .onComplete(context.asyncAssertSuccess(res -> context.assertEquals(message, res)));
@@ -65,6 +65,7 @@ public class ClientTest {
     public void TestUnsuccessfulGetMessage(TestContext context) {
         setUpApiServer(context);
         String randomId = "random-id";
+
         client.GETMessage(randomId)
             .onComplete(context.asyncAssertFailure(err -> context.assertEquals(String.format("Could not find entry for uuid '%s'", randomId), err.getMessage())));
     }
@@ -88,6 +89,17 @@ public class ClientTest {
                 context.assertEquals(newMessage, res);
             })));
 
+    }
+
+    @Test
+    public void TestUnsuccessfulPUTMessage(TestContext context) {
+        setUpApiServer(context);
+        JsonObject message = new JsonObject().put("new", "message");
+        String nonExistentId = "random-id";
+
+        client.PUTMessage(nonExistentId, message)
+            .onComplete(context.asyncAssertFailure(throwable ->
+                context.assertEquals(String.format("Could not find entry for uuid '%s'", nonExistentId), throwable.getMessage())));
     }
 
     protected void setUpApiServer(TestContext context) {

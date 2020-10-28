@@ -10,7 +10,7 @@ import java.util.Optional;
 public class Configuration {
     private static final Logger log = LogManager.getLogger(Configuration.class.getName());
     public static final String MESSAGE_FILE_PATH_ENV = "MESSAGE_FILE_PATH";
-    public static final String DEFAULT_MESSAGE_FILE_PATH = File.separator + "blah";
+    public static final String DEFAULT_MESSAGE_FILE_PATH = "/Users/juliangoh/Projects/src/java/DistributedBlackboxOperations/client/src/main/resources/generated/messages";
 
     public static final String OPERATIONS_FILE_PATH_ENV = "OPERATIONS_FILE_PATH";
     public static final String OPERATIONS_MESSAGE_FILE_PATH = File.separator + "blah";

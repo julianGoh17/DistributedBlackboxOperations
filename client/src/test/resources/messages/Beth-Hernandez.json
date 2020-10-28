@@ -1,0 +1,12 @@
+{
+  "info": {
+    "firstName": "Beth",
+    "lastName": "Hernandez",
+    "time": "09/10/2019 03:13 AM"
+  },
+  "order": {
+    "clothing": "Shirt",
+    "quantity": 4,
+    "cost": 93
+  }
+}

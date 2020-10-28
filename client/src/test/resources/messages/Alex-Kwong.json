@@ -1,0 +1,19 @@
+{
+  "info": {
+    "firstName": "Alex",
+    "lastName": "Kwong",
+    "time": "04/12/2019 08:04 AM"
+  },
+  "order": [
+    {
+      "clothing": "Boxers",
+      "quantity": 3,
+      "cost": 27
+    },
+    {
+      "clothing": "Boxers",
+      "quantity": 4,
+      "cost": 22
+    }
+  ]
+}

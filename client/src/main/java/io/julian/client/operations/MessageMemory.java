@@ -1,15 +1,19 @@
 package io.julian.client.operations;
 
 import io.vertx.core.json.JsonObject;
+import lombok.Getter;
+import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
+@Getter
 public class MessageMemory {
     private static final Logger log = LogManager.getLogger(MessageMemory.class.getName());
 
@@ -34,9 +38,33 @@ public class MessageMemory {
 
     public JsonObject getExpectedMessageForID(final String id) {
         log.traceEntry(() -> id);
-        return log.traceExit(Optional.ofNullable(expectedMapping.get(id))
-            .orElse(new JsonObject()));
+        return log.traceExit(expectedMapping.get(id));
     }
 
-    // TODO: Add thing that reads message file
+    public void readInMessageFiles(final String messageFilePath) throws NullPointerException {
+        log.traceEntry(() -> messageFilePath);
+        final File folder = new File(messageFilePath);
+        try {
+            for (final File file : folder.listFiles()) {
+                readInMessageFile(file);
+            }
+        } catch (NullPointerException e) {
+            log.error(e);
+            log.traceExit();
+            throw e;
+        }
+        log.traceExit();
+    }
+
+    private void readInMessageFile(final File file) {
+        log.traceEntry(() -> file);
+        try {
+            String content = FileUtils.readFileToString(file);
+            JsonObject message = new JsonObject(content);
+            originalMessages.add(message);
+        } catch (IOException e) {
+            log.error(e);
+        }
+        log.traceExit();
+    }
 }
