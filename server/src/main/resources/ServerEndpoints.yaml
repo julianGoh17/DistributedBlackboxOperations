@@ -172,8 +172,6 @@ components:
     MessageResponse:
       type: object
       properties:
-        messageId:
-          type: string
         message:
           type: object
     ErrorResponse:
