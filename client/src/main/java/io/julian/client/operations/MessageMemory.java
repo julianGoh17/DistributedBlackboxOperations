@@ -2,11 +2,9 @@ package io.julian.client.operations;
 
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
-import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,30 +39,9 @@ public class MessageMemory {
         return log.traceExit(expectedMapping.get(id));
     }
 
-    public void readInMessageFiles(final String messageFilePath) throws NullPointerException {
+    public void readInMessageFiles(final String messageFilePath) throws NullPointerException, IOException {
         log.traceEntry(() -> messageFilePath);
-        final File folder = new File(messageFilePath);
-        try {
-            for (final File file : folder.listFiles()) {
-                readInMessageFile(file);
-            }
-        } catch (NullPointerException e) {
-            log.error(e);
-            log.traceExit();
-            throw e;
-        }
-        log.traceExit();
-    }
-
-    private void readInMessageFile(final File file) {
-        log.traceEntry(() -> file);
-        try {
-            String content = FileUtils.readFileToString(file);
-            JsonObject message = new JsonObject(content);
-            originalMessages.add(message);
-        } catch (IOException e) {
-            log.error(e);
-        }
+        FileObjectMapper.readInMessagesFile(messageFilePath, originalMessages);
         log.traceExit();
     }
 }

@@ -11,13 +11,13 @@ import io.vertx.ext.web.client.WebClient;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class Client {
-    private static final Logger log = LogManager.getLogger(Client.class.getName());
+public class BaseClient {
+    private static final Logger log = LogManager.getLogger(BaseClient.class.getName());
     private static final String CLIENT_URI = "/client";
 
     private final WebClient client;
 
-    public Client(final Vertx vertx) {
+    public BaseClient(final Vertx vertx) {
         client = WebClient.create(vertx);
     }
 

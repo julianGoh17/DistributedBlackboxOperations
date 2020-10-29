@@ -51,7 +51,7 @@ public class MessageMemoryTest {
     }
 
     @Test
-    public void TestMessageMemoryThrowsNPEWhenIncorrectPath() {
+    public void TestMessageMemoryThrowsNPEWhenIncorrectPath() throws IOException {
         MessageMemory memory = new MessageMemory();
         try {
             memory.readInMessageFiles(String.format("%s/random-1234124", TEST_MESSAGE_FILES_PATH));
