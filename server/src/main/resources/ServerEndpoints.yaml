@@ -155,6 +155,9 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  # TODO: Set State Server
+
 components:
   schemas:
     PostedMessage:

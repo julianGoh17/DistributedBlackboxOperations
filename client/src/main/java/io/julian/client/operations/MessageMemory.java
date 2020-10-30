@@ -16,7 +16,7 @@ public class MessageMemory {
     private static final Logger log = LogManager.getLogger(MessageMemory.class.getName());
 
     private final List<JsonObject> originalMessages;
-    private final Map<String, JsonObject> expectedMapping;
+    private final Map<Integer, String> expectedMapping;
 
     public MessageMemory() {
         originalMessages = new ArrayList<>();
@@ -28,15 +28,21 @@ public class MessageMemory {
         return log.traceExit(originalMessages.get(i));
     }
 
-    public void putIDAndMessage(final String id, final JsonObject message) {
-        log.traceEntry(() -> id, () -> message);
-        expectedMapping.put(id, message);
+    public void associateNumberWithID(final int messageNumber, final String messageId) {
+        log.traceEntry(() -> messageNumber, () -> messageId);
+        expectedMapping.put(messageNumber, messageId);
         log.traceExit();
     }
 
-    public JsonObject getExpectedMessageForID(final String id) {
-        log.traceEntry(() -> id);
-        return log.traceExit(expectedMapping.get(id));
+    public void disassociateNumberFromID(final int messageNumber) {
+        log.traceEntry(() -> messageNumber);
+        expectedMapping.remove(messageNumber);
+        log.traceExit();
+    }
+
+    public String getExpectedIDForNum(final int messageNumber) {
+        log.traceEntry(() -> messageNumber);
+        return log.traceExit(expectedMapping.get(messageNumber));
     }
 
     public void readInMessageFiles(final String messageFilePath) throws NullPointerException, IOException {

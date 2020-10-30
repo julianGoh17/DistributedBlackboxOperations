@@ -26,13 +26,18 @@ public class BaseClient {
         Promise<String> messageID = Promise.promise();
         client.post(Configuration.getServerPort(), Configuration.getServerHost(), CLIENT_URI)
             .sendJson(new MessageWrapper(message).toJson(), res -> {
-                MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
-                if (response.isError()) {
-                    log.error(response.getError());
-                    messageID.fail(response.getError());
+                if (res.succeeded()) {
+                    MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
+                    if (response.isError()) {
+                        log.error(response.getError());
+                        messageID.fail(response.getError());
+                    } else {
+                        log.info(String.format("Successful POST and returned id '%s'", response.getMessageId()));
+                        messageID.complete(response.getMessageId());
+                    }
                 } else {
-                    log.info(String.format("Successful POST and returned id '%s'", response.getMessageId()));
-                    messageID.complete(response.getMessageId());
+                    log.error(res);
+                    messageID.fail(res.cause());
                 }
             });
 

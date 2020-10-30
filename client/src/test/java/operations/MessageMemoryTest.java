@@ -31,23 +31,37 @@ public class MessageMemoryTest {
     public void TestPutAndGetExpectedMemory() {
         MessageMemory memory = new MessageMemory();
         String id = "my-id";
-        JsonObject message = new JsonObject().put("message", "here");
-        JsonObject newMessage = new JsonObject().put("new", "message");
+        String newID = "new-id";
+        int num = 0;
 
-        memory.putIDAndMessage(id, message);
-        Assert.assertEquals(message, memory.getExpectedMessageForID(id));
+        memory.associateNumberWithID(num, id);
+        Assert.assertEquals(id, memory.getExpectedIDForNum(num));
 
-        memory.putIDAndMessage(id, newMessage);
-        Assert.assertNotEquals(message, memory.getExpectedMessageForID(id));
-        Assert.assertEquals(newMessage, memory.getExpectedMessageForID(id));
+        memory.associateNumberWithID(num, newID);
+        Assert.assertNotEquals(id, memory.getExpectedIDForNum(num));
+        Assert.assertEquals(newID, memory.getExpectedIDForNum(num));
+    }
+
+    @Test
+    public void TestCanRemoveKeysFromExpectedMemory() {
+        MessageMemory memory = new MessageMemory();
+        String id = "my-id";
+        int num = 0;
+
+        memory.associateNumberWithID(num, id);
+        Assert.assertEquals(id, memory.getExpectedIDForNum(num));
+
+        memory.disassociateNumberFromID(num);
+        Assert.assertNull(memory.getExpectedIDForNum(num));
+
+        memory.disassociateNumberFromID(num);
+        Assert.assertNull(memory.getExpectedIDForNum(num));
     }
 
     @Test
     public void TestGetNullKeyExpectedMemory() {
         MessageMemory memory = new MessageMemory();
-        String id = "my-id";
-
-        Assert.assertNull(memory.getExpectedMessageForID(id));
+        Assert.assertNull(memory.getExpectedIDForNum(0));
     }
 
     @Test
