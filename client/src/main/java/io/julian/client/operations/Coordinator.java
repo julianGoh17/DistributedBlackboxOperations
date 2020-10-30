@@ -1,5 +1,8 @@
 package io.julian.client.operations;
 
+import io.julian.client.metrics.MetricsCollector;
+import io.julian.client.model.RequestMethod;
+import io.julian.client.model.operation.Operation;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -11,20 +14,29 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Getter
 public class Coordinator {
     private static final Logger log = LogManager.getLogger(Coordinator.class.getName());
+    private static final int MAX_RETRIES = 3;
 
     private final BaseClient client;
     private final MessageMemory memory;
     private final List<OperationChain> operationChains;
+    private final MetricsCollector collector;
+    private final Vertx vertx;
 
     public Coordinator(final Vertx vertx) {
+        this.vertx = vertx;
         client = new BaseClient(vertx);
         memory = new MessageMemory();
         operationChains = new ArrayList<>();
+        collector = new MetricsCollector();
     }
 
     public void initialize(final String messageFilePath, final String operationsFilePath) throws NullPointerException, IOException {
@@ -39,10 +51,14 @@ public class Coordinator {
         Promise<Void> isPOSTSuccessful = Promise.promise();
         client.POSTMessage(memory.getOriginalMessage(messageIndex))
             .onSuccess(id -> {
+                log.info(String.format("Successful POST of message number '%d', received id '%s'", messageIndex, id));
                 memory.associateNumberWithID(messageIndex, id);
                 isPOSTSuccessful.complete();
             })
-            .onFailure(isPOSTSuccessful::fail);
+            .onFailure(throwable -> {
+                log.error(String.format("Unsuccessful POST of message number '%d' because: %s", messageIndex, throwable.getMessage()));
+                isPOSTSuccessful.fail(throwable);
+            });
 
         return log.traceExit(isPOSTSuccessful.future());
     }
@@ -51,8 +67,14 @@ public class Coordinator {
         log.traceEntry(() -> messageIndex);
         Promise<JsonObject> isGETSuccessful = Promise.promise();
         client.GETMessage(memory.getExpectedIDForNum(messageIndex))
-            .onSuccess(isGETSuccessful::complete)
-            .onFailure(isGETSuccessful::fail);
+            .onSuccess(res -> {
+                log.info(String.format("Successful GET of message number '%d' for id '%s'", messageIndex, memory.getExpectedIDForNum(messageIndex)));
+                isGETSuccessful.complete(res);
+            })
+            .onFailure(throwable -> {
+                log.info(String.format("Unsuccessful GET of message number '%d' for id '%s' because: %s", messageIndex, memory.getExpectedIDForNum(messageIndex), throwable.getMessage()));
+                isGETSuccessful.fail(throwable);
+            });
 
         return log.traceExit(isGETSuccessful.future());
     }
@@ -62,13 +84,91 @@ public class Coordinator {
         Promise<Void> isPUTSuccessful = Promise.promise();
         client.PUTMessage(memory.getExpectedIDForNum(oldMessageIndex), memory.getOriginalMessage(newMessageIndex))
             .onSuccess(v -> {
+                log.info(String.format("Successful PUT of new message number '%d' for old message number '%d'", oldMessageIndex, newMessageIndex));
                 memory.associateNumberWithID(newMessageIndex, memory.getExpectedIDForNum(0));
                 memory.disassociateNumberFromID(oldMessageIndex);
                 isPUTSuccessful.complete();
             })
-            .onFailure(isPUTSuccessful::fail);
+            .onFailure(throwable -> {
+                log.error(String.format("Unsuccessful PUT of new message number '%d' for old message number '%d' because: %s", oldMessageIndex, newMessageIndex, throwable.getMessage()));
+                isPUTSuccessful.fail(throwable);
+            });
 
         return log.traceExit(isPUTSuccessful.future());
+    }
+
+    public Future<Void> runOperationChain(final int operationChainNumber) {
+        log.traceEntry(() -> operationChainNumber);
+
+        List<Operation> operations = Optional.ofNullable(operationChains.get(operationChainNumber))
+            .map(OperationChain::getOperations)
+            .orElse(Collections.emptyList());
+
+        return log.traceExit(runOperationsAndWait(operations.listIterator()));
+    }
+
+    // TODO: Add retry?
+    private Future<Void> runOperationsAndWait(final Iterator<Operation> operations) {
+        log.traceEntry(() -> operations);
+        AtomicBoolean inFlight = new AtomicBoolean(false);
+        Promise<Void> finishedOperations = Promise.promise();
+
+        this.vertx.setPeriodic(1000, id -> {
+            log.info(String.format("Entering loop '%d' waiting for request to complete", id));
+            if (!inFlight.get()) {
+                if (operations.hasNext()) {
+                    log.info(String.format("Loop '%d' has succeeded operation", id));
+                    Operation op = operations.next();
+                    runOperation(op)
+                        .onSuccess(v -> {
+                            collector.addMetric(op, true);
+                            inFlight.set(false);
+                        })
+                        .onFailure(throwable -> {
+                            collector.addMetric(op, false);
+                            vertx.cancelTimer(id);
+                            inFlight.set(false);
+                            finishedOperations.fail(throwable);
+                        });
+                    inFlight.set(true);
+                } else {
+                    log.info(String.format("Loop '%d' exiting as all operations have been completed", id));
+                    vertx.cancelTimer(id);
+                    finishedOperations.complete();
+                }
+            }
+        });
+
+        return log.traceExit(finishedOperations.future());
+    }
+
+    private Future<Void> runOperation(final Operation operation) {
+        log.traceEntry(() -> operation);
+        Promise<Void> complete = Promise.promise();
+        switch (operation.getAction().getMethod()) {
+            case POST:
+                log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.POST.toString(), operation.getAction().getMessageNumber()));
+                return sendPOST(operation.getAction().getMessageNumber());
+            case GET:
+                log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.GET.toString(), operation.getAction().getMessageNumber()));
+                sendGET(operation.getAction().getMessageNumber())
+                    .onSuccess(v -> complete.complete())
+                    .onFailure(complete::fail);
+                return complete.future();
+            case PUT:
+                log.debug(String.format("Running '%s' operation to update message '%d' to message '%d'", RequestMethod.PUT.toString(), operation.getAction().getMessageNumber(), operation.getAction().getNewMessageNumber()));
+                sendPUT(operation.getAction().getMessageNumber(), operation.getAction().getNewMessageNumber());
+                return sendPUT(operation.getAction().getMessageNumber(), operation.getAction().getNewMessageNumber());
+            default:
+                complete.complete();
+        }
+        return log.traceExit(complete.future());
+    }
+
+    public void close() {
+        log.traceEntry();
+        client.closeClient();
+        log.traceExit();
     }
 
     private void readInOperationsFile(final String operationsFilePath) throws NullPointerException, IOException {
@@ -85,12 +185,6 @@ public class Coordinator {
             log.traceExit();
             throw e;
         }
-        log.traceExit();
-    }
-    
-    public void close() {
-        log.traceEntry();
-        client.closeClient();
         log.traceExit();
     }
 }

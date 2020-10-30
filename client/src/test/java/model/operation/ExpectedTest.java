@@ -1,8 +1,9 @@
-package model;
+package model.operation;
 
-import io.julian.client.model.Expected;
+import io.julian.client.model.operation.Expected;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import model.AbstractOperationModelTest;
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -1,6 +1,6 @@
 package io.julian.client.operations;
 
-import io.julian.client.model.Operation;
+import io.julian.client.model.operation.Operation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

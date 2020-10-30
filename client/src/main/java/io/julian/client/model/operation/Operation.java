@@ -1,4 +1,4 @@
-package io.julian.client.model;
+package io.julian.client.model.operation;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;

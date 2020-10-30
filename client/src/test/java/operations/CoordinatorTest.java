@@ -103,6 +103,59 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
+    public void TestCoordinatorClientCanRunOperationChain(TestContext context) throws IOException, NullPointerException {
+        setUpApiServer(context);
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        client.runOperationChain(0).onComplete(context.asyncAssertSuccess(v -> {
+            Assert.assertEquals(3, client.getCollector().getTotalMessages());
+            Assert.assertEquals(0, client.getCollector().getFailed());
+            Assert.assertEquals(3, client.getCollector().getSucceeded());
+        }));
+    }
+
+    @Test
+    public void TestCoordinatorClientFailsOnPOSTOperation(TestContext context) throws IOException, NullPointerException {
+        client = new Coordinator(vertx);
+        server = null;
+        api = null;
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        client.runOperationChain(0).onComplete(context.asyncAssertFailure(throwable -> {
+            Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, throwable.getMessage());
+            Assert.assertEquals(1, client.getCollector().getTotalMessages());
+            Assert.assertEquals(1, client.getCollector().getFailed());
+            Assert.assertEquals(0, client.getCollector().getSucceeded());
+        }));
+    }
+
+    @Test
+    public void TestCoordinatorClientFailsOnGETOperation(TestContext context) throws IOException, NullPointerException {
+        setUpApiServer(context);
+        int impossibleMessage = 9999;
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        client.getOperationChains().get(0).getOperations().get(1).getAction().setMessageNumber(impossibleMessage);
+        client.runOperationChain(0).onComplete(context.asyncAssertFailure(throwable -> {
+            Assert.assertEquals("Could not find entry for uuid 'null'", throwable.getMessage());
+            Assert.assertEquals(2, client.getCollector().getTotalMessages());
+            Assert.assertEquals(1, client.getCollector().getFailed());
+            Assert.assertEquals(1, client.getCollector().getSucceeded());
+        }));
+    }
+
+    @Test
+    public void TestCoordinatorClientFailsOnPUTOperation(TestContext context) throws IOException, NullPointerException {
+        setUpApiServer(context);
+        int impossibleMessage = 9999;
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        client.getOperationChains().get(0).getOperations().get(2).getAction().setMessageNumber(impossibleMessage);
+        client.runOperationChain(0).onComplete(context.asyncAssertFailure(throwable -> {
+            Assert.assertEquals("Could not find entry for uuid 'null'", throwable.getMessage());
+            Assert.assertEquals(3, client.getCollector().getTotalMessages());
+            Assert.assertEquals(1, client.getCollector().getFailed());
+            Assert.assertEquals(2, client.getCollector().getSucceeded());
+        }));
+    }
+
+    @Test
     public void TestCoordinatorClientCanFailPUT(TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);

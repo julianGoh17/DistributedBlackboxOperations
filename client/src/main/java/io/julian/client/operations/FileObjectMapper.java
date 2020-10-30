@@ -1,6 +1,6 @@
 package io.julian.client.operations;
 
-import io.julian.client.model.Operation;
+import io.julian.client.model.operation.Operation;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.commons.io.FileUtils;

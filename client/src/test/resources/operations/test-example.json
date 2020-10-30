@@ -20,7 +20,8 @@
   {
     "action": {
       "method": "PUT",
-      "messageNumber": 3
+      "messageNumber": 1,
+      "newMessageNumber": 2
     },
     "expected": {
       "statusCode": 200,

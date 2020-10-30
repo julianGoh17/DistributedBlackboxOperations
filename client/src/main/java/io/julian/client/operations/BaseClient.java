@@ -49,31 +49,40 @@ public class BaseClient {
         Promise<JsonObject> getResponse = Promise.promise();
         client.get(Configuration.getServerPort(), Configuration.getServerHost(), String.format("%s/%s", CLIENT_URI, messageId))
             .send(res -> {
-                GetMessageResponse get = res.result().bodyAsJsonObject().mapTo(GetMessageResponse.class);
-                if (get.isError()) {
-                    log.error(get.getError());
-                    getResponse.fail(get.getError());
+                if (res.succeeded()) {
+                    GetMessageResponse get = res.result().bodyAsJsonObject().mapTo(GetMessageResponse.class);
+                    if (get.isError()) {
+                        log.error(get.getError());
+                        getResponse.fail(get.getError());
+                    } else {
+                        log.info(String.format("Successful GET for message id '%s'", messageId));
+                        getResponse.complete(get.getMessage());
+                    }
                 } else {
-                    log.info(String.format("Successful GET for message id '%s'", messageId));
-                    getResponse.complete(get.getMessage());
+                    getResponse.fail(res.cause());
                 }
             });
 
         return log.traceExit(getResponse.future());
     }
 
+    // TODO: Clean up log lines
     public Future<String> PUTMessage(final String messageId, final JsonObject message) {
         log.traceEntry(() -> messageId, () -> message);
         Promise<String> putResponse = Promise.promise();
         client.put(Configuration.getServerPort(), Configuration.getServerHost(), String.format("%s/%s", CLIENT_URI, messageId))
             .sendJsonObject(new MessageWrapper(message).toJson(), res -> {
-                MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
-                if (response.isError()) {
-                    log.error(response.getError());
-                    putResponse.fail(response.getError());
+                if (res.succeeded()) {
+                    MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
+                    if (response.isError()) {
+                        log.error(response.getError());
+                        putResponse.fail(response.getError());
+                    } else {
+                        log.info(String.format("Successful POST and returned id '%s'", response.getMessageId()));
+                        putResponse.complete(response.getMessageId());
+                    }
                 } else {
-                    log.info(String.format("Successful POST and returned id '%s'", response.getMessageId()));
-                    putResponse.complete(response.getMessageId());
+                    putResponse.fail(res.cause());
                 }
             });
         return log.traceExit(putResponse.future());
