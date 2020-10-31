@@ -47,7 +47,7 @@ public class MessageMemory {
 
     public void readInMessageFiles(final String messageFilePath) throws NullPointerException, IOException {
         log.traceEntry(() -> messageFilePath);
-        FileObjectMapper.readInMessagesFile(messageFilePath, originalMessages);
+        FileObjectMapper.readInFolderAndAddToList(messageFilePath, originalMessages, JsonObject.class);
         log.traceExit();
     }
 }

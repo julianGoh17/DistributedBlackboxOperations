@@ -1,28 +1,20 @@
-package operations;
+package model.operation;
 
 import io.julian.client.model.RequestMethod;
-import io.julian.client.operations.OperationChain;
+import io.julian.client.model.operation.Configuration;
+import io.julian.client.model.operation.OperationChain;
+import io.vertx.core.json.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
-public class OperationChainTest {
-    private static final String TEST_OPERATION_FILES_PATH = String.format("%s/src/test/resources/operations", System.getProperty("user.dir"));
-
+public class OperationChainTest extends AbstractOperationModelTest {
     @Test
-    public void TestOperationChainCanMapFromFile() throws IOException {
-        File folder = new File(TEST_OPERATION_FILES_PATH);
-        OperationChain chain = new OperationChain();
-        for (final File file : folder.listFiles()) {
-            if (file.getName().equals("test-example.json")) {
-                chain.readInOperationFiles(file);
-            }
-        }
-
-        Assert.assertEquals(0, chain.getExpectedMessages().size());
-
+    public void TestOperationChainMapsCorrectly() throws IOException {
+        JsonObject content = readTestFile();
+        OperationChain chain = content.mapTo(OperationChain.class);
         Assert.assertEquals(3, chain.getOperations().size());
         Assert.assertEquals(RequestMethod.POST, chain.getOperations().get(0).getAction().getMethod());
         Assert.assertEquals(1, chain.getOperations().get(0).getAction().getMessageNumber().intValue());
@@ -39,11 +31,25 @@ public class OperationChainTest {
         Assert.assertEquals(2, chain.getOperations().get(2).getAction().getNewMessageNumber().intValue());
         Assert.assertEquals(200, chain.getOperations().get(2).getExpected().getStatusCode());
         Assert.assertEquals(1, chain.getOperations().get(2).getExpected().getMessageNumber().intValue());
+
+        Assert.assertTrue(chain.getConfiguration().willFailFast());
+        Assert.assertTrue(chain.getConfiguration().willRunInParallel());
+    }
+
+    @Test
+    public void TestOperationChainFailsIfNoOperations() {
+        JsonObject emptyObject = new JsonObject();
+        try {
+            emptyObject.mapTo(OperationChain.class);
+            Assert.fail();
+        } catch (Exception e) {
+            Assert.assertTrue(e.getMessage().contains(String.format("Missing required creator property '%s'", OPERATIONS_KEY)));
+        }
     }
 
     @Test
     public void TestOperationCanUpdateExpectedMessages() {
-        OperationChain chain = new OperationChain();
+        OperationChain chain = new OperationChain(new ArrayList<>(), new Configuration());
         String id = "random-id";
 
         Assert.assertNull(chain.getExpectedMessageID(0));

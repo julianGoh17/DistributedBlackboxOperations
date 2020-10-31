@@ -3,6 +3,7 @@ package io.julian.client.operations;
 import io.julian.client.metrics.MetricsCollector;
 import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Operation;
+import io.julian.client.model.operation.OperationChain;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -11,7 +12,6 @@ import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -173,18 +173,7 @@ public class Coordinator {
 
     private void readInOperationsFile(final String operationsFilePath) throws NullPointerException, IOException {
         log.traceEntry(() -> operationsFilePath);
-        final File folder = new File(operationsFilePath);
-        try {
-            for (final File file : folder.listFiles()) {
-                OperationChain operationChain = new OperationChain();
-                operationChain.readInOperationFiles(file);
-                operationChains.add(operationChain);
-            }
-        } catch (NullPointerException e) {
-            log.error(e);
-            log.traceExit();
-            throw e;
-        }
+        FileObjectMapper.readInFolderAndAddToList(operationsFilePath, operationChains, OperationChain.class);
         log.traceExit();
     }
 }

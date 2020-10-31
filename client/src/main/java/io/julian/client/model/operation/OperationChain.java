@@ -1,31 +1,28 @@
-package io.julian.client.operations;
+package io.julian.client.model.operation;
 
-import io.julian.client.model.operation.Operation;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Getter
 public class OperationChain {
     private static final Logger log = LogManager.getLogger(OperationChain.class.getName());
-
     private List<Operation> operations;
+    private Configuration configuration;
     private final Map<Integer, String> expectedMessages;
 
-    public OperationChain() {
-        expectedMessages = new HashMap<>();
-        operations = new ArrayList<>();
-    }
-
-    public void readInOperationFiles(final File file) throws IOException {
-        log.traceEntry(() -> file);
-        operations = FileObjectMapper.readInOperationsFile(file);
-        log.traceExit();
+    @JsonCreator
+    public OperationChain(@JsonProperty(value = "operations", required = true) List<Operation> operations,
+                         @JsonProperty("configuration") Configuration configuration) {
+        this.operations = operations;
+        this.configuration = configuration;
+        this.expectedMessages = new HashMap<>();
     }
 
     public void updateExpectedMapping(final int messageNumber, final String messageID) {
