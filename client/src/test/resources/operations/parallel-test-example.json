@@ -1,0 +1,35 @@
+{
+  "operations": [
+    {
+      "action": {
+        "method": "POST",
+        "messageNumber": 0
+      },
+      "expected": {
+        "statusCode": 200
+      }
+    },
+    {
+      "action": {
+        "method": "POST",
+        "messageNumber": 1
+      },
+      "expected": {
+        "statusCode": 404
+      }
+    },
+    {
+      "action": {
+        "method": "POST",
+        "messageNumber": 2
+      },
+      "expected": {
+        "statusCode": 200,
+        "messageNumber": 1
+      }
+    }
+  ],
+  "configuration": {
+    "willRunInParallel": true
+  }
+}

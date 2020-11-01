@@ -31,7 +31,6 @@
     }
   ],
   "configuration": {
-    "willRunInParallel": true,
-    "willFailFast": true
+    "willRunInParallel": false
   }
 }

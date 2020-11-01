@@ -31,9 +31,7 @@ public class OperationChainTest extends AbstractOperationModelTest {
         Assert.assertEquals(2, chain.getOperations().get(2).getAction().getNewMessageNumber().intValue());
         Assert.assertEquals(200, chain.getOperations().get(2).getExpected().getStatusCode());
         Assert.assertEquals(1, chain.getOperations().get(2).getExpected().getMessageNumber().intValue());
-
-        Assert.assertTrue(chain.getConfiguration().willFailFast());
-        Assert.assertTrue(chain.getConfiguration().willRunInParallel());
+        Assert.assertFalse(chain.getConfiguration().willRunInParallel());
     }
 
     @Test

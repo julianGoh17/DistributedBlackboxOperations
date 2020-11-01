@@ -2,6 +2,7 @@ package io.julian.client.operations;
 
 import io.julian.client.metrics.MetricsCollector;
 import io.julian.client.model.RequestMethod;
+import io.julian.client.model.operation.Configuration;
 import io.julian.client.model.operation.Operation;
 import io.julian.client.model.operation.OperationChain;
 import io.vertx.core.Future;
@@ -19,6 +20,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Getter
 public class Coordinator {
@@ -46,20 +49,24 @@ public class Coordinator {
         log.traceExit();
     }
 
-    public Future<Void> sendPOST(final int messageIndex) {
+    public Future<Void> sendPOST(final int messageIndex) throws ArrayIndexOutOfBoundsException {
         log.traceEntry(() -> messageIndex);
         Promise<Void> isPOSTSuccessful = Promise.promise();
-        client.POSTMessage(memory.getOriginalMessage(messageIndex))
-            .onSuccess(id -> {
-                log.info(String.format("Successful POST of message number '%d', received id '%s'", messageIndex, id));
-                memory.associateNumberWithID(messageIndex, id);
-                isPOSTSuccessful.complete();
-            })
-            .onFailure(throwable -> {
-                log.error(String.format("Unsuccessful POST of message number '%d' because: %s", messageIndex, throwable.getMessage()));
-                isPOSTSuccessful.fail(throwable);
-            });
-
+        try {
+            checkValidMessageIndex(messageIndex);
+            client.POSTMessage(memory.getOriginalMessage(messageIndex))
+                .onSuccess(id -> {
+                    log.info(String.format("Successful POST of message number '%d', received id '%s'", messageIndex, id));
+                    memory.associateNumberWithID(messageIndex, id);
+                    isPOSTSuccessful.complete();
+                })
+                .onFailure(throwable -> {
+                    log.error(String.format("Unsuccessful POST of message number '%d' because: %s", messageIndex, throwable.getMessage()));
+                    isPOSTSuccessful.fail(throwable);
+                });
+        } catch (ArrayIndexOutOfBoundsException e) {
+            isPOSTSuccessful.fail(e);
+        }
         return log.traceExit(isPOSTSuccessful.future());
     }
 
@@ -82,19 +89,34 @@ public class Coordinator {
     public Future<Void> sendPUT(final int oldMessageIndex, final int newMessageIndex) {
         log.traceEntry(() -> oldMessageIndex, () -> newMessageIndex);
         Promise<Void> isPUTSuccessful = Promise.promise();
-        client.PUTMessage(memory.getExpectedIDForNum(oldMessageIndex), memory.getOriginalMessage(newMessageIndex))
-            .onSuccess(v -> {
-                log.info(String.format("Successful PUT of new message number '%d' for old message number '%d'", oldMessageIndex, newMessageIndex));
-                memory.associateNumberWithID(newMessageIndex, memory.getExpectedIDForNum(0));
-                memory.disassociateNumberFromID(oldMessageIndex);
-                isPUTSuccessful.complete();
-            })
-            .onFailure(throwable -> {
-                log.error(String.format("Unsuccessful PUT of new message number '%d' for old message number '%d' because: %s", oldMessageIndex, newMessageIndex, throwable.getMessage()));
-                isPUTSuccessful.fail(throwable);
-            });
+        try {
+            checkValidMessageIndex(newMessageIndex);
+            client.PUTMessage(memory.getExpectedIDForNum(oldMessageIndex), memory.getOriginalMessage(newMessageIndex))
+                .onSuccess(v -> {
+                    log.info(String.format("Successful PUT of new message number '%d' for old message number '%d'", oldMessageIndex, newMessageIndex));
+                    memory.associateNumberWithID(newMessageIndex, memory.getExpectedIDForNum(0));
+                    memory.disassociateNumberFromID(oldMessageIndex);
+                    isPUTSuccessful.complete();
+                })
+                .onFailure(throwable -> {
+                    log.error(String.format("Unsuccessful PUT of new message number '%d' for old message number '%d' because: %s", oldMessageIndex, newMessageIndex, throwable.getMessage()));
+                    isPUTSuccessful.fail(throwable);
+                });
+        } catch (ArrayIndexOutOfBoundsException e) {
+            isPUTSuccessful.fail(e);
+        }
 
         return log.traceExit(isPUTSuccessful.future());
+    }
+
+    private void checkValidMessageIndex(final int messageIndex) throws ArrayIndexOutOfBoundsException {
+        log.traceEntry(() -> messageIndex);
+        if (!memory.hasOriginalMessageNumber(messageIndex)) {
+            ArrayIndexOutOfBoundsException exception = new ArrayIndexOutOfBoundsException(String.format("No original message with index '%d'", messageIndex));
+            log.error(exception);
+            throw exception;
+        }
+        log.traceExit();
     }
 
     public Future<Void> runOperationChain(final int operationChainNumber) {
@@ -104,15 +126,29 @@ public class Coordinator {
             .map(OperationChain::getOperations)
             .orElse(Collections.emptyList());
 
-        return log.traceExit(runOperationsAndWait(operations.listIterator()));
+        boolean isParallel = Optional.ofNullable(operationChains.get(operationChainNumber))
+            .map(OperationChain::getConfiguration)
+            .map(Configuration::willRunInParallel)
+            .orElse(false);
+
+        if (!operations.isEmpty()) {
+            if (isParallel) {
+                return runOperationsInParallel(operations);
+            } else {
+                return runOperationsSequentially(operations.listIterator());
+            }
+        }
+
+        return log.traceExit(Future.succeededFuture());
     }
 
     // TODO: Add retry?
-    private Future<Void> runOperationsAndWait(final Iterator<Operation> operations) {
+    private Future<Void> runOperationsSequentially(final Iterator<Operation> operations) {
         log.traceEntry(() -> operations);
         AtomicBoolean inFlight = new AtomicBoolean(false);
         Promise<Void> finishedOperations = Promise.promise();
 
+        log.info("Running operations sequentially");
         this.vertx.setPeriodic(1000, id -> {
             log.info(String.format("Entering loop '%d' waiting for request to complete", id));
             if (!inFlight.get()) {
@@ -140,6 +176,36 @@ public class Coordinator {
         });
 
         return log.traceExit(finishedOperations.future());
+    }
+
+    private Future<Void> runOperationsInParallel(final List<Operation> operations) {
+        log.traceEntry(() -> operations);
+        Promise<Void> allSuccessfulOperations = Promise.promise();
+        AtomicInteger remainingOperations = new AtomicInteger(operations.size());
+        AtomicReference<Throwable> firstException = new AtomicReference<>();
+        log.info("Running operations in parallel");
+        operations.forEach(op -> runOperation(op)
+            .onComplete(res -> {
+                if (res.succeeded()) {
+                    log.info(String.format("Successful '%s' parallel operation", op.getAction().getMethod().toString()));
+                    collector.addMetric(op, true);
+                    remainingOperations.getAndDecrement();
+                } else {
+                    log.info(String.format("Failed '%s' parallel operation", op.getAction().getMethod().toString()));
+                    collector.addMetric(op, false);
+                    remainingOperations.getAndDecrement();
+                    if (firstException.get() == null) {
+                        firstException.set(res.cause());
+                    }
+                }
+                if (remainingOperations.get() == 0 && firstException.get() == null) {
+                    allSuccessfulOperations.complete();
+                } else if (remainingOperations.get() == 0 && firstException.get() != null) {
+                    allSuccessfulOperations.fail(firstException.get());
+                }
+            }));
+
+        return log.traceExit(allSuccessfulOperations.future());
     }
 
     private Future<Void> runOperation(final Operation operation) {

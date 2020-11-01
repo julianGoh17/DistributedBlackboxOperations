@@ -28,6 +28,11 @@ public class MessageMemory {
         return log.traceExit(originalMessages.get(i));
     }
 
+    public boolean hasOriginalMessageNumber(final int messageIndex) {
+        log.traceEntry(() -> messageIndex);
+        return log.traceExit(messageIndex < originalMessages.size());
+    }
+
     public void associateNumberWithID(final int messageNumber, final String messageId) {
         log.traceEntry(() -> messageNumber, () -> messageId);
         expectedMapping.put(messageNumber, messageId);
