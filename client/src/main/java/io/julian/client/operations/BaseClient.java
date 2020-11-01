@@ -1,5 +1,6 @@
 package io.julian.client.operations;
 
+import io.julian.client.Exception.ClientException;
 import io.julian.client.model.MessageIdResponse;
 import io.julian.client.model.MessageWrapper;
 import io.julian.client.model.GetMessageResponse;
@@ -29,15 +30,17 @@ public class BaseClient {
                 if (res.succeeded()) {
                     MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
                     if (response.isError()) {
-                        log.error(response.getError());
-                        messageID.fail(response.getError());
+                        ClientException exception = new ClientException(response.getError(), response.getStatusCode());
+                        log.error(exception);
+                        messageID.fail(exception);
                     } else {
                         log.info(String.format("Successful POST and returned id '%s'", response.getMessageId()));
                         messageID.complete(response.getMessageId());
                     }
                 } else {
-                    log.error(res);
-                    messageID.fail(res.cause());
+                    ClientException exception = new ClientException(res.cause().getMessage(), 400);
+                    log.error(exception);
+                    messageID.fail(exception);
                 }
             });
 
@@ -52,14 +55,17 @@ public class BaseClient {
                 if (res.succeeded()) {
                     GetMessageResponse get = res.result().bodyAsJsonObject().mapTo(GetMessageResponse.class);
                     if (get.isError()) {
-                        log.error(get.getError());
-                        getResponse.fail(get.getError());
+                        ClientException exception = new ClientException(get.getError(), get.getStatusCode());
+                        log.error(exception);
+                        getResponse.fail(exception);
                     } else {
                         log.info(String.format("Successful GET for message id '%s'", messageId));
                         getResponse.complete(get.getMessage());
                     }
                 } else {
-                    getResponse.fail(res.cause());
+                    ClientException exception = new ClientException(res.cause().getMessage(), 400);
+                    log.error(exception);
+                    getResponse.fail(exception);
                 }
             });
 
@@ -75,14 +81,17 @@ public class BaseClient {
                 if (res.succeeded()) {
                     MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
                     if (response.isError()) {
-                        log.error(response.getError());
-                        putResponse.fail(response.getError());
+                        ClientException exception = new ClientException(response.getError(), response.getStatusCode());
+                        log.error(exception);
+                        putResponse.fail(exception);
                     } else {
                         log.info(String.format("Successful POST and returned id '%s'", response.getMessageId()));
                         putResponse.complete(response.getMessageId());
                     }
                 } else {
-                    putResponse.fail(res.cause());
+                    ClientException exception = new ClientException(res.cause().getMessage(), 400);
+                    log.error(exception);
+                    putResponse.fail(exception);
                 }
             });
         return log.traceExit(putResponse.future());

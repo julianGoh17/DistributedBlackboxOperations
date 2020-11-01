@@ -1,5 +1,6 @@
 package io.julian.client.operations;
 
+import io.julian.client.Exception.ClientException;
 import io.julian.client.metrics.MetricsCollector;
 import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Configuration;
@@ -61,11 +62,14 @@ public class Coordinator {
                     isPOSTSuccessful.complete();
                 })
                 .onFailure(throwable -> {
-                    log.error(String.format("Unsuccessful POST of message number '%d' because: %s", messageIndex, throwable.getMessage()));
+                    ClientException exception = (ClientException) throwable;
+                    log.error(String.format("Unsuccessful POST of message number '%d' because: %s", messageIndex, exception.getMessage()));
                     isPOSTSuccessful.fail(throwable);
                 });
         } catch (ArrayIndexOutOfBoundsException e) {
-            isPOSTSuccessful.fail(e);
+            ClientException exception = new ClientException(e.getMessage(), 500);
+            log.error(exception);
+            isPOSTSuccessful.fail(exception);
         }
         return log.traceExit(isPOSTSuccessful.future());
     }
@@ -79,8 +83,9 @@ public class Coordinator {
                 isGETSuccessful.complete(res);
             })
             .onFailure(throwable -> {
-                log.info(String.format("Unsuccessful GET of message number '%d' for id '%s' because: %s", messageIndex, memory.getExpectedIDForNum(messageIndex), throwable.getMessage()));
-                isGETSuccessful.fail(throwable);
+                ClientException exception = (ClientException) throwable;
+                log.error(String.format("Unsuccessful GET of message number '%d' because: %s", messageIndex, exception.getMessage()));
+                isGETSuccessful.fail(exception);
             });
 
         return log.traceExit(isGETSuccessful.future());
@@ -99,11 +104,14 @@ public class Coordinator {
                     isPUTSuccessful.complete();
                 })
                 .onFailure(throwable -> {
-                    log.error(String.format("Unsuccessful PUT of new message number '%d' for old message number '%d' because: %s", oldMessageIndex, newMessageIndex, throwable.getMessage()));
-                    isPUTSuccessful.fail(throwable);
+                    ClientException exception = (ClientException) throwable;
+                    log.error(String.format("Unsuccessful PUT of new message number '%d' for old message number '%d' because: %s", oldMessageIndex, newMessageIndex, exception.getMessage()));
+                    isPUTSuccessful.fail(exception);
                 });
         } catch (ArrayIndexOutOfBoundsException e) {
-            isPUTSuccessful.fail(e);
+            ClientException exception = new ClientException(e.getMessage(), 500);
+            log.error(String.format("Unsuccessful PUT of new message number '%d' for old message number '%d' because: %s", oldMessageIndex, newMessageIndex, exception.getMessage()));
+            isPUTSuccessful.fail(exception);
         }
 
         return log.traceExit(isPUTSuccessful.future());
@@ -142,7 +150,6 @@ public class Coordinator {
         return log.traceExit(Future.succeededFuture());
     }
 
-    // TODO: Add retry?
     private Future<Void> runOperationsSequentially(final Iterator<Operation> operations) {
         log.traceEntry(() -> operations);
         AtomicBoolean inFlight = new AtomicBoolean(false);
@@ -157,11 +164,11 @@ public class Coordinator {
                     Operation op = operations.next();
                     runOperation(op)
                         .onSuccess(v -> {
-                            collector.addMetric(op, true);
+                            collector.addSucceededMetric(op);
                             inFlight.set(false);
                         })
                         .onFailure(throwable -> {
-                            collector.addMetric(op, false);
+                            collector.addFailedMetric(op, (ClientException) throwable);
                             vertx.cancelTimer(id);
                             inFlight.set(false);
                             finishedOperations.fail(throwable);
@@ -188,11 +195,11 @@ public class Coordinator {
             .onComplete(res -> {
                 if (res.succeeded()) {
                     log.info(String.format("Successful '%s' parallel operation", op.getAction().getMethod().toString()));
-                    collector.addMetric(op, true);
+                    collector.addSucceededMetric(op);
                     remainingOperations.getAndDecrement();
                 } else {
                     log.info(String.format("Failed '%s' parallel operation", op.getAction().getMethod().toString()));
-                    collector.addMetric(op, false);
+                    collector.addFailedMetric(op, (ClientException) res.cause());
                     remainingOperations.getAndDecrement();
                     if (firstException.get() == null) {
                         firstException.set(res.cause());

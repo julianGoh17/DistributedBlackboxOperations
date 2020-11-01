@@ -1,5 +1,9 @@
 package operations;
 
+import io.julian.client.Exception.ClientException;
+import io.julian.client.model.MismatchedResponse;
+import io.julian.client.model.RequestMethod;
+import io.julian.client.model.operation.Operation;
 import io.julian.client.operations.Coordinator;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
@@ -120,11 +124,8 @@ public class CoordinatorTest extends AbstractClientTest {
     public void TestCoordinatorCanRunOperationChain(TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
-        client.runOperationChain(SEQUENTIAL_OPERATION_CHAIN).onComplete(context.asyncAssertSuccess(v -> {
-            Assert.assertEquals(3, client.getCollector().getTotalMessages());
-            Assert.assertEquals(0, client.getCollector().getFailed());
-            Assert.assertEquals(3, client.getCollector().getSucceeded());
-        }));
+        client.runOperationChain(SEQUENTIAL_OPERATION_CHAIN).onComplete(context.asyncAssertSuccess(v ->
+            checkCollectorGenericMetrics(1, 1, 1, 0, 0, 0)));
     }
 
     @Test
@@ -134,10 +135,14 @@ public class CoordinatorTest extends AbstractClientTest {
         api = null;
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.runOperationChain(SEQUENTIAL_OPERATION_CHAIN).onComplete(context.asyncAssertFailure(throwable -> {
-            Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, throwable.getMessage());
-            Assert.assertEquals(1, client.getCollector().getTotalMessages());
-            Assert.assertEquals(1, client.getCollector().getFailed());
-            Assert.assertEquals(0, client.getCollector().getSucceeded());
+            ClientException exception = (ClientException) throwable;
+            Assert.assertEquals(400, exception.getStatusCode());
+            Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, exception.getMessage());
+            checkCollectorGenericMetrics(0, 0, 0, 0, 1, 0);
+
+            checkMismatchedResponse(client.getOperationChains().get(SEQUENTIAL_OPERATION_CHAIN).getOperations().get(POST_OPERATION_NUMBER),
+                client.getCollector().getMismatchedResponses().get(0),
+                exception);
         }));
     }
 
@@ -147,10 +152,14 @@ public class CoordinatorTest extends AbstractClientTest {
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(SEQUENTIAL_OPERATION_CHAIN).getOperations().get(GET_OPERATION_NUMBER).getAction().setMessageNumber(OUT_OF_BOUND_MESSAGE_INDEX);
         client.runOperationChain(SEQUENTIAL_OPERATION_CHAIN).onComplete(context.asyncAssertFailure(throwable -> {
-            Assert.assertEquals("Could not find entry for uuid 'null'", throwable.getMessage());
-            Assert.assertEquals(2, client.getCollector().getTotalMessages());
-            Assert.assertEquals(1, client.getCollector().getFailed());
-            Assert.assertEquals(1, client.getCollector().getSucceeded());
+            ClientException exception = (ClientException) throwable;
+            Assert.assertEquals(404, exception.getStatusCode());
+            Assert.assertEquals("Could not find entry for uuid 'null'", exception.getMessage());
+            checkCollectorGenericMetrics(0, 1, 0, 1, 0, 0);
+
+            checkMismatchedResponse(client.getOperationChains().get(SEQUENTIAL_OPERATION_CHAIN).getOperations().get(GET_OPERATION_NUMBER),
+                client.getCollector().getMismatchedResponses().get(0),
+                exception);
         }));
     }
 
@@ -161,10 +170,14 @@ public class CoordinatorTest extends AbstractClientTest {
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(SEQUENTIAL_OPERATION_CHAIN).getOperations().get(PUT_OPERATION_NUMBER).getAction().setMessageNumber(impossibleMessage);
         client.runOperationChain(SEQUENTIAL_OPERATION_CHAIN).onComplete(context.asyncAssertFailure(throwable -> {
-            Assert.assertEquals("Could not find entry for uuid 'null'", throwable.getMessage());
-            Assert.assertEquals(3, client.getCollector().getTotalMessages());
-            Assert.assertEquals(1, client.getCollector().getFailed());
-            Assert.assertEquals(2, client.getCollector().getSucceeded());
+            ClientException exception = (ClientException) throwable;
+            Assert.assertEquals(404, exception.getStatusCode());
+            Assert.assertEquals("Could not find entry for uuid 'null'", exception.getMessage());
+            checkCollectorGenericMetrics(1, 1, 0, 0, 0, 1);
+
+            checkMismatchedResponse(client.getOperationChains().get(SEQUENTIAL_OPERATION_CHAIN).getOperations().get(PUT_OPERATION_NUMBER),
+                client.getCollector().getMismatchedResponses().get(0),
+                exception);
         }));
     }
 
@@ -185,12 +198,8 @@ public class CoordinatorTest extends AbstractClientTest {
     public void TestCoordinatorCanRunOperationChainInParallel(TestContext context) throws IOException, NullPointerException  {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
-        int messages = client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().size();
-        client.runOperationChain(PARALLEL_OPERATION_CHAIN).onComplete(context.asyncAssertSuccess(v -> {
-            Assert.assertEquals(messages, client.getCollector().getTotalMessages());
-            Assert.assertEquals(0, client.getCollector().getFailed());
-            Assert.assertEquals(messages, client.getCollector().getSucceeded());
-        }));
+        client.runOperationChain(PARALLEL_OPERATION_CHAIN).onComplete(context.asyncAssertSuccess(v ->
+            checkCollectorGenericMetrics(0, 3, 0, 0, 0, 0)));
     }
 
     @Test
@@ -199,12 +208,23 @@ public class CoordinatorTest extends AbstractClientTest {
         server = null;
         client = new Coordinator(vertx);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
-        int messages = client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().size();
         client.runOperationChain(PARALLEL_OPERATION_CHAIN).onComplete(context.asyncAssertFailure(error -> {
-            Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, error.getMessage());
-            Assert.assertEquals(messages, client.getCollector().getTotalMessages());
-            Assert.assertEquals(messages, client.getCollector().getFailed());
-            Assert.assertEquals(0, client.getCollector().getSucceeded());
+            ClientException exception = (ClientException) error;
+            Assert.assertEquals(400, exception.getStatusCode());
+            Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, exception.getMessage());
+            checkCollectorGenericMetrics(0, 0, 0, 0, 3, 0);
+
+            checkMismatchedResponse(client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().get(0),
+                client.getCollector().getMismatchedResponses().get(0),
+                exception);
+
+            checkMismatchedResponse(client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().get(1),
+                client.getCollector().getMismatchedResponses().get(1),
+                exception);
+
+            checkMismatchedResponse(client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().get(2),
+                client.getCollector().getMismatchedResponses().get(2),
+                exception);
         }));
     }
 
@@ -213,12 +233,15 @@ public class CoordinatorTest extends AbstractClientTest {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().get(1).getAction().setMessageNumber(OUT_OF_BOUND_MESSAGE_INDEX);
-        int messages = client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().size();
         client.runOperationChain(PARALLEL_OPERATION_CHAIN).onComplete(context.asyncAssertFailure(error -> {
-            Assert.assertEquals(OUT_OF_BOUND_EXCEPTION, error.getMessage());
-            Assert.assertEquals(messages, client.getCollector().getTotalMessages());
-            Assert.assertEquals(1, client.getCollector().getFailed());
-            Assert.assertEquals(2, client.getCollector().getSucceeded());
+            ClientException exception = (ClientException) error;
+            Assert.assertEquals(500, exception.getStatusCode());
+            Assert.assertEquals(OUT_OF_BOUND_EXCEPTION, exception.getMessage());
+            checkCollectorGenericMetrics(0, 2, 0, 0, 1, 0);
+
+            checkMismatchedResponse(client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().get(1),
+                client.getCollector().getMismatchedResponses().get(0),
+                exception);
         }));
     }
 
@@ -228,12 +251,18 @@ public class CoordinatorTest extends AbstractClientTest {
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().get(1).getAction().setMessageNumber(OUT_OF_BOUND_MESSAGE_INDEX);
         client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().get(2).getAction().setMessageNumber(OUT_OF_BOUND_MESSAGE_INDEX);
-        int messages = client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().size();
         client.runOperationChain(PARALLEL_OPERATION_CHAIN).onComplete(context.asyncAssertFailure(error -> {
-            Assert.assertEquals(OUT_OF_BOUND_EXCEPTION, error.getMessage());
-            Assert.assertEquals(messages, client.getCollector().getTotalMessages());
-            Assert.assertEquals(2, client.getCollector().getFailed());
-            Assert.assertEquals(1, client.getCollector().getSucceeded());
+            ClientException exception = (ClientException) error;
+            Assert.assertEquals(500, exception.getStatusCode());
+            Assert.assertEquals(OUT_OF_BOUND_EXCEPTION, exception.getMessage());
+            checkCollectorGenericMetrics(0, 1, 0, 0, 2, 0);
+
+            checkMismatchedResponse(client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().get(1),
+                client.getCollector().getMismatchedResponses().get(0),
+                exception);
+            checkMismatchedResponse(client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().get(2),
+                client.getCollector().getMismatchedResponses().get(1),
+                exception);
         }));
     }
 
@@ -246,10 +275,14 @@ public class CoordinatorTest extends AbstractClientTest {
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(SEQUENTIAL_OPERATION_CHAIN).getOperations().get(POST_OPERATION_NUMBER).getAction().setMessageNumber(OUT_OF_BOUND_MESSAGE_INDEX);
         client.runOperationChain(SEQUENTIAL_OPERATION_CHAIN).onComplete(context.asyncAssertFailure(throwable -> {
-            Assert.assertEquals(OUT_OF_BOUND_EXCEPTION, throwable.getMessage());
-            Assert.assertEquals(1, client.getCollector().getTotalMessages());
-            Assert.assertEquals(1, client.getCollector().getFailed());
-            Assert.assertEquals(0, client.getCollector().getSucceeded());
+            ClientException exception = (ClientException) throwable;
+            Assert.assertEquals(500, exception.getStatusCode());
+            Assert.assertEquals(OUT_OF_BOUND_EXCEPTION, exception.getMessage());
+            checkCollectorGenericMetrics(0, 0, 0, 0, 1, 0);
+
+            checkMismatchedResponse(client.getOperationChains().get(SEQUENTIAL_OPERATION_CHAIN).getOperations().get(POST_OPERATION_NUMBER),
+                client.getCollector().getMismatchedResponses().get(0),
+                exception);
         }));
     }
 
@@ -259,11 +292,41 @@ public class CoordinatorTest extends AbstractClientTest {
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(SEQUENTIAL_OPERATION_CHAIN).getOperations().get(PUT_OPERATION_NUMBER).getAction().setNewMessageNumber(OUT_OF_BOUND_MESSAGE_INDEX);
         client.runOperationChain(SEQUENTIAL_OPERATION_CHAIN).onComplete(context.asyncAssertFailure(throwable -> {
-            Assert.assertEquals(OUT_OF_BOUND_EXCEPTION, throwable.getMessage());
-            Assert.assertEquals(3, client.getCollector().getTotalMessages());
-            Assert.assertEquals(1, client.getCollector().getFailed());
-            Assert.assertEquals(2, client.getCollector().getSucceeded());
+            ClientException exception = (ClientException) throwable;
+            Assert.assertEquals(500, exception.getStatusCode());
+            Assert.assertEquals(OUT_OF_BOUND_EXCEPTION, exception.getMessage());
+            checkCollectorGenericMetrics(1, 1, 0, 0, 0, 1);
+
+            checkMismatchedResponse(client.getOperationChains().get(SEQUENTIAL_OPERATION_CHAIN).getOperations().get(PUT_OPERATION_NUMBER),
+                client.getCollector().getMismatchedResponses().get(0),
+                exception);
         }));
+    }
+
+    private void checkMismatchedResponse(Operation operation, MismatchedResponse response, ClientException exception) {
+        Assert.assertEquals(operation.getAction().getMethod(), response.getMethod());
+        Assert.assertEquals(operation.getAction().getMessageNumber().intValue(), response.getMessageNumber());
+        Assert.assertEquals(operation.getExpected().getStatusCode(), response.getExpectedStatusCode());
+        Assert.assertEquals(exception.getStatusCode(), response.getActualStatusCode());
+        Assert.assertEquals(exception.getMessage(), response.getError());
+    }
+
+    private void checkCollectorGenericMetrics(int successfulGet, int successfulPost, int successfulPut, int failedGet, int failedPost, int failedPut) {
+        int totalSuccess = successfulGet + successfulPost + successfulPut;
+        int totalFail = failedGet + failedPost + failedPut;
+
+        Assert.assertEquals(totalSuccess + totalFail, client.getCollector().getTotalMessages());
+        Assert.assertEquals(totalFail, client.getCollector().getFailed());
+        Assert.assertEquals(totalSuccess, client.getCollector().getSucceeded());
+        Assert.assertEquals(totalFail, client.getCollector().getMismatchedResponses().size());
+
+        Assert.assertEquals(successfulGet, client.getCollector().getSucceeded(RequestMethod.GET));
+        Assert.assertEquals(successfulPost, client.getCollector().getSucceeded(RequestMethod.POST));
+        Assert.assertEquals(successfulPut, client.getCollector().getSucceeded(RequestMethod.PUT));
+
+        Assert.assertEquals(failedGet, client.getCollector().getFailed(RequestMethod.GET));
+        Assert.assertEquals(failedPost, client.getCollector().getFailed(RequestMethod.POST));
+        Assert.assertEquals(failedPut, client.getCollector().getFailed(RequestMethod.PUT));
     }
 
     @After
