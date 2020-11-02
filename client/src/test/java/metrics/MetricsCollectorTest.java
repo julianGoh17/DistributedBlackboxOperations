@@ -24,59 +24,59 @@ public class MetricsCollectorTest {
     @Test
     public void TestMetricsCollectorInitializesWithZero() {
         MetricsCollector collector = new MetricsCollector();
-        Assert.assertEquals(0, collector.getTotalMessages());
-        Assert.assertEquals(0, collector.getSucceeded());
-        Assert.assertEquals(0, collector.getFailed());
+        Assert.assertEquals(0, collector.getGeneral().getTotal());
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded());
+        Assert.assertEquals(0, collector.getGeneral().getFailed());
     }
 
     @Test
     public void TestMetricsCollectorIncrementsSuccessesCorrectly() {
         MetricsCollector collector = new MetricsCollector();
-        Assert.assertEquals(0, collector.getTotalMessages());
-        Assert.assertEquals(0, collector.getSucceeded());
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.GET));
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.PUT));
-        Assert.assertEquals(0, collector.getFailed());
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.GET));
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.PUT));
+        Assert.assertEquals(0, collector.getGeneral().getTotal());
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded());
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.GET));
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.PUT));
+        Assert.assertEquals(0, collector.getGeneral().getFailed());
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.GET));
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.PUT));
         Assert.assertEquals(0, collector.getMismatchedResponses().size());
 
         collector.addSucceededMetric(getOperation);
-        Assert.assertEquals(1, collector.getTotalMessages());
-        Assert.assertEquals(1, collector.getSucceeded());
-        Assert.assertEquals(1, collector.getSucceeded(RequestMethod.GET));
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.PUT));
-        Assert.assertEquals(0, collector.getFailed());
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.GET));
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.PUT));
+        Assert.assertEquals(1, collector.getGeneral().getTotal());
+        Assert.assertEquals(1, collector.getGeneral().getSucceeded());
+        Assert.assertEquals(1, collector.getGeneral().getSucceeded(RequestMethod.GET));
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.PUT));
+        Assert.assertEquals(0, collector.getGeneral().getFailed());
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.GET));
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.PUT));
         Assert.assertEquals(0, collector.getMismatchedResponses().size());
 
         collector.addSucceededMetric(postOperation);
-        Assert.assertEquals(2, collector.getTotalMessages());
-        Assert.assertEquals(2, collector.getSucceeded());
-        Assert.assertEquals(1, collector.getSucceeded(RequestMethod.GET));
-        Assert.assertEquals(1, collector.getSucceeded(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.PUT));
-        Assert.assertEquals(0, collector.getFailed());
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.GET));
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.PUT));
+        Assert.assertEquals(2, collector.getGeneral().getTotal());
+        Assert.assertEquals(2, collector.getGeneral().getSucceeded());
+        Assert.assertEquals(1, collector.getGeneral().getSucceeded(RequestMethod.GET));
+        Assert.assertEquals(1, collector.getGeneral().getSucceeded(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.PUT));
+        Assert.assertEquals(0, collector.getGeneral().getFailed());
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.GET));
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.PUT));
         Assert.assertEquals(0, collector.getMismatchedResponses().size());
 
         collector.addSucceededMetric(putOperation);
-        Assert.assertEquals(3, collector.getTotalMessages());
-        Assert.assertEquals(3, collector.getSucceeded());
-        Assert.assertEquals(1, collector.getSucceeded(RequestMethod.GET));
-        Assert.assertEquals(1, collector.getSucceeded(RequestMethod.POST));
-        Assert.assertEquals(1, collector.getSucceeded(RequestMethod.PUT));
-        Assert.assertEquals(0, collector.getFailed());
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.GET));
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.PUT));
+        Assert.assertEquals(3, collector.getGeneral().getTotal());
+        Assert.assertEquals(3, collector.getGeneral().getSucceeded());
+        Assert.assertEquals(1, collector.getGeneral().getSucceeded(RequestMethod.GET));
+        Assert.assertEquals(1, collector.getGeneral().getSucceeded(RequestMethod.POST));
+        Assert.assertEquals(1, collector.getGeneral().getSucceeded(RequestMethod.PUT));
+        Assert.assertEquals(0, collector.getGeneral().getFailed());
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.GET));
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.PUT));
         Assert.assertEquals(0, collector.getMismatchedResponses().size());
     }
 
@@ -84,51 +84,51 @@ public class MetricsCollectorTest {
     public void TestMetricsCollectorIncrementsFailedCorrectly() {
         ClientException exception = new ClientException(EXCEPTION_MESSAGE, ACTUAL_STATUS_CODE);
         MetricsCollector collector = new MetricsCollector();
-        Assert.assertEquals(0, collector.getTotalMessages());
-        Assert.assertEquals(0, collector.getSucceeded());
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.GET));
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.PUT));
-        Assert.assertEquals(0, collector.getFailed());
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.GET));
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.PUT));
+        Assert.assertEquals(0, collector.getGeneral().getTotal());
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded());
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.GET));
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.PUT));
+        Assert.assertEquals(0, collector.getGeneral().getFailed());
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.GET));
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.PUT));
         Assert.assertEquals(0, collector.getMismatchedResponses().size());
 
         collector.addFailedMetric(getOperation, exception);
-        Assert.assertEquals(1, collector.getTotalMessages());
-        Assert.assertEquals(0, collector.getSucceeded());
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.GET));
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.PUT));
-        Assert.assertEquals(1, collector.getFailed());
-        Assert.assertEquals(1, collector.getFailed(RequestMethod.GET));
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.PUT));
+        Assert.assertEquals(1, collector.getGeneral().getTotal());
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded());
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.GET));
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.PUT));
+        Assert.assertEquals(1, collector.getGeneral().getFailed());
+        Assert.assertEquals(1, collector.getGeneral().getFailed(RequestMethod.GET));
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.PUT));
         Assert.assertEquals(1, collector.getMismatchedResponses().size());
 
         collector.addFailedMetric(postOperation, exception);
-        Assert.assertEquals(2, collector.getTotalMessages());
-        Assert.assertEquals(0, collector.getSucceeded());
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.GET));
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.PUT));
-        Assert.assertEquals(2, collector.getFailed());
-        Assert.assertEquals(1, collector.getFailed(RequestMethod.GET));
-        Assert.assertEquals(1, collector.getFailed(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getFailed(RequestMethod.PUT));
+        Assert.assertEquals(2, collector.getGeneral().getTotal());
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded());
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.GET));
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.PUT));
+        Assert.assertEquals(2, collector.getGeneral().getFailed());
+        Assert.assertEquals(1, collector.getGeneral().getFailed(RequestMethod.GET));
+        Assert.assertEquals(1, collector.getGeneral().getFailed(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getFailed(RequestMethod.PUT));
         Assert.assertEquals(2, collector.getMismatchedResponses().size());
 
         collector.addFailedMetric(putOperation, exception);
-        Assert.assertEquals(3, collector.getTotalMessages());
-        Assert.assertEquals(0, collector.getSucceeded());
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.GET));
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.POST));
-        Assert.assertEquals(0, collector.getSucceeded(RequestMethod.PUT));
-        Assert.assertEquals(3, collector.getFailed());
-        Assert.assertEquals(1, collector.getFailed(RequestMethod.GET));
-        Assert.assertEquals(1, collector.getFailed(RequestMethod.POST));
-        Assert.assertEquals(1, collector.getFailed(RequestMethod.PUT));
+        Assert.assertEquals(3, collector.getGeneral().getTotal());
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded());
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.GET));
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.POST));
+        Assert.assertEquals(0, collector.getGeneral().getSucceeded(RequestMethod.PUT));
+        Assert.assertEquals(3, collector.getGeneral().getFailed());
+        Assert.assertEquals(1, collector.getGeneral().getFailed(RequestMethod.GET));
+        Assert.assertEquals(1, collector.getGeneral().getFailed(RequestMethod.POST));
+        Assert.assertEquals(1, collector.getGeneral().getFailed(RequestMethod.PUT));
         Assert.assertEquals(3, collector.getMismatchedResponses().size());
     }
 

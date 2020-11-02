@@ -315,18 +315,18 @@ public class CoordinatorTest extends AbstractClientTest {
         int totalSuccess = successfulGet + successfulPost + successfulPut;
         int totalFail = failedGet + failedPost + failedPut;
 
-        Assert.assertEquals(totalSuccess + totalFail, client.getCollector().getTotalMessages());
-        Assert.assertEquals(totalFail, client.getCollector().getFailed());
-        Assert.assertEquals(totalSuccess, client.getCollector().getSucceeded());
+        Assert.assertEquals(totalSuccess + totalFail, client.getCollector().getGeneral().getTotal());
+        Assert.assertEquals(totalFail, client.getCollector().getGeneral().getFailed());
+        Assert.assertEquals(totalSuccess, client.getCollector().getGeneral().getSucceeded());
         Assert.assertEquals(totalFail, client.getCollector().getMismatchedResponses().size());
 
-        Assert.assertEquals(successfulGet, client.getCollector().getSucceeded(RequestMethod.GET));
-        Assert.assertEquals(successfulPost, client.getCollector().getSucceeded(RequestMethod.POST));
-        Assert.assertEquals(successfulPut, client.getCollector().getSucceeded(RequestMethod.PUT));
+        Assert.assertEquals(successfulGet, client.getCollector().getGeneral().getSucceeded(RequestMethod.GET));
+        Assert.assertEquals(successfulPost, client.getCollector().getGeneral().getSucceeded(RequestMethod.POST));
+        Assert.assertEquals(successfulPut, client.getCollector().getGeneral().getSucceeded(RequestMethod.PUT));
 
-        Assert.assertEquals(failedGet, client.getCollector().getFailed(RequestMethod.GET));
-        Assert.assertEquals(failedPost, client.getCollector().getFailed(RequestMethod.POST));
-        Assert.assertEquals(failedPut, client.getCollector().getFailed(RequestMethod.PUT));
+        Assert.assertEquals(failedGet, client.getCollector().getGeneral().getFailed(RequestMethod.GET));
+        Assert.assertEquals(failedPost, client.getCollector().getGeneral().getFailed(RequestMethod.POST));
+        Assert.assertEquals(failedPut, client.getCollector().getGeneral().getFailed(RequestMethod.PUT));
     }
 
     @After
