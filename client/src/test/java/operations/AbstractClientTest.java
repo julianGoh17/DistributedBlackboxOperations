@@ -19,7 +19,7 @@ public class AbstractClientTest {
     HttpServer api;
     Vertx vertx;
 
-    protected void setUpApiServer(TestContext context) {
+    protected void setUpApiServer(final TestContext context) {
         server = new Server();
         Promise<Boolean> hasDeployed = server.startServer(vertx, System.getProperty("user.dir") + File.separator + ".."  + File.separator + "server" + File.separator + OPENAPI_SPEC_LOCATION);
         api = vertx.createHttpServer(new HttpServerOptions()

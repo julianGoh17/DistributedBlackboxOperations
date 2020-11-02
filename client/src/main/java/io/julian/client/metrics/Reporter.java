@@ -2,6 +2,10 @@ package io.julian.client.metrics;
 
 import io.julian.client.model.MismatchedResponse;
 import io.julian.client.model.RequestMethod;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
+import io.vertx.core.buffer.Buffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -10,11 +14,28 @@ import java.util.List;
 import java.util.Optional;
 
 public class Reporter {
+    public final static String REPORT_FILE_NAME = "generated-report.txt";
+
     private final static Logger log = LogManager.getLogger(Reporter.class.getName());
     private final static String HEADER_SEPARATOR_CHAR = "-";
 
+    public Future<Void> createReportFile(final List<MismatchedResponse> responses, final GeneralMetrics metrics, final String reportFileLocation, final Vertx vertx) {
+        log.traceEntry(() -> responses, () -> metrics, () -> reportFileLocation, () -> vertx);
+        Promise<Void> completedWrite = Promise.promise();
+        vertx.fileSystem().writeFile(String.format("%s/%s", reportFileLocation, REPORT_FILE_NAME),
+            Buffer.buffer(getReport(responses, metrics).toString()), res -> {
+                if (res.succeeded()) {
+                    completedWrite.complete();
+                } else {
+                    log.error(res.cause());
+                    completedWrite.fail(res.cause());
+                }
+            });
+        return log.traceExit(completedWrite.future());
+    }
+
     // Exposed For Testing
-    public StringBuilder createReport(final List<MismatchedResponse> responses, final GeneralMetrics metrics) {
+    public StringBuilder getReport(final List<MismatchedResponse> responses, final GeneralMetrics metrics) {
         log.traceEntry(() -> responses, () -> metrics);
         final StringBuilder builder = new StringBuilder();
 

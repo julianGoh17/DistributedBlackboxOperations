@@ -10,7 +10,7 @@ import static io.julian.server.components.Server.DEFAULT_SERVER_PORT;
 
 public class GetMessageHandlerTest extends AbstractHandlerTest {
     @Test
-    public void TestGetMessageFailsWhenNoUUIDInServer(TestContext context) {
+    public void TestGetMessageFailsWhenNoUUIDInServer(final TestContext context) {
         String invalidID = "does-not-exist";
         setUpApiServer(context);
         WebClient client = WebClient.create(this.vertx);
@@ -24,7 +24,7 @@ public class GetMessageHandlerTest extends AbstractHandlerTest {
     }
 
     @Test
-    public void TestGetMessageSucceedsWhenUUIDInServer(TestContext context) {
+    public void TestGetMessageSucceedsWhenUUIDInServer(final TestContext context) {
         setUpApiServer(context);
         WebClient client = WebClient.create(this.vertx);
 
@@ -34,7 +34,7 @@ public class GetMessageHandlerTest extends AbstractHandlerTest {
     }
 
     @Test
-    public void TestGetMessageFailsWhenNoPathParamPassedIn(TestContext context) {
+    public void TestGetMessageFailsWhenNoPathParamPassedIn(final TestContext context) {
         setUpApiServer(context);
         WebClient client = WebClient.create(this.vertx);
 

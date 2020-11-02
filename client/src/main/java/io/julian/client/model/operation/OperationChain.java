@@ -18,8 +18,8 @@ public class OperationChain {
     private final Map<Integer, String> expectedMessages;
 
     @JsonCreator
-    public OperationChain(@JsonProperty(value = "operations", required = true) List<Operation> operations,
-                         @JsonProperty("configuration") Configuration configuration) {
+    public OperationChain(final @JsonProperty(value = "operations", required = true) List<Operation> operations,
+                         final @JsonProperty("configuration") Configuration configuration) {
         this.operations = operations;
         this.configuration = configuration;
         this.expectedMessages = new HashMap<>();

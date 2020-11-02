@@ -163,7 +163,7 @@ public class MetricsCollectorTest {
         Assert.assertEquals(EXCEPTION_MESSAGE, collector.getMismatchedResponses().get(2).getError());
     }
 
-    private Operation createOperation(RequestMethod method) {
+    private Operation createOperation(final RequestMethod method) {
         Operation operation = new Operation();
         Action action = new Action();
         action.setMethod(method);

@@ -74,7 +74,7 @@ public class Coordinator {
         return log.traceExit(isPOSTSuccessful.future());
     }
 
-    public Future<JsonObject> sendGET(int messageIndex) {
+    public Future<JsonObject> sendGET(final int messageIndex) {
         log.traceEntry(() -> messageIndex);
         Promise<JsonObject> isGETSuccessful = Promise.promise();
         client.GETMessage(memory.getExpectedIDForNum(messageIndex))

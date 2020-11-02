@@ -41,8 +41,14 @@ public class CoordinatorTest extends AbstractClientTest {
         this.vertx = Vertx.vertx();
     }
 
+    @After
+    public void tearDown() {
+        client.close();
+        vertx.close();
+    }
+
     @Test
-    public void TestCoordinatorCanInitialize(TestContext context) throws Exception {
+    public void TestCoordinatorCanInitialize(final TestContext context) throws Exception {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         Assert.assertEquals(3, client.getMemory().getOriginalMessages().size());
@@ -54,7 +60,7 @@ public class CoordinatorTest extends AbstractClientTest {
      * HTTP METHODS
      */
     @Test
-    public void TestCoordinatorCanPOSTSuccessfully(TestContext context) throws IOException, NullPointerException {
+    public void TestCoordinatorCanPOSTSuccessfully(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.sendPOST(0)
@@ -62,14 +68,14 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestCoordinatorPOSTFail(TestContext context) throws IOException, NullPointerException {
+    public void TestCoordinatorPOSTFail(final TestContext context) throws IOException, NullPointerException {
         client = new Coordinator(vertx);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.sendPOST(0).onComplete(context.asyncAssertFailure(throwable -> Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, throwable.getMessage())));
     }
 
     @Test
-    public void TestCoordinatorGETSuccessfully(TestContext context) throws IOException, NullPointerException {
+    public void TestCoordinatorGETSuccessfully(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         int messageNum = 0;
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
@@ -83,7 +89,7 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestCoordinator404OnGET(TestContext context) throws IOException, NullPointerException {
+    public void TestCoordinator404OnGET(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         int messageNum = 0;
         String id = "random-id";
@@ -101,7 +107,7 @@ public class CoordinatorTest extends AbstractClientTest {
      * SEQUENTIAL OPERATION TESTS
      */
     @Test
-    public void TestCoordinatorCanPUTSuccessfully(TestContext context) throws IOException, NullPointerException {
+    public void TestCoordinatorCanPUTSuccessfully(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         int oldIndex = 0;
@@ -121,7 +127,7 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestCoordinatorCanRunOperationChain(TestContext context) throws IOException, NullPointerException {
+    public void TestCoordinatorCanRunOperationChain(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.runOperationChain(SEQUENTIAL_OPERATION_CHAIN).onComplete(context.asyncAssertSuccess(v ->
@@ -129,7 +135,7 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestCoordinatorFailsOnPOSTOperation(TestContext context) throws IOException, NullPointerException {
+    public void TestCoordinatorFailsOnPOSTOperation(final TestContext context) throws IOException, NullPointerException {
         client = new Coordinator(vertx);
         server = null;
         api = null;
@@ -147,7 +153,7 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestCoordinatorFailsOnGETOperation(TestContext context) throws IOException, NullPointerException {
+    public void TestCoordinatorFailsOnGETOperation(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(SEQUENTIAL_OPERATION_CHAIN).getOperations().get(GET_OPERATION_NUMBER).getAction().setMessageNumber(OUT_OF_BOUND_MESSAGE_INDEX);
@@ -164,7 +170,7 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestCoordinatorFailsOnPUTOperation(TestContext context) throws IOException, NullPointerException {
+    public void TestCoordinatorFailsOnPUTOperation(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         int impossibleMessage = 9999;
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
@@ -182,7 +188,7 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestCoordinatorCanFailPUT(TestContext context) throws IOException, NullPointerException {
+    public void TestCoordinatorCanFailPUT(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         int oldIndex = 0;
@@ -195,7 +201,7 @@ public class CoordinatorTest extends AbstractClientTest {
      * PARALLEL_TESTS
      */
     @Test
-    public void TestCoordinatorCanRunOperationChainInParallel(TestContext context) throws IOException, NullPointerException  {
+    public void TestCoordinatorCanRunOperationChainInParallel(final TestContext context) throws IOException, NullPointerException  {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.runOperationChain(PARALLEL_OPERATION_CHAIN).onComplete(context.asyncAssertSuccess(v ->
@@ -203,7 +209,7 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestCoordinatorCanFailOperationChainInParallel(TestContext context) throws IOException, NullPointerException  {
+    public void TestCoordinatorCanFailOperationChainInParallel(final TestContext context) throws IOException, NullPointerException  {
         api = null;
         server = null;
         client = new Coordinator(vertx);
@@ -229,7 +235,7 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestCoordinatorFailsIfOnlyOneOperationChainFailsInParallel(TestContext context) throws IOException, NullPointerException  {
+    public void TestCoordinatorFailsIfOnlyOneOperationChainFailsInParallel(final TestContext context) throws IOException, NullPointerException  {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().get(1).getAction().setMessageNumber(OUT_OF_BOUND_MESSAGE_INDEX);
@@ -246,7 +252,7 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestCoordinatorFailsIfMultipleOperationChainFailsInParallel(TestContext context) throws IOException, NullPointerException  {
+    public void TestCoordinatorFailsIfMultipleOperationChainFailsInParallel(final TestContext context) throws IOException, NullPointerException  {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(PARALLEL_OPERATION_CHAIN).getOperations().get(1).getAction().setMessageNumber(OUT_OF_BOUND_MESSAGE_INDEX);
@@ -270,7 +276,7 @@ public class CoordinatorTest extends AbstractClientTest {
      * EXCEPTION TESTS
      */
     @Test
-    public void TestCoordinatorThrowsOutOfBoundExceptionOnPOSTOperation(TestContext context) throws IOException, NullPointerException {
+    public void TestCoordinatorThrowsOutOfBoundExceptionOnPOSTOperation(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(SEQUENTIAL_OPERATION_CHAIN).getOperations().get(POST_OPERATION_NUMBER).getAction().setMessageNumber(OUT_OF_BOUND_MESSAGE_INDEX);
@@ -287,7 +293,7 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestCoordinatorThrowsOutOfBoundExceptionOnPUTOperation(TestContext context) throws IOException, NullPointerException {
+    public void TestCoordinatorThrowsOutOfBoundExceptionOnPUTOperation(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(SEQUENTIAL_OPERATION_CHAIN).getOperations().get(PUT_OPERATION_NUMBER).getAction().setNewMessageNumber(OUT_OF_BOUND_MESSAGE_INDEX);
@@ -303,7 +309,7 @@ public class CoordinatorTest extends AbstractClientTest {
         }));
     }
 
-    private void checkMismatchedResponse(Operation operation, MismatchedResponse response, ClientException exception) {
+    private void checkMismatchedResponse(final Operation operation, final MismatchedResponse response, final ClientException exception) {
         Assert.assertEquals(operation.getAction().getMethod(), response.getMethod());
         Assert.assertEquals(operation.getAction().getMessageNumber().intValue(), response.getMessageNumber());
         Assert.assertEquals(operation.getExpected().getStatusCode(), response.getExpectedStatusCode());
@@ -311,7 +317,7 @@ public class CoordinatorTest extends AbstractClientTest {
         Assert.assertEquals(exception.getMessage(), response.getError());
     }
 
-    private void checkCollectorGenericMetrics(int successfulGet, int successfulPost, int successfulPut, int failedGet, int failedPost, int failedPut) {
+    private void checkCollectorGenericMetrics(final int successfulGet, final int successfulPost, final int successfulPut, final int failedGet, final int failedPost, final int failedPut) {
         int totalSuccess = successfulGet + successfulPost + successfulPut;
         int totalFail = failedGet + failedPost + failedPut;
 
@@ -329,13 +335,7 @@ public class CoordinatorTest extends AbstractClientTest {
         Assert.assertEquals(failedPut, client.getCollector().getGeneral().getFailed(RequestMethod.PUT));
     }
 
-    @After
-    public void tearDown() {
-        client.close();
-        vertx.close();
-    }
-
-    protected void setUpApiServer(TestContext context) {
+    protected void setUpApiServer(final TestContext context) {
         super.setUpApiServer(context);
         client = new Coordinator(vertx);
     }

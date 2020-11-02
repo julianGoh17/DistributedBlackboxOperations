@@ -42,7 +42,7 @@ public abstract class AbstractHandlerTest {
         vertx.close();
     }
 
-    protected void setUpApiServer(TestContext context) {
+    protected void setUpApiServer(final TestContext context) {
         server = new Server();
         Promise<Boolean> hasDeployed = server.startServer(vertx, OPENAPI_SPEC_LOCATION);
         api = vertx.createHttpServer(new HttpServerOptions()
@@ -60,12 +60,12 @@ public abstract class AbstractHandlerTest {
         async.awaitSuccess();
     }
 
-    protected JsonObject createPostMessage(JsonObject message) {
+    protected JsonObject createPostMessage(final JsonObject message) {
         return new JsonObject()
             .put("message", message);
     }
 
-    protected Future<String> sendSuccessfulGETMessage(TestContext context, WebClient client, String messageId, JsonObject message) {
+    protected Future<String> sendSuccessfulGETMessage(final TestContext context, final WebClient client, final String messageId, final JsonObject message) {
         Promise<String> completed = Promise.promise();
         client
             .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", CLIENT_URI, messageId))
@@ -77,7 +77,7 @@ public abstract class AbstractHandlerTest {
         return completed.future();
     }
 
-    protected Future<String> sendSuccessfulPOSTMessage(TestContext context, WebClient client, JsonObject message) {
+    protected Future<String> sendSuccessfulPOSTMessage(final TestContext context, final  WebClient client, final JsonObject message) {
         Promise<String> uuid = Promise.promise();
         sendPOSTMessage(context, client, createPostMessage(message))
             .compose(res -> {
@@ -89,7 +89,7 @@ public abstract class AbstractHandlerTest {
         return uuid.future();
     }
 
-    protected Future<String> sendSuccessfulPUTMessage(TestContext context, WebClient client, String messageId, JsonObject message) {
+    protected Future<String> sendSuccessfulPUTMessage(final TestContext context, final WebClient client, final String messageId, final JsonObject message) {
         Promise<String> completed = Promise.promise();
         client
             .put(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", CLIENT_URI, messageId))
@@ -101,7 +101,7 @@ public abstract class AbstractHandlerTest {
         return completed.future();
     }
 
-    protected void sendUnsuccessfulPOSTMessage(TestContext context, WebClient client, JsonObject message, Throwable error) {
+    protected void sendUnsuccessfulPOSTMessage(final TestContext context, final WebClient client, final JsonObject message, final Throwable error) {
         sendPOSTMessage(context, client, message)
             .compose(res -> {
                 context.assertEquals(res.statusCode(), 400);
@@ -114,7 +114,7 @@ public abstract class AbstractHandlerTest {
             });
     }
 
-    protected Future<HttpResponse<Buffer>> sendPOSTMessage(TestContext context, WebClient client, JsonObject requestBody) {
+    protected Future<HttpResponse<Buffer>> sendPOSTMessage(final TestContext context, final WebClient client, final JsonObject requestBody) {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
             .post(DEFAULT_SERVER_PORT, DEFAULT_HOST, CLIENT_URI)

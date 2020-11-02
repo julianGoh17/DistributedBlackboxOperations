@@ -9,7 +9,7 @@ import org.apache.logging.log4j.Logger;
 public class ErrorHandler {
     private static final Logger log = LogManager.getLogger(ErrorHandler.class.getName());
 
-    public void handle(RoutingContext context) {
+    public void handle(final RoutingContext context) {
         log.traceEntry(() -> context);
         ErrorResponse error = new ErrorResponse(context.statusCode(), context.failure() != null ? context.failure() : new Exception("Not Found"));
         log.error(error.getException());

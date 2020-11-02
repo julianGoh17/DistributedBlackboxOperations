@@ -10,7 +10,7 @@ import static io.julian.server.components.Server.DEFAULT_SERVER_PORT;
 
 public class PostMessageHandlerTest extends AbstractHandlerTest {
     @Test
-    public void TestSuccessfulMessageIsInDatabase(TestContext context) {
+    public void TestSuccessfulMessageIsInDatabase(final TestContext context) {
         setUpApiServer(context);
         WebClient client = WebClient.create(this.vertx);
 
@@ -23,7 +23,7 @@ public class PostMessageHandlerTest extends AbstractHandlerTest {
     }
 
     @Test
-    public void TestInvalidMessageRespondsWithError(TestContext context) {
+    public void TestInvalidMessageRespondsWithError(final TestContext context) {
         setUpApiServer(context);
 
         WebClient client = WebClient.create(this.vertx);
@@ -32,7 +32,7 @@ public class PostMessageHandlerTest extends AbstractHandlerTest {
     }
 
     @Test
-    public void TestPostMessageFailsWhenNoBodySent(TestContext context) {
+    public void TestPostMessageFailsWhenNoBodySent(final TestContext context) {
         setUpApiServer(context);
         WebClient client = WebClient.create(this.vertx);
 

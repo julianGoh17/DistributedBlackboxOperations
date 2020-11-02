@@ -26,7 +26,7 @@ public class Server {
         this.messages = new MessageStore();
     }
 
-    public Promise<Boolean> startServer(Vertx vertx, String specLocation) {
+    public Promise<Boolean> startServer(final Vertx vertx, final String specLocation) {
         log.traceEntry(() -> vertx);
         Promise<Boolean> hasDeployed = Promise.promise();
         OpenAPI3RouterFactory.create(vertx, specLocation, ar -> {

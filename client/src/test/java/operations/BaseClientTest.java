@@ -28,7 +28,7 @@ public class BaseClientTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestSuccessfulPostMessage(TestContext context) {
+    public void TestSuccessfulPostMessage(final TestContext context) {
         setUpApiServer(context);
         JsonObject message = new JsonObject()
             .put("this", "message");
@@ -38,7 +38,7 @@ public class BaseClientTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestSuccessfulGetMessage(TestContext context) {
+    public void TestSuccessfulGetMessage(final TestContext context) {
         setUpApiServer(context);
         JsonObject message = new JsonObject().put("this", "message");
 
@@ -48,7 +48,7 @@ public class BaseClientTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestUnsuccessfulGetMessage(TestContext context) {
+    public void TestUnsuccessfulGetMessage(final TestContext context) {
         setUpApiServer(context);
         String randomId = "random-id";
 
@@ -57,7 +57,7 @@ public class BaseClientTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestSuccessfulPUTMessage(TestContext context) {
+    public void TestSuccessfulPUTMessage(final TestContext context) {
         setUpApiServer(context);
         JsonObject originalMessage = new JsonObject().put("original", "message");
         JsonObject newMessage = new JsonObject().put("new", "message");
@@ -78,7 +78,7 @@ public class BaseClientTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestUnsuccessfulPUTMessage(TestContext context) {
+    public void TestUnsuccessfulPUTMessage(final TestContext context) {
         setUpApiServer(context);
         JsonObject message = new JsonObject().put("new", "message");
         String nonExistentId = "random-id";

@@ -21,7 +21,7 @@ public class FileObjectMapper {
         log.traceExit();
     }
 
-    private static <T> void mapFileAndAddToList(final File file, List<T> list, final Class<T> mappedClass) throws IOException {
+    private static <T> void mapFileAndAddToList(final File file, final List<T> list, final Class<T> mappedClass) throws IOException {
         log.traceEntry(() -> file, () -> list, () -> mappedClass);
         list.add(readFileMapToObject(file, mappedClass));
         log.traceExit();

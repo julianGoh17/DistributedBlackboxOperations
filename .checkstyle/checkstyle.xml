@@ -53,6 +53,7 @@
         <module name="StaticVariableName"/>
         <module name="TypeName"/>
         <module name="AvoidStarImport"/>
+        <module name="FinalParameters"/>
 
         <!-- whitespace -->
         <module name="GenericWhitespace"/>

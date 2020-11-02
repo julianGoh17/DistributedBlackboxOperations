@@ -8,12 +8,25 @@ import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Action;
 import io.julian.client.model.operation.Expected;
 import io.julian.client.model.operation.Operation;
+import io.vertx.core.Future;
+import io.vertx.core.Vertx;
+import io.vertx.ext.unit.TestContext;
+import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import java.util.Collections;
 
+import static io.julian.client.metrics.Reporter.REPORT_FILE_NAME;
+
+@RunWith(VertxUnitRunner.class)
 public class ReporterTest {
+    private Vertx vertx;
+
+    private static final String TEST_REPORT_FILE_PATH = String.format("%s/src/test/resources/report", System.getProperty("user.dir"));
     private final static RequestMethod METHOD = RequestMethod.GET;
     private final static int MESSAGE_NUMBER = 91;
     private final static int EXPECTED_STATUS_CODE = 0;
@@ -43,10 +56,52 @@ public class ReporterTest {
         String.format("Actual Status Code: %d\n", ACTUAL_STATUS_CODE) +
         String.format("Error: %s\n", ERROR);
 
+    @Before
+    public void before() {
+        this.vertx = Vertx.vertx();
+    }
+
+    @After
+    public void tearDown() {
+        vertx.close();
+    }
+
     @Test
-    public void TestCreateReport() {
+    public void TestCreateReportFailsWhenWrongFileLocation(final TestContext context) {
         Reporter reporter = new Reporter();
-        StringBuilder builder = reporter.createReport(Collections.singletonList(createTestMismatchedResponse()), new GeneralMetrics());
+        String wrongFilePath = String.format("%s/random-location1234", TEST_REPORT_FILE_PATH);
+        Future<Void> hasWrote = reporter.createReportFile(Collections.singletonList(createTestMismatchedResponse()), new GeneralMetrics(), wrongFilePath, vertx);
+
+        hasWrote.onComplete(context.asyncAssertFailure(throwable ->
+            Assert.assertEquals(String.format("java.nio.file.NoSuchFileException: %s/%s", wrongFilePath, REPORT_FILE_NAME), throwable.getMessage())));
+    }
+
+    @Test
+    public void TestCreateReportSuccessful(final TestContext context) {
+        String reportFilePath = String.format("%s/%s", TEST_REPORT_FILE_PATH, REPORT_FILE_NAME);
+        try {
+            Reporter reporter = new Reporter();
+            Future<Void> hasWrote = reporter.createReportFile(Collections.singletonList(createTestMismatchedResponse()), new GeneralMetrics(), TEST_REPORT_FILE_PATH, vertx);
+
+            hasWrote.onComplete(context.asyncAssertSuccess(res -> vertx.fileSystem().exists(reportFilePath, open -> {
+                Assert.assertTrue(open.succeeded());
+                Assert.assertNull(open.cause());
+            })));
+        } finally {
+            vertx.fileSystem().delete(reportFilePath, delete -> {
+                if (delete.succeeded()) {
+                    System.out.printf("Deleted file '%s'", reportFilePath);
+                } else {
+                    System.out.printf("Failed to delete file '%s'", reportFilePath);
+                }
+            });
+        }
+    }
+
+    @Test
+    public void TestGetReport() {
+        Reporter reporter = new Reporter();
+        StringBuilder builder = reporter.getReport(Collections.singletonList(createTestMismatchedResponse()), new GeneralMetrics());
         String expected = String.join("\n", GENERAL_REPORT, GET_REPORT, POST_REPORT, PUT_REPORT, MISMATCHED_RESPONSE_REPORT);
         Assert.assertEquals(expected, builder.toString());
     }

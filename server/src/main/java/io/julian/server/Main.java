@@ -11,7 +11,7 @@ import static io.julian.server.components.Server.DEFAULT_SERVER_PORT;
 import static io.julian.server.components.Server.OPENAPI_SPEC_LOCATION;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(final String[] args) {
         Vertx vertx = Vertx.vertx();
         Server server = new Server();
         Promise<Boolean> hasDeployed = server.startServer(vertx, OPENAPI_SPEC_LOCATION);

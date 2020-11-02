@@ -13,7 +13,7 @@ public class MessageIDResponse {
     private final String uuid;
     public static final String MESSAGE_ID_KEY = "messageId";
 
-    public MessageIDResponse(String uuid) {
+    public MessageIDResponse(final String uuid) {
         this.uuid = uuid;
     }
 

@@ -15,7 +15,7 @@ public class MessageStore {
         messages = new HashMap<>();
     }
 
-    public JsonObject getMessage(String uuid) {
+    public JsonObject getMessage(final String uuid) {
         log.traceEntry(() -> uuid);
         log.info("Getting message from Message Store");
         if (messages.containsKey(uuid)) {
@@ -25,13 +25,13 @@ public class MessageStore {
         return null;
     }
 
-    public void putMessage(String uuid, JsonObject message) {
+    public void putMessage(final String uuid, final JsonObject message) {
         log.traceEntry(() -> uuid, () -> message);
         messages.put(uuid, message);
         log.traceExit();
     }
 
-    public boolean hasUUID(String uuid) {
+    public boolean hasUUID(final String uuid) {
         log.traceEntry(() -> uuid);
         return log.traceExit(messages.containsKey(uuid));
     }

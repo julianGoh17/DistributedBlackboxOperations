@@ -13,7 +13,7 @@ public class MessageResponse {
     private final JsonObject message;
     public static final String MESSAGE_KEY = "message";
 
-    public MessageResponse(JsonObject message) {
+    public MessageResponse(final JsonObject message) {
         this.message = message;
     }
 

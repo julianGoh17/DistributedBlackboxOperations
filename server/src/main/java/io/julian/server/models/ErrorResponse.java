@@ -13,7 +13,7 @@ public class ErrorResponse {
     public static final String STATUS_CODE_KEY = "statusCode";
     public static final String ERROR_KEY = "error";
 
-    public ErrorResponse(int statusCode, Throwable exception) {
+    public ErrorResponse(final int statusCode, final Throwable exception) {
         this.statusCode = statusCode;
         this.exception = exception;
     }
