@@ -41,7 +41,6 @@ public class Server {
                 hasDeployed.fail(exception);
             }
         });
-
         return hasDeployed;
     }
 

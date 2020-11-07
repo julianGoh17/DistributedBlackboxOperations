@@ -1,6 +1,6 @@
 package io.julian.client.operations;
 
-import io.julian.client.Exception.ClientException;
+import io.julian.client.exception.ClientException;
 import io.julian.client.metrics.MetricsCollector;
 import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Configuration;
@@ -15,10 +15,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,7 +32,7 @@ public class Coordinator {
 
     private final BaseClient client;
     private final MessageMemory memory;
-    private final List<OperationChain> operationChains;
+    private final Map<String, OperationChain> operationChains;
     private final MetricsCollector collector;
     private final Vertx vertx;
 
@@ -39,7 +40,7 @@ public class Coordinator {
         this.vertx = vertx;
         client = new BaseClient(vertx);
         memory = new MessageMemory();
-        operationChains = new ArrayList<>();
+        operationChains = new HashMap<>();
         collector = new MetricsCollector();
     }
 
@@ -127,14 +128,14 @@ public class Coordinator {
         log.traceExit();
     }
 
-    public Future<Void> runOperationChain(final int operationChainNumber) {
-        log.traceEntry(() -> operationChainNumber);
+    public Future<Void> runOperationChain(final String operationChainName) {
+        log.traceEntry(() -> operationChainName);
 
-        List<Operation> operations = Optional.ofNullable(operationChains.get(operationChainNumber))
+        List<Operation> operations = Optional.ofNullable(operationChains.get(operationChainName))
             .map(OperationChain::getOperations)
             .orElse(Collections.emptyList());
 
-        boolean isParallel = Optional.ofNullable(operationChains.get(operationChainNumber))
+        boolean isParallel = Optional.ofNullable(operationChains.get(operationChainName))
             .map(OperationChain::getConfiguration)
             .map(Configuration::willRunInParallel)
             .orElse(false);
@@ -246,7 +247,7 @@ public class Coordinator {
 
     private void readInOperationsFile(final String operationsFilePath) throws NullPointerException, IOException {
         log.traceEntry(() -> operationsFilePath);
-        FileObjectMapper.readInFolderAndAddToList(operationsFilePath, operationChains, OperationChain.class);
+        FileObjectMapper.readInFolderAndAddToMap(operationsFilePath, operationChains, OperationChain.class);
         log.traceExit();
     }
 }

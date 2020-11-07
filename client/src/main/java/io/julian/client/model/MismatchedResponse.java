@@ -1,6 +1,6 @@
 package io.julian.client.model;
 
-import io.julian.client.Exception.ClientException;
+import io.julian.client.exception.ClientException;
 import io.julian.client.model.operation.Operation;
 import lombok.Getter;
 

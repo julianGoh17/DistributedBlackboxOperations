@@ -1,6 +1,6 @@
 package io.julian.client.operations;
 
-import io.julian.client.Exception.ClientException;
+import io.julian.client.exception.ClientException;
 import io.julian.client.model.MessageIdResponse;
 import io.julian.client.model.MessageWrapper;
 import io.julian.client.model.GetMessageResponse;

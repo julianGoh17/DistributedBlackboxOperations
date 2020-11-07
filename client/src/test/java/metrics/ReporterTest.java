@@ -1,6 +1,6 @@
 package metrics;
 
-import io.julian.client.Exception.ClientException;
+import io.julian.client.exception.ClientException;
 import io.julian.client.metrics.GeneralMetrics;
 import io.julian.client.metrics.Reporter;
 import io.julian.client.model.MismatchedResponse;

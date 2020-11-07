@@ -8,9 +8,26 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public class FileObjectMapper {
     private static final Logger log = LogManager.getLogger(FileObjectMapper.class.getName());
+    private static final String JSON_FILE_EXTENSION = ".json";
+
+    public static <T> void readInFolderAndAddToMap(final String folderPath, final Map<String, T> map, final Class<T> mappedClass) throws NullPointerException, IOException {
+        log.traceEntry(() -> folderPath, () -> map, () -> mappedClass);
+        final File folder = new File(folderPath);
+        for (final File file : folder.listFiles()) {
+            mapFileAndAddToMap(file, map, mappedClass);
+        }
+        log.traceExit();
+    }
+
+    private static <T> void mapFileAndAddToMap(final File file, final Map<String, T> map, final Class<T> mappedClass) throws IOException {
+        log.traceEntry(() -> file, () -> map, () -> mappedClass);
+        map.put(file.getName().replace(JSON_FILE_EXTENSION, ""), readFileMapToObject(file, mappedClass));
+        log.traceExit();
+    }
 
     public static <T> void readInFolderAndAddToList(final String folderPath, final List<T> messages, final Class<T> mappedClass) throws NullPointerException, IOException {
         log.traceEntry(() -> folderPath, () -> messages, () -> mappedClass);

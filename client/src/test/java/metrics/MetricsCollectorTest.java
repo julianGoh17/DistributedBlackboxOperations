@@ -1,6 +1,6 @@
 package metrics;
 
-import io.julian.client.Exception.ClientException;
+import io.julian.client.exception.ClientException;
 import io.julian.client.metrics.MetricsCollector;
 import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Action;

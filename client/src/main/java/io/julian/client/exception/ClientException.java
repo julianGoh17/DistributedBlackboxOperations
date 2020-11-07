@@ -1,4 +1,4 @@
-package io.julian.client.Exception;
+package io.julian.client.exception;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;

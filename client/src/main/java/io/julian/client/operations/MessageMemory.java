@@ -15,6 +15,7 @@ import java.util.Map;
 public class MessageMemory {
     private static final Logger log = LogManager.getLogger(MessageMemory.class.getName());
 
+    // TODO: Use Map instead of list?
     private final List<JsonObject> originalMessages;
     private final Map<Integer, String> expectedMapping;
 
