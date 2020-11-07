@@ -32,7 +32,7 @@ public class Coordinator {
 
     private final BaseClient client;
     private final MessageMemory memory;
-    private final Map<String, OperationChain> operationChains;
+    private Map<String, OperationChain> operationChains;
     private final MetricsCollector collector;
     private final Vertx vertx;
 
@@ -163,6 +163,7 @@ public class Coordinator {
                 if (operations.hasNext()) {
                     log.info(String.format("Loop '%d' has succeeded operation", id));
                     Operation op = operations.next();
+                    inFlight.set(true);
                     runOperation(op)
                         .onSuccess(v -> {
                             collector.addSucceededMetric(op);
@@ -174,7 +175,6 @@ public class Coordinator {
                             inFlight.set(false);
                             finishedOperations.fail(throwable);
                         });
-                    inFlight.set(true);
                 } else {
                     log.info(String.format("Loop '%d' exiting as all operations have been completed", id));
                     vertx.cancelTimer(id);
@@ -249,5 +249,9 @@ public class Coordinator {
         log.traceEntry(() -> operationsFilePath);
         FileObjectMapper.readInFolderAndAddToMap(operationsFilePath, operationChains, OperationChain.class);
         log.traceExit();
+    }
+
+    public void setOperationChains(final Map<String, OperationChain> operationChains) {
+        this.operationChains = operationChains;
     }
 }

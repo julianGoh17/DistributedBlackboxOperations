@@ -2,6 +2,7 @@ package io.julian.client.operations;
 
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,12 +13,13 @@ import java.util.List;
 import java.util.Map;
 
 @Getter
+@Setter
 public class MessageMemory {
     private static final Logger log = LogManager.getLogger(MessageMemory.class.getName());
 
     // TODO: Use Map instead of list?
-    private final List<JsonObject> originalMessages;
-    private final Map<Integer, String> expectedMapping;
+    private List<JsonObject> originalMessages;
+    private Map<Integer, String> expectedMapping;
 
     public MessageMemory() {
         originalMessages = new ArrayList<>();

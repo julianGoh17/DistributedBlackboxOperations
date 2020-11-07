@@ -12,7 +12,7 @@ public class TerminalOutputHandler {
     private final static Logger log = LogManager.getLogger(TerminalOutputHandler.class.getName());
     private final OutputPrinter printer;
 
-    private final static String HEADER_CHAR = "*";
+    public final static String HEADER_CHAR = "*";
 
     public final static String OPERATION_CHAIN_HEADER = "Preconfigured Operation Chains";
     public final static String MESSAGES_HEADER = "Preconfigured Messages";
@@ -30,8 +30,7 @@ public class TerminalOutputHandler {
 
     public void printOperations() {
         log.traceEntry();
-        printer.println(AVAILABLE_OPERATIONS);
-        printer.println(getHeader(AVAILABLE_OPERATIONS));
+        printHeader(AVAILABLE_OPERATIONS);
         printer.println(String.format("%d. Run Operation Chain", OPERATION_CHAIN_NUMBER));
         printer.println(String.format("%d. Send Command Line Message", SEND_COMMAND_LINE_MESSAGE_NUMBER));
         printer.println(String.format("%d. Print Preconfigured Messages", PRINT_MESSAGES_NUMBER));
@@ -42,21 +41,18 @@ public class TerminalOutputHandler {
 
     public void printOperationChains(final Map<String, OperationChain> operationChain) {
         log.traceEntry(() -> operationChain);
-        printer.println(OPERATION_CHAIN_HEADER);
-        printer.println(getHeader(OPERATION_CHAIN_HEADER));
+        printHeader(OPERATION_CHAIN_HEADER);
         if (operationChain.isEmpty()) {
             printer.println("No preconfigured operation chains");
         } else {
             operationChain.keySet().forEach(printer::println);
         }
-
         log.traceExit();
     }
 
     public void printMessages(final List<JsonObject> messages) {
         log.traceEntry(() -> messages);
-        printer.println(MESSAGES_HEADER);
-        printer.println(getHeader(MESSAGES_HEADER));
+        printHeader(MESSAGES_HEADER);
         if (messages.size() == 0) {
             printer.println("No preconfigured messages");
         } else {
@@ -67,12 +63,16 @@ public class TerminalOutputHandler {
         log.traceExit();
     }
 
-    private String getHeader(final String header) {
+    public void printHeader(final String header) {
         log.traceEntry(() -> header);
-        return log.traceExit(HEADER_CHAR.repeat(header.length()));
+        printer.println(header);
+        printer.println(HEADER_CHAR.repeat(header.length()));
+        log.traceExit();
     }
 
-    public OutputPrinter getPrinter() {
-        return printer;
+    public void println(final String line) {
+        log.traceEntry(line);
+        printer.println(line);
+        log.traceExit();
     }
 }
