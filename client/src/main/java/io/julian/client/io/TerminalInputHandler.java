@@ -23,10 +23,10 @@ public class TerminalInputHandler {
         log.traceEntry();
         Promise<Integer> integer = Promise.promise();
         vertx.executeBlocking(
-            promise -> promise.complete(reader.nextLine()),
+            promise -> promise.complete(reader.nextLine().trim()),
             input -> {
                 try {
-                    int number = Integer.parseInt(((String) input.result()).trim());
+                    int number = Integer.parseInt((String) input.result());
                     integer.complete(number);
                 } catch (NumberFormatException e) {
                     log.error(e);
@@ -40,14 +40,26 @@ public class TerminalInputHandler {
         log.traceEntry();
         Promise<String> string = Promise.promise();
         vertx.executeBlocking(
-            promise -> promise.complete(reader.nextLine()),
-            input -> string.complete(((String) input.result()).trim())
+            promise -> promise.complete(reader.nextLine().trim()),
+            input -> string.complete((String) input.result())
         );
         return log.traceExit(string.future());
     }
 
-    public JsonObject getJsonObjectFromInput() throws DecodeException {
+    public Future<JsonObject> getJsonObjectFromInput() throws DecodeException {
         log.traceEntry();
-        return log.traceExit(new JsonObject(reader.nextLine()));
+        Promise<JsonObject> object = Promise.promise();
+        vertx.executeBlocking(
+            promise -> promise.complete(reader.nextLine().trim()),
+            input -> {
+                try {
+                    object.complete(new JsonObject((String) input.result()));
+                } catch (DecodeException e) {
+                    log.error(e);
+                    object.fail(e);
+                }
+            }
+        );
+        return log.traceExit(object.future());
     }
 }

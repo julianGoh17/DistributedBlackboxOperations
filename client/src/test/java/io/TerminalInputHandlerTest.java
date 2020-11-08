@@ -61,28 +61,24 @@ public class TerminalInputHandlerTest {
     }
 
     @Test
-    public void TestTerminalInputHandlerCanCreateJsonObject() throws DecodeException {
+    public void TestTerminalInputHandlerCanCreateJsonObject(final TestContext context) throws DecodeException {
         JsonObject message = new JsonObject().put("really", "works");
         String value = "{\"really\":\"works\"}";
         when(inputReader.nextLine())
             .thenReturn(String.format("  %s  ", value))
             .thenReturn(value);
-
-        Assert.assertEquals(message, input.getJsonObjectFromInput());
-        Assert.assertEquals(message, input.getJsonObjectFromInput());
+        input.getJsonObjectFromInput().onComplete(context.asyncAssertSuccess(firstJson -> {
+            Assert.assertEquals(message, firstJson);
+            input.getJsonObjectFromInput().onComplete(context.asyncAssertSuccess(secondJson -> Assert.assertEquals(message, secondJson)));
+        }));
     }
 
     @Test
-    public void TestTerminalInputHandlerHandlesInvalidJsonWhenCreatingJsonObject() {
+    public void TestTerminalInputHandlerHandlesInvalidJsonWhenCreatingJsonObject(final TestContext context) {
         String invalidJsonString = "{dfd;";
         when(inputReader.nextLine())
             .thenReturn(String.format("  %s  ", invalidJsonString));
 
-        try {
-            input.getJsonObjectFromInput();
-            Assert.fail();
-        } catch (DecodeException e) {
-            Assert.assertNotNull(e);
-        }
+        input.getJsonObjectFromInput().onComplete(context.asyncAssertFailure(Assert::assertNotNull));
     }
 }

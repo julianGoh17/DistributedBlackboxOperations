@@ -2,4 +2,7 @@
 .idea
 */target/**
 client/src/main/resources/generated/messages
+client/src/main/resources/generated/report
+client/src/main/resources/generated/operations
+logs
 target
