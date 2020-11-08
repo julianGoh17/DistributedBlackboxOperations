@@ -46,7 +46,7 @@ public class ControllerTest extends AbstractClientTest {
     private Coordinator coordinator;
     private final InputReader inputReader = mock(InputReader.class);
     private final OutputPrinter outputPrinter = mock(OutputPrinter.class);
-    private final TerminalInputHandler input = new TerminalInputHandler(inputReader);
+    private TerminalInputHandler input;
     private final TerminalOutputHandler output = new TerminalOutputHandler(outputPrinter);
 
     private static final String VALID_OPERATION_CHAIN_NAME = "test-operation-chain";
@@ -59,6 +59,7 @@ public class ControllerTest extends AbstractClientTest {
     @Before
     public void before() throws IOException  {
         this.vertx = Vertx.vertx();
+        this.input = new TerminalInputHandler(inputReader, vertx);
         this.coordinator = new Coordinator(vertx);
         this.coordinator.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         this.coordinator.getMemory().setOriginalMessages(Collections.singletonList(message));
@@ -98,6 +99,7 @@ public class ControllerTest extends AbstractClientTest {
                 testControllerPrintsOperation(order);
                 order.verify(inputReader).nextLine();
                 order.verify(outputPrinter).println(SUPPLY_VALID_OPERATION_CHAIN_MESSAGE);
+                order.verify(outputPrinter).println(HEADER_CHAR.repeat(SUPPLY_VALID_OPERATION_CHAIN_MESSAGE.length()));
                 order.verify(inputReader).nextLine();
                 order.verify(outputPrinter).println(String.format(VALID_OPERATION_CHAIN_MESSAGE, VALID_OPERATION_CHAIN_NAME));
 
@@ -127,6 +129,7 @@ public class ControllerTest extends AbstractClientTest {
                 testControllerPrintsOperation(order);
                 order.verify(inputReader).nextLine();
                 order.verify(outputPrinter).println(SUPPLY_VALID_OPERATION_CHAIN_MESSAGE);
+                order.verify(outputPrinter).println(HEADER_CHAR.repeat(SUPPLY_VALID_OPERATION_CHAIN_MESSAGE.length()));
                 order.verify(inputReader).nextLine();
                 order.verify(outputPrinter).println(String.format(VALID_OPERATION_CHAIN_MESSAGE, VALID_OPERATION_CHAIN_NAME));
 
@@ -162,6 +165,7 @@ public class ControllerTest extends AbstractClientTest {
                 testControllerPrintsOperation(order);
                 order.verify(inputReader).nextLine();
                 order.verify(outputPrinter).println(SUPPLY_VALID_OPERATION_CHAIN_MESSAGE);
+                order.verify(outputPrinter).println(HEADER_CHAR.repeat(SUPPLY_VALID_OPERATION_CHAIN_MESSAGE.length()));
                 order.verify(inputReader).nextLine();
                 order.verify(outputPrinter).println(String.format(VALID_OPERATION_CHAIN_MESSAGE, VALID_OPERATION_CHAIN_NAME));
 
@@ -178,17 +182,18 @@ public class ControllerTest extends AbstractClientTest {
         when(inputReader.nextLine())
             .thenReturn("Not A Number")
             .thenReturn("5");
-        controller.runOperation().onComplete(wantsToContinue -> Assert.assertFalse(wantsToContinue.result()));
+        controller.runOperation().onComplete(wantsToContinue -> {
+            Assert.assertFalse(wantsToContinue.result());
+            InOrder order = inOrder(inputReader, outputPrinter);
+            testControllerPrintsOperation(order);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(Controller.NOT_GIVEN_VALID_OPERATION_ERROR_MESSAGE);
 
-        InOrder order = inOrder(inputReader, outputPrinter);
-        testControllerPrintsOperation(order);
-        order.verify(inputReader).nextLine();
-        order.verify(outputPrinter).println(Controller.NOT_GIVEN_VALID_OPERATION_ERROR_MESSAGE);
-
-        testControllerPrintsOperation(order);
-        order.verify(inputReader).nextLine();
-        order.verify(outputPrinter).println(TERMINATING_CLIENT_MESSAGE);
-        order.verifyNoMoreInteractions();
+            testControllerPrintsOperation(order);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(TERMINATING_CLIENT_MESSAGE);
+            order.verifyNoMoreInteractions();
+        });
     }
 
     @Test
@@ -197,17 +202,18 @@ public class ControllerTest extends AbstractClientTest {
         when(inputReader.nextLine())
             .thenReturn("7")
             .thenReturn("5");
-        controller.runOperation().onComplete(wantsToContinue -> Assert.assertFalse(wantsToContinue.result()));
+        controller.runOperation().onComplete(wantsToContinue -> {
+            Assert.assertFalse(wantsToContinue.result());
+            InOrder order = inOrder(inputReader, outputPrinter);
+            testControllerPrintsOperation(order);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(Controller.NOT_GIVEN_VALID_OPERATION_ERROR_MESSAGE);
 
-        InOrder order = inOrder(inputReader, outputPrinter);
-        testControllerPrintsOperation(order);
-        order.verify(inputReader).nextLine();
-        order.verify(outputPrinter).println(Controller.NOT_GIVEN_VALID_OPERATION_ERROR_MESSAGE);
-
-        testControllerPrintsOperation(order);
-        order.verify(inputReader).nextLine();
-        order.verify(outputPrinter).println(TERMINATING_CLIENT_MESSAGE);
-        order.verifyNoMoreInteractions();
+            testControllerPrintsOperation(order);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(TERMINATING_CLIENT_MESSAGE);
+            order.verifyNoMoreInteractions();
+        });
     }
 
     @Test
@@ -217,17 +223,18 @@ public class ControllerTest extends AbstractClientTest {
             .thenReturn("1")
             .thenReturn(INVALID_OPERATION_CHAIN_NAME)
             .thenReturn(VALID_OPERATION_CHAIN_NAME);
-        controller.runOperation().onComplete(wantsToContinue -> Assert.assertTrue(wantsToContinue.result()));
-
-        InOrder order = inOrder(inputReader, outputPrinter);
-        testControllerPrintsOperation(order);
-        order.verify(inputReader).nextLine();
-        order.verify(outputPrinter).println(SUPPLY_VALID_OPERATION_CHAIN_MESSAGE);
-        order.verify(inputReader).nextLine();
-        order.verify(outputPrinter).println(String.format(INVALID_OPERATION_CHAIN_MESSAGE, INVALID_OPERATION_CHAIN_NAME));
-        order.verify(inputReader).nextLine();
-        order.verify(outputPrinter).println(String.format(VALID_OPERATION_CHAIN_MESSAGE, VALID_OPERATION_CHAIN_NAME));
-        order.verifyNoMoreInteractions();
+        controller.runOperation().onComplete(wantsToContinue -> {
+            Assert.assertTrue(wantsToContinue.result());
+            InOrder order = inOrder(inputReader, outputPrinter);
+            testControllerPrintsOperation(order);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(SUPPLY_VALID_OPERATION_CHAIN_MESSAGE);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(String.format(INVALID_OPERATION_CHAIN_MESSAGE, INVALID_OPERATION_CHAIN_NAME));
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(String.format(VALID_OPERATION_CHAIN_MESSAGE, VALID_OPERATION_CHAIN_NAME));
+            order.verifyNoMoreInteractions();
+        });
     }
 
     @Test
@@ -235,13 +242,14 @@ public class ControllerTest extends AbstractClientTest {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
             .thenReturn("2");
-        controller.runOperation().onComplete(wantsToContinue -> Assert.assertTrue(wantsToContinue.result()));
-
-        InOrder order = inOrder(inputReader, outputPrinter);
-        testControllerPrintsOperation(order);
-        order.verify(inputReader).nextLine();
-        order.verify(outputPrinter).println(SENDING_COMMAND_LINE_MESSAGE);
-        order.verifyNoMoreInteractions();
+        controller.runOperation().onComplete(wantsToContinue -> {
+            Assert.assertTrue(wantsToContinue.result());
+            InOrder order = inOrder(inputReader, outputPrinter);
+            testControllerPrintsOperation(order);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(SENDING_COMMAND_LINE_MESSAGE);
+            order.verifyNoMoreInteractions();
+        });
     }
 
     @Test
@@ -249,15 +257,16 @@ public class ControllerTest extends AbstractClientTest {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
             .thenReturn("3");
-        controller.runOperation().onComplete(wantsToContinue -> Assert.assertTrue(wantsToContinue.result()));
-
-        InOrder order = inOrder(inputReader, outputPrinter);
-        testControllerPrintsOperation(order);
-        order.verify(inputReader).nextLine();
-        order.verify(outputPrinter).println(MESSAGES_HEADER);
-        order.verify(outputPrinter).println(HEADER_CHAR.repeat(MESSAGES_HEADER.length()));
-        order.verify(outputPrinter).println(String.format("Message '0': %s", message.encodePrettily()));
-        order.verifyNoMoreInteractions();
+        controller.runOperation().onComplete(wantsToContinue -> {
+            Assert.assertTrue(wantsToContinue.result());
+            InOrder order = inOrder(inputReader, outputPrinter);
+            testControllerPrintsOperation(order);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(MESSAGES_HEADER);
+            order.verify(outputPrinter).println(HEADER_CHAR.repeat(MESSAGES_HEADER.length()));
+            order.verify(outputPrinter).println(String.format("Message '0': %s", message.encodePrettily()));
+            order.verifyNoMoreInteractions();
+        });
     }
 
     @Test
@@ -265,15 +274,16 @@ public class ControllerTest extends AbstractClientTest {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
             .thenReturn("4");
-        controller.runOperation().onComplete(wantsToContinue -> Assert.assertTrue(wantsToContinue.result()));
-
-        InOrder order = inOrder(inputReader, outputPrinter);
-        testControllerPrintsOperation(order);
-        order.verify(inputReader).nextLine();
-        order.verify(outputPrinter).println(OPERATION_CHAIN_HEADER);
-        order.verify(outputPrinter).println(HEADER_CHAR.repeat(OPERATION_CHAIN_HEADER.length()));
-        order.verify(outputPrinter).println(VALID_OPERATION_CHAIN_NAME);
-        order.verifyNoMoreInteractions();
+        controller.runOperation().onComplete(wantsToContinue -> {
+            Assert.assertTrue(wantsToContinue.result());
+            InOrder order = inOrder(inputReader, outputPrinter);
+            testControllerPrintsOperation(order);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(OPERATION_CHAIN_HEADER);
+            order.verify(outputPrinter).println(HEADER_CHAR.repeat(OPERATION_CHAIN_HEADER.length()));
+            order.verify(outputPrinter).println(VALID_OPERATION_CHAIN_NAME);
+            order.verifyNoMoreInteractions();
+        });
     }
 
     @Test
@@ -281,13 +291,14 @@ public class ControllerTest extends AbstractClientTest {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
             .thenReturn("5");
-        controller.runOperation().onComplete(wantsToContinue -> Assert.assertFalse(wantsToContinue.result()));
-
-        InOrder order = inOrder(inputReader, outputPrinter);
-        testControllerPrintsOperation(order);
-        order.verify(inputReader).nextLine();
-        order.verify(outputPrinter).println(TERMINATING_CLIENT_MESSAGE);
-        order.verifyNoMoreInteractions();
+        controller.runOperation().onComplete(wantsToContinue -> {
+            Assert.assertFalse(wantsToContinue.result());
+            InOrder order = inOrder(inputReader, outputPrinter);
+            testControllerPrintsOperation(order);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(TERMINATING_CLIENT_MESSAGE);
+            order.verifyNoMoreInteractions();
+        });
     }
 
     private void testControllerPrintsOperation(final InOrder order) {

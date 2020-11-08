@@ -1,0 +1,20 @@
+General Statistics:
+-------------------
+Total Successful Requests: 0
+Total Failed Requests: 0
+
+General Statistics For GET:
+---------------------------
+Successful Requests: 0
+Failed Requests: 0
+
+General Statistics For POST:
+----------------------------
+Successful Requests: 0
+Failed Requests: 0
+
+General Statistics For PUT:
+---------------------------
+Successful Requests: 0
+Failed Requests: 0
+

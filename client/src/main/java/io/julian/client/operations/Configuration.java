@@ -9,13 +9,13 @@ import java.util.Optional;
 public class Configuration {
     private static final Logger log = LogManager.getLogger(Configuration.class.getName());
     public static final String MESSAGE_FILE_PATH_ENV = "MESSAGE_FILE_PATH";
-    public static final String DEFAULT_MESSAGE_FILE_PATH = String.format("%s/src/main/resources/generated/messages", System.getProperty("user.dir"));
+    public static final String DEFAULT_MESSAGE_FILE_PATH = String.format("%s/client/src/main/resources/generated/messages", System.getProperty("user.dir"));
 
     public static final String OPERATIONS_FILE_PATH_ENV = "OPERATIONS_FILE_PATH";
-    public static final String OPERATIONS_MESSAGE_FILE_PATH = String.format("%s/src/main/resources/generated/operations", System.getProperty("user.dir"));
+    public static final String OPERATIONS_MESSAGE_FILE_PATH = String.format("%s/client/src/main/resources/generated/operations", System.getProperty("user.dir"));
 
     public static final String REPORT_FILE_PATH_ENV = "REPORT_FILE_PATH";
-    public static final String REPORT_MESSAGE_FILE_PATH = String.format("%s/src/main/resources/generated/report", System.getProperty("user.dir"));
+    public static final String REPORT_MESSAGE_FILE_PATH = String.format("%s/client/src/main/resources/generated/report", System.getProperty("user.dir"));
 
     public static final String SERVER_HOST_ENV = "SERVER_HOST";
     public static final String DEFAULT_SERVER_HOST = Server.DEFAULT_HOST;

@@ -9,6 +9,7 @@ import io.julian.client.model.operation.Action;
 import io.julian.client.model.operation.Expected;
 import io.julian.client.model.operation.Operation;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -18,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.io.FileNotFoundException;
 import java.util.Collections;
 
 import static io.julian.client.metrics.Reporter.REPORT_FILE_NAME;
@@ -67,6 +69,53 @@ public class ReporterTest {
     }
 
     @Test
+    public void TestReporterCanCheckFolderPathExists() {
+        Reporter reporter = new Reporter();
+        try {
+            reporter.checkReportFolderExists(TEST_REPORT_FILE_PATH);
+        } catch (FileNotFoundException e) {
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void TestReporterCanCheckFolderPathDoesNotExists() {
+        Reporter reporter = new Reporter();
+        String wrongFilePath = String.format("%s/random-location1234", TEST_REPORT_FILE_PATH);
+        try {
+            reporter.checkReportFolderExists(wrongFilePath);
+            Assert.fail();
+        } catch (FileNotFoundException e) {
+            Assert.assertNotNull(e);
+            Assert.assertEquals(String.format("Could not find folder at '%s'", wrongFilePath), e.getMessage());
+        }
+    }
+
+    @Test
+    public void TestReporterCanTellIfNotDirectory(final TestContext context) {
+        Reporter reporter = new Reporter();
+        String filePath = String.format("%s/random-location1234", TEST_REPORT_FILE_PATH);
+        Promise<String> testComplete = Promise.promise();
+        vertx.fileSystem().createFile(filePath, res -> {
+            try {
+                reporter.checkReportFolderExists(filePath);
+                testComplete.fail("Failed to check that folder is file");
+            } catch (FileNotFoundException e) {
+                testComplete.complete(e.getMessage());
+            }
+        });
+
+        testComplete.future().onComplete(context.asyncAssertSuccess(test -> vertx.fileSystem().delete(filePath, delete -> {
+            if (delete.succeeded()) {
+                System.out.println("Successfully deleted file at " + filePath);
+            } else {
+                System.out.println("Could not delete file at " + filePath);
+            }
+            Assert.assertEquals(String.format("Could not find folder at '%s'", filePath), test);
+        })));
+    }
+
+    @Test
     public void TestCreateReportFailsWhenWrongFileLocation(final TestContext context) {
         Reporter reporter = new Reporter();
         String wrongFilePath = String.format("%s/random-location1234", TEST_REPORT_FILE_PATH);
@@ -79,15 +128,12 @@ public class ReporterTest {
     @Test
     public void TestCreateReportSuccessful(final TestContext context) {
         String reportFilePath = String.format("%s/%s", TEST_REPORT_FILE_PATH, REPORT_FILE_NAME);
-        try {
-            Reporter reporter = new Reporter();
-            Future<Void> hasWrote = reporter.createReportFile(Collections.singletonList(createTestMismatchedResponse()), new GeneralMetrics(), TEST_REPORT_FILE_PATH, vertx);
+        Reporter reporter = new Reporter();
+        Future<Void> hasWrote = reporter.createReportFile(Collections.singletonList(createTestMismatchedResponse()), new GeneralMetrics(), TEST_REPORT_FILE_PATH, vertx);
 
-            hasWrote.onComplete(context.asyncAssertSuccess(res -> vertx.fileSystem().exists(reportFilePath, open -> {
-                Assert.assertTrue(open.succeeded());
-                Assert.assertNull(open.cause());
-            })));
-        } finally {
+        hasWrote.onComplete(context.asyncAssertSuccess(res -> vertx.fileSystem().exists(reportFilePath, open -> {
+            Assert.assertTrue(open.succeeded());
+            Assert.assertNull(open.cause());
             vertx.fileSystem().delete(reportFilePath, delete -> {
                 if (delete.succeeded()) {
                     System.out.printf("Deleted file '%s'", reportFilePath);
@@ -95,7 +141,7 @@ public class ReporterTest {
                     System.out.printf("Failed to delete file '%s'", reportFilePath);
                 }
             });
-        }
+        })));
     }
 
     @Test

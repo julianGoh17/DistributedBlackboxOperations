@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static io.julian.client.io.TerminalOutputHandler.EXIT_NUMBER;
 import static io.julian.client.io.TerminalOutputHandler.OPERATION_CHAIN_NUMBER;
@@ -66,62 +67,87 @@ public class Controller {
 
     public Future<Boolean> runOperation() {
         log.traceEntry();
-        boolean hasNotGivenValidOperation = true;
+        AtomicBoolean hasNotGivenValidOperation = new AtomicBoolean(true);
         Promise<Boolean> userWantsToContinue = Promise.promise();
-        while (hasNotGivenValidOperation) {
-            output.printOperations();
-            try {
-                hasNotGivenValidOperation = false;
-                switch (input.getNumberFromInput()) {
-                    case OPERATION_CHAIN_NUMBER:
-                        runOperationChain()
-                            .onComplete(v -> userWantsToContinue.complete(true));
-                        break;
-                    // TODO: Add ability to send command line message
-                    case SEND_COMMAND_LINE_MESSAGE_NUMBER:
-                        runSendCommandLineMessage();
-                        userWantsToContinue.complete(true);
-                        break;
-                    case PRINT_MESSAGES_NUMBER:
-                        runPreconfiguredMessages();
-                        userWantsToContinue.complete(true);
-                        break;
-                    case PRINT_OPERATION_CHAIN_NUMBER:
-                        runOperationChains();
-                        userWantsToContinue.complete(true);
-                        break;
-                    case EXIT_NUMBER:
-                        runExit();
-                        userWantsToContinue.complete(false);
-                        break;
-                    default:
-                        output.println(NOT_GIVEN_VALID_OPERATION_ERROR_MESSAGE);
-                        hasNotGivenValidOperation = true;
-                        break;
-                }
-            } catch (NumberFormatException e) {
-                log.error(e);
-                output.println(NOT_GIVEN_VALID_OPERATION_ERROR_MESSAGE);
-                hasNotGivenValidOperation = true;
+        vertx.setPeriodic(1000, id -> {
+            while (hasNotGivenValidOperation.get()) {
+                hasNotGivenValidOperation.set(false);
+                output.printOperations();
+                input.getNumberFromInput().onSuccess(num -> {
+                    switch (num) {
+                        case OPERATION_CHAIN_NUMBER:
+                            runOperationChain()
+                                .onComplete(v -> {
+                                    userWantsToContinue.complete(true);
+                                    vertx.cancelTimer(id);
+                                });
+                            break;
+                        // TODO: Add ability to send command line message
+                        case SEND_COMMAND_LINE_MESSAGE_NUMBER:
+                            runSendCommandLineMessage();
+                            userWantsToContinue.complete(true);
+                            vertx.cancelTimer(id);
+                            break;
+                        case PRINT_MESSAGES_NUMBER:
+                            runPreconfiguredMessages();
+                            userWantsToContinue.complete(true);
+                            vertx.cancelTimer(id);
+                            break;
+                        case PRINT_OPERATION_CHAIN_NUMBER:
+                            runOperationChains();
+                            userWantsToContinue.complete(true);
+                            vertx.cancelTimer(id);
+                            break;
+                        case EXIT_NUMBER:
+                            runExit();
+                            userWantsToContinue.complete(false);
+                            vertx.cancelTimer(id);
+                            break;
+                        default:
+                            output.println(NOT_GIVEN_VALID_OPERATION_ERROR_MESSAGE);
+                            hasNotGivenValidOperation.set(true);
+                            break;
+                    }
+                }).onFailure(throwable -> {
+                    log.error(throwable.getMessage());
+                    output.println(NOT_GIVEN_VALID_OPERATION_ERROR_MESSAGE);
+                    hasNotGivenValidOperation.set(true);
+                });
             }
-        }
+        });
         return userWantsToContinue.future();
+    }
+
+    public void close() {
+        log.traceEntry();
+        client.close();
+        log.traceExit();
     }
 
     private Future<Void> runOperationChain() {
         log.traceEntry();
         output.printHeader(SUPPLY_VALID_OPERATION_CHAIN_MESSAGE);
-        boolean hasNotSuppliedValidOperationChainName = true;
-        String suppliedName = "";
-        while (hasNotSuppliedValidOperationChainName) {
-            suppliedName = input.getStringFromInput();
-            hasNotSuppliedValidOperationChainName = !client.getOperationChains().containsKey(suppliedName);
-            if (hasNotSuppliedValidOperationChainName) {
-                output.println(String.format(INVALID_OPERATION_CHAIN_MESSAGE, suppliedName));
+        AtomicBoolean inFlight = new AtomicBoolean();
+        AtomicReference<String> suppliedName = new AtomicReference<>();
+        Promise<Void> operationRes = Promise.promise();
+        vertx.setPeriodic(1000, id -> {
+            if (suppliedName.get() == null & !inFlight.get()) {
+                inFlight.set(true);
+                input.getStringFromInput().onComplete(name -> {
+                    if (client.getOperationChains().containsKey(name.result())) {
+                        suppliedName.set(name.result());
+                    }
+                    inFlight.set(false);
+                });
+            } else if (suppliedName.get() != null) {
+                vertx.cancelTimer(id);
+                output.println(String.format(VALID_OPERATION_CHAIN_MESSAGE, suppliedName));
+                client.runOperationChain(suppliedName.get())
+                    .onSuccess(v -> operationRes.complete())
+                    .onFailure(operationRes::fail);
             }
-        }
-        output.println(String.format(VALID_OPERATION_CHAIN_MESSAGE, suppliedName));
-        return log.traceExit(client.runOperationChain(suppliedName));
+        });
+        return log.traceExit(operationRes.future());
     }
 
     private void runSendCommandLineMessage() {

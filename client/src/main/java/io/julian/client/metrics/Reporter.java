@@ -9,6 +9,8 @@ import io.vertx.core.buffer.Buffer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -32,6 +34,17 @@ public class Reporter {
                 }
             });
         return log.traceExit(completedWrite.future());
+    }
+
+    public void checkReportFolderExists(final String reportFolderLocation) throws FileNotFoundException {
+        log.traceEntry(() -> reportFolderLocation);
+        File reportFolder = new File(reportFolderLocation);
+        if (!reportFolder.exists()) {
+            throw new FileNotFoundException(String.format("Could not find folder at '%s'", reportFolder));
+        } else if (!reportFolder.isDirectory()) {
+            throw new FileNotFoundException(String.format("Not a folder found at '%s'", reportFolder));
+        }
+        log.traceExit();
     }
 
     // Exposed For Testing
