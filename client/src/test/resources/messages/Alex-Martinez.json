@@ -1,0 +1,12 @@
+{
+  "info": {
+    "firstName": "Alex",
+    "lastName": "Martinez",
+    "time": "15/03/2020 11:40 AM"
+  },
+  "order": {
+    "clothing": "Balaclava",
+    "quantity": 2,
+    "cost": 50
+  }
+}
