@@ -22,6 +22,7 @@
         <fasterxml.jackson-core.version>2.10.4</fasterxml.jackson-core.version>
         <fasterxml.jackson-annotations.version>2.10.4</fasterxml.jackson-annotations.version>
         <mockito.version>1.10.19</mockito.version>
+        <puppy.crawler.build.version>8.29</puppy.crawler.build.version>
     </properties>
 
     <modules>
@@ -142,7 +143,7 @@
                     <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
                         <artifactId>checkstyle</artifactId>
-                        <version>8.29</version>
+                        <version>${puppy.crawler.build.version}</version>
                     </dependency>
                 </dependencies>
                 <executions>
