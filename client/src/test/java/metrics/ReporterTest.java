@@ -28,7 +28,8 @@ import static io.julian.client.metrics.Reporter.REPORT_FILE_NAME;
 public class ReporterTest {
     private Vertx vertx;
 
-    private static final String TEST_REPORT_FILE_PATH = String.format("%s/src/test/resources/report", System.getProperty("user.dir"));
+    // Putting in /tmp so that we have permissions to create file in Github Action pipeline
+    private static final String TEST_REPORT_FILE_PATH = "/tmp";
     private final static RequestMethod METHOD = RequestMethod.GET;
     private final static int MESSAGE_NUMBER = 91;
     private final static int EXPECTED_STATUS_CODE = 0;
