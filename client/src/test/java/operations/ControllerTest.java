@@ -54,7 +54,8 @@ public class ControllerTest extends AbstractClientTest {
 
     private static final String TEST_MESSAGE_FILES_PATH = String.format("%s/src/test/resources/messages", System.getProperty("user.dir"));
     private static final String TEST_OPERATION_FILES_PATH = String.format("%s/src/test/resources/operations", System.getProperty("user.dir"));
-    private static final String TEST_REPORT_FILE_PATH = String.format("%s/src/test/resources/report", System.getProperty("user.dir"));
+    // Putting in /tmp so that we have permissions to create file in Github Action pipeline
+    private static final String TEST_REPORT_FILE_PATH = "/tmp";
 
     @Before
     public void before() throws IOException  {

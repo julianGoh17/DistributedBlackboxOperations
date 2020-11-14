@@ -28,7 +28,8 @@ import static io.julian.client.metrics.Reporter.REPORT_FILE_NAME;
 public class ReporterTest {
     private Vertx vertx;
 
-    private static final String TEST_REPORT_FILE_PATH = String.format("%s/src/test/resources/report", System.getProperty("user.dir"));
+    // Putting in /tmp so that we have permissions to create file in Github Action pipeline
+    private static final String TEST_REPORT_FILE_PATH = "/tmp";
     private final static RequestMethod METHOD = RequestMethod.GET;
     private final static int MESSAGE_NUMBER = 91;
     private final static int EXPECTED_STATUS_CODE = 0;
@@ -96,23 +97,19 @@ public class ReporterTest {
         Reporter reporter = new Reporter();
         String filePath = String.format("%s/random-location1234", TEST_REPORT_FILE_PATH);
         Promise<String> testComplete = Promise.promise();
-        vertx.fileSystem().createFile(filePath, res -> {
+        vertx.fileSystem().createFile(filePath, context.asyncAssertSuccess(res -> {
             try {
                 reporter.checkReportFolderExists(filePath);
                 testComplete.fail("Failed to check that folder is file");
             } catch (FileNotFoundException e) {
                 testComplete.complete(e.getMessage());
             }
-        });
+        }));
 
-        testComplete.future().onComplete(context.asyncAssertSuccess(test -> vertx.fileSystem().delete(filePath, delete -> {
-            if (delete.succeeded()) {
-                System.out.println("Successfully deleted file at " + filePath);
-            } else {
-                System.out.println("Could not delete file at " + filePath);
-            }
-            Assert.assertEquals(String.format("Could not find folder at '%s'", filePath), test);
-        })));
+        testComplete.future().onComplete(context.asyncAssertSuccess(test -> vertx.fileSystem().delete(filePath, context.asyncAssertSuccess(delete -> {
+            System.out.println("Successfully deleted file at " + filePath);
+            Assert.assertEquals(String.format("Not a folder found at '%s'", filePath), test);
+        }))));
     }
 
     @Test
