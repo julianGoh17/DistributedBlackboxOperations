@@ -20,7 +20,6 @@ public class Server {
 
     public static final int DEFAULT_SERVER_PORT = 8888;
     public static final String DEFAULT_HOST = "localhost";
-    public static final String OPENAPI_SPEC_LOCATION = "src/main/resources/ServerEndpoints.yaml";
 
     public Server() {
         this.messages = new MessageStore();

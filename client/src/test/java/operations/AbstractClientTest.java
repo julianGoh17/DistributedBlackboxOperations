@@ -1,5 +1,6 @@
 package operations;
 
+import io.julian.server.components.Configuration;
 import io.julian.server.components.Server;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -12,7 +13,6 @@ import java.io.File;
 
 import static io.julian.server.components.Server.DEFAULT_HOST;
 import static io.julian.server.components.Server.DEFAULT_SERVER_PORT;
-import static io.julian.server.components.Server.OPENAPI_SPEC_LOCATION;
 
 public class AbstractClientTest {
     Server server;
@@ -21,7 +21,7 @@ public class AbstractClientTest {
 
     protected void setUpApiServer(final TestContext context) {
         server = new Server();
-        Promise<Boolean> hasDeployed = server.startServer(vertx, System.getProperty("user.dir") + File.separator + ".."  + File.separator + "server" + File.separator + OPENAPI_SPEC_LOCATION);
+        Promise<Boolean> hasDeployed = server.startServer(vertx, System.getProperty("user.dir") + File.separator + ".."  + File.separator + "server" + File.separator + Configuration.OPENAPI_SPEC_LOCATION);
         api = vertx.createHttpServer(new HttpServerOptions()
             .setPort(DEFAULT_SERVER_PORT)
             .setHost(DEFAULT_HOST));

@@ -1,5 +1,6 @@
 package io.julian.server.endpoints;
 
+import io.julian.server.components.Configuration;
 import io.julian.server.components.Server;
 import io.julian.server.models.ErrorResponse;
 import io.julian.server.models.MessageIDResponse;
@@ -22,7 +23,6 @@ import org.junit.runner.RunWith;
 
 import static io.julian.server.components.Server.DEFAULT_HOST;
 import static io.julian.server.components.Server.DEFAULT_SERVER_PORT;
-import static io.julian.server.components.Server.OPENAPI_SPEC_LOCATION;
 
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractHandlerTest {
@@ -44,7 +44,7 @@ public abstract class AbstractHandlerTest {
 
     protected void setUpApiServer(final TestContext context) {
         server = new Server();
-        Promise<Boolean> hasDeployed = server.startServer(vertx, OPENAPI_SPEC_LOCATION);
+        Promise<Boolean> hasDeployed = server.startServer(vertx, Configuration.OPENAPI_SPEC_LOCATION);
         api = vertx.createHttpServer(new HttpServerOptions()
             .setPort(DEFAULT_SERVER_PORT)
             .setHost(DEFAULT_HOST));

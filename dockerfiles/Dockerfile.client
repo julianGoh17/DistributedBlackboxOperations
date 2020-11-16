@@ -1,5 +1,19 @@
-FROM dbo-base:version-1
+ARG BASE_IMAGE
 
-COPY client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar /client-1.0-SNAPSHOT-jar-with-dependencies.jar
+FROM ${BASE_IMAGE}:latest
 
-CMD ["java", "-jar", "/client-1.0-SNAPSHOT-jar-with-dependencies.jar"]
+ARG JAR_NAME
+COPY client/target/${JAR_NAME} ${JAR_NAME}
+
+ENV JAR_NAME=${JAR_NAME}
+ENV OPERATIONS_FILE_PATH="/resources/operations"
+ENV MESSAGE_FILE_PATH="/resources/messages"
+ENV REPORT_FILE_PATH="/resources/report"
+
+ARG CLIENT_GENERATED_FOLDER
+COPY ${CLIENT_GENERATED_FOLDER}/operations ${OPERATIONS_FILE_PATH}
+COPY ${CLIENT_GENERATED_FOLDER}/messages ${MESSAGE_FILE_PATH}
+
+RUN mkdir ${REPORT_FILE_PATH}
+
+CMD java -jar ${JAR_NAME}
