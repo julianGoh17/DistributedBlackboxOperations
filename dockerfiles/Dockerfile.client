@@ -1,0 +1,5 @@
+FROM dbo-base:version-1
+
+COPY client/target/client-1.0-SNAPSHOT-jar-with-dependencies.jar /client-1.0-SNAPSHOT-jar-with-dependencies.jar
+
+CMD ["java", "-jar", "/client-1.0-SNAPSHOT-jar-with-dependencies.jar"]
