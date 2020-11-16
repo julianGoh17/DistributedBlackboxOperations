@@ -1,12 +1,10 @@
 package io.julian.server.endpoints;
 
+import io.julian.server.components.Configuration;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
 import org.junit.Test;
-
-import static io.julian.server.components.Server.DEFAULT_HOST;
-import static io.julian.server.components.Server.DEFAULT_SERVER_PORT;
 
 public class PostMessageHandlerTest extends AbstractHandlerTest {
     @Test
@@ -37,7 +35,7 @@ public class PostMessageHandlerTest extends AbstractHandlerTest {
         WebClient client = WebClient.create(this.vertx);
 
         client
-            .post(DEFAULT_SERVER_PORT, DEFAULT_HOST, CLIENT_URI)
+            .post(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, CLIENT_URI)
             .send(context.asyncAssertSuccess(res -> {
                 context.assertEquals(res.statusCode(), 400);
                 context.assertNull(res.body());

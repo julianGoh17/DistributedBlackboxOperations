@@ -1,6 +1,5 @@
 package io.julian.client.operations;
 
-import io.julian.server.components.Server;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,10 +17,10 @@ public class Configuration {
     public static final String REPORT_MESSAGE_FILE_PATH = String.format("%s/client/src/main/resources/generated/report", System.getProperty("user.dir"));
 
     public static final String SERVER_HOST_ENV = "SERVER_HOST";
-    public static final String DEFAULT_SERVER_HOST = Server.DEFAULT_HOST;
+    public static final String DEFAULT_SERVER_HOST = io.julian.server.components.Configuration.DEFAULT_SERVER_HOST;
 
     public static final String SERVER_PORT_ENV = "SERVER_PORT";
-    public static final int DEFAULT_SERVER_PORT = Server.DEFAULT_SERVER_PORT;
+    public static final int DEFAULT_SERVER_PORT = io.julian.server.components.Configuration.DEFAULT_SERVER_PORT;
 
     public static String getMessageFilePath() {
         log.traceEntry();

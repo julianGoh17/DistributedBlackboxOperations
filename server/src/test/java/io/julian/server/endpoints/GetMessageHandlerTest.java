@@ -1,12 +1,10 @@
 package io.julian.server.endpoints;
 
+import io.julian.server.components.Configuration;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
 import org.junit.Test;
-
-import static io.julian.server.components.Server.DEFAULT_HOST;
-import static io.julian.server.components.Server.DEFAULT_SERVER_PORT;
 
 public class GetMessageHandlerTest extends AbstractHandlerTest {
     @Test
@@ -15,7 +13,7 @@ public class GetMessageHandlerTest extends AbstractHandlerTest {
         setUpApiServer(context);
         WebClient client = WebClient.create(this.vertx);
         client
-            .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", CLIENT_URI, invalidID))
+            .get(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, invalidID))
             .send(context.asyncAssertSuccess(res -> {
                 context.assertEquals(res.statusCode(), 404);
                 context.assertEquals(res.bodyAsJsonObject().getInteger("statusCode"), 404);
@@ -39,7 +37,7 @@ public class GetMessageHandlerTest extends AbstractHandlerTest {
         WebClient client = WebClient.create(this.vertx);
 
         client
-            .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, CLIENT_URI)
+            .get(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, CLIENT_URI)
             .send(context.asyncAssertSuccess(res -> {
                 context.assertEquals(res.statusCode(), 405);
                 context.assertNull(res.body());
