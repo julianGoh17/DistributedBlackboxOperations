@@ -1,5 +1,6 @@
 package io.julian.server.endpoints;
 
+import io.julian.server.components.Configuration;
 import io.julian.server.components.Server;
 import io.julian.server.models.ErrorResponse;
 import io.julian.server.models.MessageIDResponse;
@@ -20,9 +21,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 
-import static io.julian.server.components.Server.DEFAULT_HOST;
-import static io.julian.server.components.Server.DEFAULT_SERVER_PORT;
-import static io.julian.server.components.Server.OPENAPI_SPEC_LOCATION;
 
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractHandlerTest {
@@ -44,10 +42,10 @@ public abstract class AbstractHandlerTest {
 
     protected void setUpApiServer(final TestContext context) {
         server = new Server();
-        Promise<Boolean> hasDeployed = server.startServer(vertx, OPENAPI_SPEC_LOCATION);
+        Promise<Boolean> hasDeployed = server.startServer(vertx, Configuration.DEFAULT_OPENAPI_SPEC_LOCATION);
         api = vertx.createHttpServer(new HttpServerOptions()
-            .setPort(DEFAULT_SERVER_PORT)
-            .setHost(DEFAULT_HOST));
+            .setPort(Configuration.DEFAULT_SERVER_PORT)
+            .setHost(Configuration.DEFAULT_SERVER_HOST));
 
         Async async = context.async();
         hasDeployed.future().onComplete(context.asyncAssertSuccess(v -> {
@@ -68,7 +66,7 @@ public abstract class AbstractHandlerTest {
     protected Future<String> sendSuccessfulGETMessage(final TestContext context, final WebClient client, final String messageId, final JsonObject message) {
         Promise<String> completed = Promise.promise();
         client
-            .get(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", CLIENT_URI, messageId))
+            .get(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, messageId))
             .send(context.asyncAssertSuccess(res -> {
                 context.assertEquals(res.statusCode(), 200);
                 context.assertEquals(res.bodyAsJsonObject().getJsonObject(MessageResponse.MESSAGE_KEY).encodePrettily(), message.encodePrettily());
@@ -92,7 +90,7 @@ public abstract class AbstractHandlerTest {
     protected Future<String> sendSuccessfulPUTMessage(final TestContext context, final WebClient client, final String messageId, final JsonObject message) {
         Promise<String> completed = Promise.promise();
         client
-            .put(DEFAULT_SERVER_PORT, DEFAULT_HOST, String.format("%s/%s", CLIENT_URI, messageId))
+            .put(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, messageId))
             .sendJson(createPostMessage(message), context.asyncAssertSuccess(res -> {
                 context.assertEquals(res.statusCode(), 200);
                 context.assertEquals(res.bodyAsJsonObject().getString(MessageIDResponse.MESSAGE_ID_KEY), messageId);
@@ -117,7 +115,7 @@ public abstract class AbstractHandlerTest {
     protected Future<HttpResponse<Buffer>> sendPOSTMessage(final TestContext context, final WebClient client, final JsonObject requestBody) {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
-            .post(DEFAULT_SERVER_PORT, DEFAULT_HOST, CLIENT_URI)
+            .post(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, CLIENT_URI)
             .sendJson(requestBody, context.asyncAssertSuccess(response::complete));
         return response.future();
     }

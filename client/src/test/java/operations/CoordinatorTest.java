@@ -5,6 +5,7 @@ import io.julian.client.model.MismatchedResponse;
 import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Operation;
 import io.julian.client.operations.Coordinator;
+import io.julian.server.components.Configuration;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -15,9 +16,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
-
-import static io.julian.server.components.Server.DEFAULT_HOST;
-import static io.julian.server.components.Server.DEFAULT_SERVER_PORT;
 
 @RunWith(VertxUnitRunner.class)
 public class CoordinatorTest extends AbstractClientTest {
@@ -33,7 +31,7 @@ public class CoordinatorTest extends AbstractClientTest {
     private static final int GET_OPERATION_NUMBER = 1;
     private static final int PUT_OPERATION_NUMBER = 2;
 
-    private static final String CONNECTION_REFUSED_EXCEPTION = String.format("Connection refused: %s/127.0.0.1:%d", DEFAULT_HOST, DEFAULT_SERVER_PORT);
+    private static final String CONNECTION_REFUSED_EXCEPTION = String.format("Connection refused: %s/127.0.0.1:%d", Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
     private static final String OUT_OF_BOUND_EXCEPTION = String.format("No original message with index '%d'", OUT_OF_BOUND_MESSAGE_INDEX);
 
     @Before
