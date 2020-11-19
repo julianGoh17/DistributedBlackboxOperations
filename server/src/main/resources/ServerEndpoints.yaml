@@ -109,26 +109,23 @@ paths:
   ########################
   # Coordinate Endpoints #
   ########################
-  /coordinate/mark:
+  /coordinate/label:
     post:
-      operationId: "markServer"
-      description: Allows a user to mark the Server with a label
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                serverLabel:
-                  type: string
+      operationId: "setLabel"
+      description: Allows a user to label a Server with a string
+      parameters:
+        - in: query
+          name: label
+          schema:
+            type: string
+          required: true
       responses:
         '202':
           description: Successfully labeled the Server
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ServerStatus"
+                $ref: "#/components/schemas/ServerLabel"
         '504':
           description: Timed out trying to label the Server
           content:
@@ -156,7 +153,30 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  # TODO: Set State Server
+  /coordinate/status:
+    post:
+      operationId: "setStatus"
+      description: Allows a user to mark the Server to set it to a specific status
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [available, unreachable, down]
+          required: true
+      responses:
+        '202':
+          description: Successfully marked Server with specific state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerStatus"
+        '504':
+          description: Timed out trying to mark the Server
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
 components:
   schemas:
@@ -184,10 +204,13 @@ components:
           type: integer
         error:
           type: string
+    ServerLabel:
+      type: object
+      properties:
+        label:
+          type: string
     ServerStatus:
       type: object
       properties:
-        serverID:
-          type: string
-        serverLabel:
+        status:
           type: string

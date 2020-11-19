@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractHandlerTest {
     public static final String CLIENT_URI = "/client";
+    public static final String COORDINATOR_URI = "/coordinate";
 
     Server server;
     HttpServer api;
