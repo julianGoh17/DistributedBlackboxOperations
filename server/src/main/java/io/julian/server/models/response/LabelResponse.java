@@ -1,4 +1,4 @@
-package io.julian.server.models;
+package io.julian.server.models.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.json.JsonObject;

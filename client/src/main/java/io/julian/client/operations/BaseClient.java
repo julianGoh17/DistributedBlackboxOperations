@@ -1,9 +1,9 @@
 package io.julian.client.operations;
 
 import io.julian.client.exception.ClientException;
-import io.julian.client.model.MessageIdResponse;
+import io.julian.client.model.responses.MessageIdResponse;
 import io.julian.client.model.MessageWrapper;
-import io.julian.client.model.GetMessageResponse;
+import io.julian.client.model.responses.GetMessageResponse;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;

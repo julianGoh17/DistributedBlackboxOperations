@@ -1,4 +1,4 @@
-package io.julian.server.models;
+package io.julian.server.models.response;
 
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;

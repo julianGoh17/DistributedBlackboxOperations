@@ -1,7 +1,7 @@
 package io.julian.server.endpoints;
 
 import io.julian.server.components.Controller;
-import io.julian.server.models.SetStatusResponse;
+import io.julian.server.models.response.SetStatusResponse;
 import io.julian.server.models.ServerStatus;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.ext.web.RoutingContext;

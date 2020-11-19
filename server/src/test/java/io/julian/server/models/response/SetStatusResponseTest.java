@@ -1,5 +1,6 @@
-package io.julian.server.models;
+package io.julian.server.models.response;
 
+import io.julian.server.models.ServerStatus;
 import io.vertx.core.json.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;

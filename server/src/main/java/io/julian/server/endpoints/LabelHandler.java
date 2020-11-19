@@ -1,7 +1,7 @@
 package io.julian.server.endpoints;
 
 import io.julian.server.components.Controller;
-import io.julian.server.models.LabelResponse;
+import io.julian.server.models.response.LabelResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.logging.log4j.LogManager;

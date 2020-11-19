@@ -1,7 +1,7 @@
 package model;
 
-import io.julian.client.model.GetMessageResponse;
-import io.julian.server.models.MessageIDResponse;
+import io.julian.client.model.responses.GetMessageResponse;
+import io.julian.server.models.response.MessageIDResponse;
 import io.vertx.core.json.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;

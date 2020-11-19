@@ -1,6 +1,6 @@
 package io.julian.client.metrics;
 
-import io.julian.client.model.MismatchedResponse;
+import io.julian.client.model.responses.MismatchedResponse;
 import io.julian.client.model.RequestMethod;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;

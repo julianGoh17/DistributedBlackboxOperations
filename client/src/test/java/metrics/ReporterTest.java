@@ -3,7 +3,7 @@ package metrics;
 import io.julian.client.exception.ClientException;
 import io.julian.client.metrics.GeneralMetrics;
 import io.julian.client.metrics.Reporter;
-import io.julian.client.model.MismatchedResponse;
+import io.julian.client.model.responses.MismatchedResponse;
 import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Action;
 import io.julian.client.model.operation.Expected;

@@ -4,7 +4,7 @@ import io.julian.server.components.MessageStore;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import io.julian.server.models.MessageIDResponse;
+import io.julian.server.models.response.MessageIDResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

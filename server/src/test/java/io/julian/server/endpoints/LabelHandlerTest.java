@@ -1,8 +1,8 @@
 package io.julian.server.endpoints;
 
 import io.julian.server.components.Configuration;
-import io.julian.server.models.ErrorResponse;
-import io.julian.server.models.LabelResponse;
+import io.julian.server.models.response.ErrorResponse;
+import io.julian.server.models.response.LabelResponse;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
 import org.junit.Test;
