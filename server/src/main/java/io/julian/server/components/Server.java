@@ -1,5 +1,6 @@
 package io.julian.server.components;
 
+import io.julian.server.endpoints.CoordinationMessageHandler;
 import io.julian.server.endpoints.ErrorHandler;
 import io.julian.server.endpoints.GetMessageHandler;
 import io.julian.server.endpoints.LabelHandler;
@@ -18,7 +19,7 @@ public class Server {
     private static final Logger log = LogManager.getLogger(Server.class);
     private OpenAPI3RouterFactory routerFactory;
     private final MessageStore messages;
-    private final static String[] OPERATION_IDS = new String[]{"postMessage", "getMessage", "putMessage", "setStatus", "setLabel"};
+    private final static String[] OPERATION_IDS = new String[]{"postMessage", "getMessage", "putMessage", "setStatus", "setLabel", "sendCoordinationMessage"};
     private final Controller controller = new Controller();
 
     public Server() {
@@ -50,12 +51,14 @@ public class Server {
         GetMessageHandler getMessageHandler = new GetMessageHandler();
         PutMessageHandler putMessageHandler = new PutMessageHandler();
         SetStatusHandler setStatusHandler = new SetStatusHandler();
+        CoordinationMessageHandler coordinationMessageHandler = new CoordinationMessageHandler();
         LabelHandler labelHandler = new LabelHandler();
         routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.handle(routingContext, messages));
         routerFactory.addHandlerByOperationId("getMessage", routingContext -> getMessageHandler.handle(routingContext, messages));
         routerFactory.addHandlerByOperationId("putMessage", routingContext -> putMessageHandler.handle(routingContext, messages));
         routerFactory.addHandlerByOperationId("setStatus", routingContext -> setStatusHandler.handle(routingContext, controller));
         routerFactory.addHandlerByOperationId("setLabel", routingContext -> labelHandler.handle(routingContext, controller));
+        routerFactory.addHandlerByOperationId("sendCoordinationMessage", routingContext -> coordinationMessageHandler.handle(routingContext, controller));
         addFailureHandlers();
         log.traceExit();
     }

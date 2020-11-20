@@ -14,11 +14,11 @@ import java.util.Optional;
 
 @Getter
 @Setter
-public class CoordinationResponse<T extends AbstractCoordinationUserDefinition> {
-    private static final Logger log = LogManager.getLogger(CoordinationResponse.class.getName());
+public class CoordinationMessage {
+    private static final Logger log = LogManager.getLogger(CoordinationMessage.class.getName());
     private final CoordinationMetadata metadata;
     private final JsonObject message;
-    private final T definition;
+    private final JsonObject definition;
 
     public static final String METADATA_KEY = "metadata";
     public static final String MESSAGE_KEY = "message";
@@ -26,16 +26,16 @@ public class CoordinationResponse<T extends AbstractCoordinationUserDefinition> 
 
     public static final String DECODE_EXCEPTION_FORMAT_STRING = "Could not decode into CoordinationResponse because JSON is missing field '%s'";
 
-    public CoordinationResponse(@JsonProperty(METADATA_KEY) final CoordinationMetadata metadata,
-                                @JsonProperty(MESSAGE_KEY) final JsonObject message,
-                                @JsonProperty(DEFINITION_KEY) final T definition) {
+    public CoordinationMessage(@JsonProperty(METADATA_KEY) final CoordinationMetadata metadata,
+                               @JsonProperty(MESSAGE_KEY) final JsonObject message,
+                               @JsonProperty(DEFINITION_KEY) final JsonObject definition) {
         this.metadata = metadata;
         this.message = message;
         this.definition = definition;
     }
 
     @JsonCreator
-    public static <T extends AbstractCoordinationUserDefinition> CoordinationResponse<T> fromJson(final JsonObject jsonObject, final Class<T> mappedClass) throws DecodeException  {
+    public static CoordinationMessage fromJson(final JsonObject jsonObject) throws DecodeException  {
         log.traceEntry(() -> jsonObject);
         Optional<CoordinationMetadata> metadata = Optional.ofNullable(jsonObject.getJsonObject(METADATA_KEY))
             .map(metadataJson -> metadataJson.mapTo(CoordinationMetadata.class));
@@ -47,12 +47,11 @@ public class CoordinationResponse<T extends AbstractCoordinationUserDefinition> 
         if (message.isEmpty()) {
             throw new DecodeException(String.format(DECODE_EXCEPTION_FORMAT_STRING, MESSAGE_KEY));
         }
-        Optional<T> userDefinition = Optional.ofNullable(jsonObject.getJsonObject(DEFINITION_KEY))
-            .map(definitionJson -> definitionJson.mapTo(mappedClass));
+        Optional<JsonObject> userDefinition = Optional.ofNullable(jsonObject.getJsonObject(DEFINITION_KEY));
         if (userDefinition.isEmpty()) {
             throw new DecodeException(String.format(DECODE_EXCEPTION_FORMAT_STRING, DEFINITION_KEY));
         }
-        return log.traceExit(new CoordinationResponse<T>(metadata.get(), message.get(), userDefinition.get()));
+        return log.traceExit(new CoordinationMessage(metadata.get(), message.get(), userDefinition.get()));
     }
 
     @JsonValue
@@ -61,6 +60,6 @@ public class CoordinationResponse<T extends AbstractCoordinationUserDefinition> 
         return log.traceExit(new JsonObject()
             .put(METADATA_KEY, metadata.toJson())
             .put(MESSAGE_KEY, message)
-            .put(DEFINITION_KEY, definition.toJson()));
+            .put(DEFINITION_KEY, definition));
     }
 }

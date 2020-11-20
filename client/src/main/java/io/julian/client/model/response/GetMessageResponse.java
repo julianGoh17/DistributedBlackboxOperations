@@ -1,4 +1,4 @@
-package io.julian.client.model.responses;
+package io.julian.client.model.response;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;

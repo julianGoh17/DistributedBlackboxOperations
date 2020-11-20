@@ -1,4 +1,4 @@
-package io.julian.client.model.responses;
+package io.julian.client.model.response;
 
 import io.julian.client.exception.ClientException;
 import io.julian.client.model.RequestMethod;

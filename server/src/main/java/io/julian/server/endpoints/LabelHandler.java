@@ -14,6 +14,7 @@ public class LabelHandler {
 
     public void handle(final RoutingContext context, final Controller controller) {
         log.traceEntry(() -> context, () -> controller);
+        // Should never get into orElse as OpenAPI validation requires label query string
         final String label = Optional.ofNullable(context.queryParam("label"))
             .map(params -> params.get(0))
             .orElse("");

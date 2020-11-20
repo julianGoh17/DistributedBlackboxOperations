@@ -1,7 +1,7 @@
 package operations;
 
 import io.julian.client.exception.ClientException;
-import io.julian.client.model.responses.MismatchedResponse;
+import io.julian.client.model.response.MismatchedResponse;
 import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Operation;
 import io.julian.client.operations.Coordinator;

@@ -142,7 +142,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
+              $ref: "#/components/schemas/CoordinationMessage"
       responses:
         '200':
           description: Successfully sent coordination message
@@ -214,3 +214,17 @@ components:
       properties:
         status:
           type: string
+    CoordinationMessage:
+      type: object
+      properties:
+        metadata:
+          type: object
+          properties:
+            fromServerId:
+              type: string
+            timestamp:
+              type: string
+        message:
+          type: object
+        definition:
+          type: object
