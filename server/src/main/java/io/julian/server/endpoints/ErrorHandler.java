@@ -2,7 +2,7 @@ package io.julian.server.endpoints;
 
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.ext.web.RoutingContext;
-import io.julian.server.models.ErrorResponse;
+import io.julian.server.models.response.ErrorResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 

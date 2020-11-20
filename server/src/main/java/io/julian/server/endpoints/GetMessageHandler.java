@@ -1,7 +1,7 @@
 package io.julian.server.endpoints;
 
 import io.julian.server.components.MessageStore;
-import io.julian.server.models.MessageResponse;
+import io.julian.server.models.response.MessageResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.logging.log4j.LogManager;

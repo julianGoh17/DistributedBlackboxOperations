@@ -2,9 +2,9 @@ package io.julian.server.endpoints;
 
 import io.julian.server.components.Configuration;
 import io.julian.server.components.Server;
-import io.julian.server.models.ErrorResponse;
-import io.julian.server.models.MessageIDResponse;
-import io.julian.server.models.MessageResponse;
+import io.julian.server.models.response.ErrorResponse;
+import io.julian.server.models.response.MessageIDResponse;
+import io.julian.server.models.response.MessageResponse;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractHandlerTest {
     public static final String CLIENT_URI = "/client";
+    public static final String COORDINATOR_URI = "/coordinate";
 
     Server server;
     HttpServer api;
