@@ -13,20 +13,24 @@ import java.time.LocalDateTime;
 public class DistributedAlgorithmTest {
     public static final CoordinationMessage TEST_MESSAGE = new CoordinationMessage(new CoordinationMetadata("random-id", new CoordinationTimestamp(LocalDateTime.now())), new JsonObject(), new JsonObject());
 
-    public static class ExampleAlgorithm implements DistributedAlgorithm {
+    public static class ExampleAlgorithm extends DistributedAlgorithm {
+        public ExampleAlgorithm(final Controller controller) {
+            super(controller);
+        }
+
         @Override
-        public void consumeMessage(final Controller controller) {
-            controller.addToQueue(TEST_MESSAGE);
+        public void consumeMessage() {
+            getController().addToQueue(TEST_MESSAGE);
         }
     }
 
     @Test
     public void TestExampleAlgorithmCanUseRunMethod() {
         Controller controller = new Controller();
-        ExampleAlgorithm algorithm = new ExampleAlgorithm();
+        ExampleAlgorithm algorithm = new ExampleAlgorithm(controller);
         int messages = 5;
         for (int i = 0; i < messages; i++) {
-            algorithm.consumeMessage(controller);
+            algorithm.consumeMessage();
         }
 
         Assert.assertEquals(messages, controller.getNumberOfCoordinationMessages());

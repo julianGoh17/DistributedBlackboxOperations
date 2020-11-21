@@ -1,11 +1,27 @@
 package io.julian.server.api;
 
 import io.julian.server.components.Controller;
+import io.julian.server.models.coordination.CoordinationMessage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-public interface DistributedAlgorithm {
-    default void run(final Controller controller) {
-        consumeMessage(controller);
+public abstract class DistributedAlgorithm {
+    private static final Logger log = LogManager.getLogger(DistributedAlgorithm.class.getName());
+    private final Controller controller;
+
+    public DistributedAlgorithm(final Controller controller) {
+        this.controller = controller;
     }
 
-    void consumeMessage(final Controller controller);
+    public abstract void consumeMessage();
+
+    public CoordinationMessage getCoordinationMessage() {
+        log.traceEntry();
+        return log.traceExit(controller.getCoordinationMessage());
+    }
+
+    public Controller getController() {
+        log.traceEntry();
+        return log.traceExit(controller);
+    }
 }

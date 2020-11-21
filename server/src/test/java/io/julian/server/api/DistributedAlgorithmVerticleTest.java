@@ -54,12 +54,11 @@ public class DistributedAlgorithmVerticleTest {
 
     private void setUpTest(final TestContext context) {
         controller = new Controller();
-        DistributedAlgorithmTest.ExampleAlgorithm algorithm = new DistributedAlgorithmTest.ExampleAlgorithm();
-        verticle = new DistributedAlgorithmVerticle(algorithm, controller);
+        DistributedAlgorithmTest.ExampleAlgorithm algorithm = new DistributedAlgorithmTest.ExampleAlgorithm(controller);
+        verticle = new DistributedAlgorithmVerticle(algorithm);
 
         Async async = context.async();
         vertx.deployVerticle(verticle, context.asyncAssertSuccess(res -> {
-            System.out.println(res);
             deploymentID.set(res);
             async.complete();
         }));

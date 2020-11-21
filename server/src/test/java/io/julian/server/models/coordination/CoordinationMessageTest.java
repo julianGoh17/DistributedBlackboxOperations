@@ -18,6 +18,8 @@ public class CoordinationMessageTest {
         }
     }
 
+    public static class WrongUserDefinition { }
+
     private static final JsonObject MESSAGE = new JsonObject().put("test", "message");
     private static final String USER = "test-user";
     public static final JsonObject JSON = new JsonObject()
@@ -39,6 +41,34 @@ public class CoordinationMessageTest {
         Assert.assertEquals(MESSAGE, response.getMessage());
         TestUserDefinition definition = response.getDefinition().mapTo(TestUserDefinition.class);
         Assert.assertEquals(USER, definition.getUser());
+    }
+
+    @Test
+    public void TestCoordinationResponseCanGetAndMapUserDefinition() {
+        CoordinationMessage response = CoordinationMessage.fromJson(JSON);
+
+        Assert.assertNotNull(response.getMetadata());
+        Assert.assertNotNull(response.getDefinition());
+        Assert.assertNotNull(response.getMessage());
+
+        TestUserDefinition definition = response.getAndCastDefinition(TestUserDefinition.class);
+        Assert.assertEquals(USER, definition.getUser());
+    }
+
+    @Test
+    public void TestCoordinationResponseGetAndMapUserDefinitionThrowDecodeException() {
+        CoordinationMessage response = CoordinationMessage.fromJson(JSON);
+
+        Assert.assertNotNull(response.getMetadata());
+        Assert.assertNotNull(response.getDefinition());
+        Assert.assertNotNull(response.getMessage());
+
+        try {
+            response.getAndCastDefinition(WrongUserDefinition.class);
+            Assert.fail();
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("Unrecognized field \"user\""));
+        }
     }
 
     @Test

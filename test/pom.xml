@@ -9,15 +9,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>server</artifactId>
-    <packaging>jar</packaging>
+    <artifactId>test</artifactId>
 
     <dependencies>
-        <!-- Vertx Dependencies -->
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-web-api-contract</artifactId>
-        </dependency>
+        <!-- Vertx -->
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
@@ -27,27 +22,11 @@
             <artifactId>vertx-unit</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>io.vertx</groupId>
-            <artifactId>vertx-web-client</artifactId>
-        </dependency>
 
-        <!--   Logging     -->
+        <!-- Internal Packages -->
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
+            <groupId>io.julian</groupId>
+            <artifactId>server</artifactId>
         </dependency>
 
         <!-- Unit Testing -->
@@ -59,11 +38,6 @@
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
         </dependency>
     </dependencies>
 
@@ -90,7 +64,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>io.julian.server.io.julian.Main</mainClass>
+                            <mainClass>io.julian.server.Main</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
@@ -100,5 +74,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>
