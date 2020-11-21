@@ -13,6 +13,8 @@ public class CoordinationMessageHandler {
         log.traceEntry(() -> context, () -> controller);
         controller.addToQueue(CoordinationMessage.fromJson(context.getBodyAsJson()));
 
+        // TODO: need to add vertx.send message to the Distributed algorith verticle
+
         context.response()
             .setStatusCode(200)
             .end();
