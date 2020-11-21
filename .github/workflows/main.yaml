@@ -19,6 +19,7 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
+      # need to build so that test module has the target directory to use the JAR from
       - name: Validate and Build
         run: mvn -B package --file pom.xml -DskipTests
       - name: Run Unit Tests
