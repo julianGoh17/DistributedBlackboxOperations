@@ -1,5 +1,7 @@
 package io.julian.server.components;
 
+import io.julian.server.api.DistributedAlgorithm;
+import io.julian.server.api.DistributedAlgorithmVerticle;
 import io.julian.server.endpoints.CoordinationMessageHandler;
 import io.julian.server.endpoints.ErrorHandler;
 import io.julian.server.endpoints.GetMessageHandler;
@@ -7,6 +9,9 @@ import io.julian.server.endpoints.LabelHandler;
 import io.julian.server.endpoints.SetStatusHandler;
 import io.julian.server.endpoints.PostMessageHandler;
 import io.julian.server.endpoints.PutMessageHandler;
+import io.julian.server.models.DistributedAlgorithmSettings;
+import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
@@ -27,13 +32,13 @@ public class Server {
     }
 
     public Promise<Boolean> startServer(final Vertx vertx, final String specLocation) {
-        log.traceEntry(() -> vertx);
+        log.traceEntry(() -> vertx, () -> specLocation);
         Promise<Boolean> hasDeployed = Promise.promise();
         OpenAPI3RouterFactory.create(vertx, specLocation, ar -> {
             if (ar.succeeded()) {
                 log.info("Successfully created server");
                 routerFactory = ar.result();
-                addHandlers();
+                addHandlers(vertx);
                 hasDeployed.complete(true);
             } else {
                 Throwable exception = ar.cause();
@@ -44,8 +49,8 @@ public class Server {
         return hasDeployed;
     }
 
-    public void addHandlers() {
-        log.traceEntry();
+    public void addHandlers(final Vertx vertx) {
+        log.traceEntry(() -> vertx);
         log.info("Adding handlers");
         PostMessageHandler postMessageHandler = new PostMessageHandler();
         GetMessageHandler getMessageHandler = new GetMessageHandler();
@@ -58,7 +63,7 @@ public class Server {
         routerFactory.addHandlerByOperationId("putMessage", routingContext -> putMessageHandler.handle(routingContext, messages));
         routerFactory.addHandlerByOperationId("setStatus", routingContext -> setStatusHandler.handle(routingContext, controller));
         routerFactory.addHandlerByOperationId("setLabel", routingContext -> labelHandler.handle(routingContext, controller));
-        routerFactory.addHandlerByOperationId("sendCoordinationMessage", routingContext -> coordinationMessageHandler.handle(routingContext, controller));
+        routerFactory.addHandlerByOperationId("sendCoordinationMessage", routingContext -> coordinationMessageHandler.handle(routingContext, controller, vertx));
         addFailureHandlers();
         log.traceExit();
     }
@@ -71,5 +76,38 @@ public class Server {
             routerFactory.addFailureHandlerByOperationId(operationId, errorHandler::handle);
         }
         log.traceExit();
+    }
+
+    public <T extends DistributedAlgorithm> Future<String> deployDistributedAlgorithmVerticle(final Controller controller, final Vertx vertx, final DistributedAlgorithmSettings settings) {
+        log.traceEntry(() -> controller, () -> vertx);
+        if (!settings.isJarFilePathEnvInstantiated() || !settings.isPackageNameEnvInstantiated()) {
+            String skipLog = String.format("Skipping loading distributed algorithm because environmental variable '%s' or '%s' not instantiated", Configuration.JAR_FILE_PATH_ENV, Configuration.PACKAGE_NAME_ENV);
+            log.info(skipLog);
+            return Future.succeededFuture(skipLog);
+        }
+
+        log.info("Loading distributed algorithm");
+        ClassLoader loader = new ClassLoader();
+        try {
+            T algorithm = loader.loadJar(settings.getJarPath(), settings.getPackageName(), controller);
+            DistributedAlgorithmVerticle verticle = new DistributedAlgorithmVerticle(algorithm);
+            return deployHelper(verticle, vertx);
+        } catch (Exception e) {
+            log.error(e);
+            return Future.failedFuture(e);
+        }
+    }
+
+    private <T extends AbstractVerticle> Future<String> deployHelper(final T verticle, final Vertx vertx) {
+        log.traceEntry(() -> verticle, () -> verticle);
+        Promise<String> deployment = Promise.promise();
+        vertx.deployVerticle(verticle, res -> {
+            if (res.succeeded()) {
+                deployment.complete(res.result());
+            } else {
+                deployment.fail("Could not deploy");
+            }
+        });
+        return log.traceExit(deployment.future());
     }
 }

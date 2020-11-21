@@ -1,5 +1,6 @@
 package io.julian.server.components;
 
+import io.julian.server.models.DistributedAlgorithmSettings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -17,6 +18,9 @@ public class Configuration {
     public static final String SERVER_PORT_ENV = "SERVER_PORT";
     public static final int DEFAULT_SERVER_PORT = 8888;
 
+    public static final String JAR_FILE_PATH_ENV = "JAR_FILE_PATH";
+    public static final String PACKAGE_NAME_ENV = "PACKAGE_NAME";
+
     public static int getServerPort() {
         log.traceEntry();
         return log.traceExit(getOrDefault(SERVER_PORT_ENV, DEFAULT_SERVER_PORT));
@@ -32,6 +36,34 @@ public class Configuration {
         return log.traceExit(getOrDefault(OPENAPI_SPEC_LOCATION_ENV, DEFAULT_OPENAPI_SPEC_LOCATION));
     }
 
+    public static String getJarFilePath() {
+        log.traceEntry();
+        return log.traceExit(getOrDefault(JAR_FILE_PATH_ENV, ""));
+    }
+
+    public static boolean isJarFilePathEnvInstantiated() {
+        log.traceEntry();
+        return log.traceExit(isVariableInstantiated(JAR_FILE_PATH_ENV));
+    }
+
+    public static String getPackageName() {
+        log.traceEntry();
+        return log.traceExit(getOrDefault(PACKAGE_NAME_ENV, ""));
+    }
+
+    public static boolean isPackageNameEnvInstantiated() {
+        log.traceEntry();
+        return log.traceExit(isVariableInstantiated(PACKAGE_NAME_ENV));
+    }
+
+    public static DistributedAlgorithmSettings getDistributedAlgorithmSettings() {
+        log.traceEntry();
+        return log.traceExit(new DistributedAlgorithmSettings(isJarFilePathEnvInstantiated(),
+            isPackageNameEnvInstantiated(),
+            getJarFilePath(),
+            getPackageName()));
+    }
+
     public static String getOrDefault(final String key, final String defaultVal) {
         log.traceEntry(() -> key, () -> defaultVal);
         return log.traceExit(Optional.ofNullable(System.getenv(key))
@@ -45,5 +77,11 @@ public class Configuration {
         } catch (NumberFormatException e) {
             return log.traceExit(defaultVal);
         }
+    }
+
+    public static boolean isVariableInstantiated(final String key) {
+        log.traceEntry(() -> key);
+        return log.traceExit(Optional.ofNullable(System.getenv(key)))
+            .isPresent();
     }
 }
