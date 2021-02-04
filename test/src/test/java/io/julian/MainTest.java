@@ -22,12 +22,12 @@ public class MainTest {
         Main main = new Main(controller);
         int messages = 5;
         for (int i = 0; i < messages; i++) {
-            controller.addToQueue(MESSAGE);
+            controller.addToCoordinationQueue(MESSAGE);
         }
 
         for (int i = 0; i < messages; i++) {
             Assert.assertEquals(messages + i, main.getMessagesInController());
-            main.consumeMessage();
+            main.actOnCoordinateMessage();
         }
 
         Assert.assertEquals(messages, main.getAcceptedMessages());

@@ -27,11 +27,25 @@ public class TestClient {
         this.client = WebClient.create(vertx);
     }
 
-    public Future<HttpResponse<Buffer>> POST(final CoordinationMessage message) {
+    public Future<HttpResponse<Buffer>> POST_COORDINATE_MESSAGE(final CoordinationMessage message) {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
             .post(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, "/coordinate/message")
             .sendJsonObject(message.toJson(), res -> {
+                if (res.succeeded()) {
+                    response.complete(res.result());
+                } else {
+                    response.fail(res.cause());
+                }
+            });
+        return response.future();
+    }
+
+    public Future<HttpResponse<Buffer>> POST_MESSAGE(final JsonObject message) {
+        Promise<HttpResponse<Buffer>> response = Promise.promise();
+        client
+            .post(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, "/client")
+            .sendJsonObject(new JsonObject().put("message", message), res -> {
                 if (res.succeeded()) {
                     response.complete(res.result());
                 } else {

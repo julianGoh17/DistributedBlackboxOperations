@@ -58,7 +58,7 @@ public class Server {
         SetStatusHandler setStatusHandler = new SetStatusHandler();
         CoordinationMessageHandler coordinationMessageHandler = new CoordinationMessageHandler();
         LabelHandler labelHandler = new LabelHandler();
-        routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.handle(routingContext, messages));
+        routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.handle(routingContext, messages, controller, vertx));
         routerFactory.addHandlerByOperationId("getMessage", routingContext -> getMessageHandler.handle(routingContext, messages));
         routerFactory.addHandlerByOperationId("putMessage", routingContext -> putMessageHandler.handle(routingContext, messages));
         routerFactory.addHandlerByOperationId("setStatus", routingContext -> setStatusHandler.handle(routingContext, controller));

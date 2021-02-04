@@ -24,12 +24,19 @@ public class CoordinationMessage {
     public static final String MESSAGE_KEY = "message";
     public static final String DEFINITION_KEY = "definition";
 
-    public static final String DECODE_EXCEPTION_FORMAT_STRING = "Could not decode into CoordinationResponse because JSON is missing field '%s'";
+    public static final String DECODE_EXCEPTION_FORMAT_STRING =
+        "Could not decode into CoordinationResponse because JSON is missing field '%s'";
 
     public CoordinationMessage(@JsonProperty(METADATA_KEY) final CoordinationMetadata metadata,
                                @JsonProperty(MESSAGE_KEY) final JsonObject message,
                                @JsonProperty(DEFINITION_KEY) final JsonObject definition) {
         this.metadata = metadata;
+        this.message = message;
+        this.definition = definition;
+    }
+
+    public CoordinationMessage(final String id, final JsonObject message, final JsonObject definition) {
+        this.metadata = new CoordinationMetadata(id);
         this.message = message;
         this.definition = definition;
     }
