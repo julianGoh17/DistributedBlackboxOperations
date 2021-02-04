@@ -2,8 +2,6 @@ package io.julian.server.endpoints.client;
 
 import io.julian.server.components.Configuration;
 import io.julian.server.endpoints.AbstractHandlerTest;
-import io.julian.server.endpoints.gates.ProbabilisticFailureGate;
-import io.julian.server.endpoints.gates.UnreachableGate;
 import io.julian.server.models.ServerStatus;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
@@ -30,7 +28,7 @@ public class PostMessageHandlerTest extends AbstractHandlerTest {
         server.getController().setStatus(ServerStatus.UNREACHABLE);
 
         JsonObject message = createPostMessage(new JsonObject().put("test", "message"));
-        sendUnsuccessfulPOSTMessage(context, client, message, new Exception(UnreachableGate.FAILURE_MESSAGE), 500);
+        sendUnsuccessfulPOSTMessage(context, client, message, UNREACHABLE_ERROR, 500);
     }
 
     @Test
@@ -40,7 +38,7 @@ public class PostMessageHandlerTest extends AbstractHandlerTest {
         server.getController().setStatus(ServerStatus.PROBABILISTIC_FAILURE);
         server.getController().setFailureChance(1);
         JsonObject message = createPostMessage(new JsonObject().put("test", "message"));
-        sendUnsuccessfulPOSTMessage(context, client, message, new Exception(ProbabilisticFailureGate.FAILURE_MESSAGE), 500);
+        sendUnsuccessfulPOSTMessage(context, client, message, PROBABILISTIC_FAILURE_ERROR, 500);
     }
 
     @Test

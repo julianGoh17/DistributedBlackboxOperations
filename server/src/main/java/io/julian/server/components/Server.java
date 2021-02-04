@@ -66,7 +66,7 @@ public class Server {
         CoordinationMessageHandler coordinationMessageHandler = new CoordinationMessageHandler();
         LabelHandler labelHandler = new LabelHandler();
 
-        List<AbstractServerHandler> handlers = Arrays.asList(postMessageHandler);
+        List<AbstractServerHandler> handlers = Arrays.asList(postMessageHandler, putMessageHandler, getMessageHandler);
         // Gate Handlers
         ProbabilisticFailureGate probabilisticFailureGate = new ProbabilisticFailureGate();
         UnreachableGate unreachableGate = new UnreachableGate();
@@ -75,8 +75,8 @@ public class Server {
         ServerComponents components = createServerComponents(vertx);
 
         routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.runThroughHandlers(routingContext, components));
-        routerFactory.addHandlerByOperationId("getMessage", routingContext -> getMessageHandler.handle(routingContext, messages));
-        routerFactory.addHandlerByOperationId("putMessage", routingContext -> putMessageHandler.handle(routingContext, messages));
+        routerFactory.addHandlerByOperationId("getMessage", routingContext -> getMessageHandler.runThroughHandlers(routingContext, components));
+        routerFactory.addHandlerByOperationId("putMessage", routingContext -> putMessageHandler.runThroughHandlers(routingContext, components));
         routerFactory.addHandlerByOperationId("setStatus", routingContext -> setStatusHandler.handle(routingContext, controller));
         routerFactory.addHandlerByOperationId("setLabel", routingContext -> labelHandler.handle(routingContext, controller));
         routerFactory.addHandlerByOperationId("sendCoordinationMessage", routingContext -> coordinationMessageHandler.handle(routingContext, controller, vertx));

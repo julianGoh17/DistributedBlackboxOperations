@@ -40,7 +40,7 @@ public abstract class AbstractServerHandler {
         return log.traceExit(succeededThroughGates.future());
     }
 
-    protected abstract Future<String> handle(final RoutingContext context, final ServerComponents components);
+    protected abstract void handle(final RoutingContext context, final ServerComponents components);
 
     public void runThroughHandlers(final RoutingContext context, final ServerComponents components) {
         log.traceEntry();

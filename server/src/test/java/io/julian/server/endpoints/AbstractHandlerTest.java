@@ -2,6 +2,8 @@ package io.julian.server.endpoints;
 
 import io.julian.server.components.Configuration;
 import io.julian.server.components.Server;
+import io.julian.server.endpoints.gates.ProbabilisticFailureGate;
+import io.julian.server.endpoints.gates.UnreachableGate;
 import io.julian.server.models.response.ErrorResponse;
 import io.julian.server.models.response.MessageIDResponse;
 import io.julian.server.models.response.MessageResponse;
@@ -26,6 +28,9 @@ import org.junit.runner.RunWith;
 public abstract class AbstractHandlerTest {
     public static final String CLIENT_URI = "/client";
     public static final String COORDINATOR_URI = "/coordinate";
+
+    public static final Exception PROBABILISTIC_FAILURE_ERROR = new Exception(ProbabilisticFailureGate.FAILURE_MESSAGE);
+    public static final Exception UNREACHABLE_ERROR = new Exception(UnreachableGate.FAILURE_MESSAGE);
 
     public Server server;
     public HttpServer api;
@@ -65,13 +70,13 @@ public abstract class AbstractHandlerTest {
 
     protected Future<String> sendSuccessfulGETMessage(final TestContext context, final WebClient client, final String messageId, final JsonObject message) {
         Promise<String> completed = Promise.promise();
-        client
-            .get(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, messageId))
-            .send(context.asyncAssertSuccess(res -> {
+        sendGETMessage(context, client, messageId)
+            .compose(res -> {
                 context.assertEquals(res.statusCode(), 200);
                 context.assertEquals(res.bodyAsJsonObject().getJsonObject(MessageResponse.MESSAGE_KEY).encodePrettily(), message.encodePrettily());
                 completed.complete(messageId);
-            }));
+                return Future.succeededFuture();
+            });
         return completed.future();
     }
 
@@ -89,14 +94,29 @@ public abstract class AbstractHandlerTest {
 
     protected Future<String> sendSuccessfulPUTMessage(final TestContext context, final WebClient client, final String messageId, final JsonObject message) {
         Promise<String> completed = Promise.promise();
-        client
-            .put(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, messageId))
-            .sendJson(createPostMessage(message), context.asyncAssertSuccess(res -> {
+        sendPUTMessage(context, client, createPostMessage(message), messageId)
+            .compose(res -> {
                 context.assertEquals(res.statusCode(), 200);
                 context.assertEquals(res.bodyAsJsonObject().getString(MessageIDResponse.MESSAGE_ID_KEY), messageId);
                 completed.complete(messageId);
-            }));
+                return Future.succeededFuture();
+            });
         return completed.future();
+    }
+
+    protected void sendUnsuccessfulGETMessage(final TestContext context, final WebClient client,
+                                               final String messageId, final Throwable error,
+                                               final int expectedStatusCode) {
+        sendGETMessage(context, client, messageId)
+            .compose(res -> {
+                context.assertEquals(res.statusCode(), expectedStatusCode);
+                if (error != null) {
+                    context.assertEquals(res.bodyAsJsonObject(), new ErrorResponse(expectedStatusCode, error).toJson());
+                } else {
+                    context.assertNull(res.bodyAsJsonObject());
+                }
+                return Future.succeededFuture();
+            });
     }
 
     protected void sendUnsuccessfulPOSTMessage(final TestContext context, final WebClient client,
@@ -114,10 +134,42 @@ public abstract class AbstractHandlerTest {
             });
     }
 
+    protected void sendUnsuccessfulPUTMessage(final TestContext context, final WebClient client,
+                                               final JsonObject message, final String messageId, final Throwable error,
+                                               final int expectedStatusCode) {
+        sendPUTMessage(context, client, message, messageId)
+            .compose(res -> {
+                context.assertEquals(res.statusCode(), expectedStatusCode);
+                if (error != null) {
+                    context.assertEquals(res.bodyAsJsonObject(), new ErrorResponse(expectedStatusCode, error).toJson());
+                } else {
+                    context.assertNull(res.bodyAsJsonObject());
+                }
+                return Future.succeededFuture();
+            });
+    }
+
+    protected Future<HttpResponse<Buffer>> sendGETMessage(final TestContext context, final WebClient client, final String messageId) {
+        Promise<HttpResponse<Buffer>> response = Promise.promise();
+        client
+            .get(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, messageId))
+            .send(context.asyncAssertSuccess(response::complete));
+        return response.future();
+    }
+
     protected Future<HttpResponse<Buffer>> sendPOSTMessage(final TestContext context, final WebClient client, final JsonObject requestBody) {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
             .post(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, CLIENT_URI)
+            .sendJson(requestBody, context.asyncAssertSuccess(response::complete));
+        return response.future();
+    }
+
+    protected Future<HttpResponse<Buffer>> sendPUTMessage(final TestContext context, final WebClient client,
+                                                          final JsonObject requestBody, final String messageId) {
+        Promise<HttpResponse<Buffer>> response = Promise.promise();
+        client
+            .put(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, messageId))
             .sendJson(requestBody, context.asyncAssertSuccess(response::complete));
         return response.future();
     }

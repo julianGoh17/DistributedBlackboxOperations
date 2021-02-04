@@ -4,7 +4,6 @@ import io.julian.server.api.DistributedAlgorithmVerticle;
 import io.julian.server.endpoints.AbstractServerHandler;
 import io.julian.server.endpoints.ServerComponents;
 import io.julian.server.models.response.MessageIDResponse;
-import io.vertx.core.Future;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -19,7 +18,7 @@ public class PostMessageHandler extends AbstractServerHandler {
 
     public static final String MESSAGE_KEY = "message";
 
-    public Future<String> handle(final RoutingContext context, final ServerComponents components) {
+    public void handle(final RoutingContext context, final ServerComponents components) {
         log.traceEntry(() -> context, () -> components);
         log.info("Entering " + PostMessageHandler.class.getName());
         JsonObject postedMessage = context.getBodyAsJson();
@@ -44,6 +43,6 @@ public class PostMessageHandler extends AbstractServerHandler {
             DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.INITIAL_POST_MESSAGE_POSTFIX),
             "");
 
-        return log.traceExit(Future.succeededFuture());
+        log.traceExit();
     }
 }

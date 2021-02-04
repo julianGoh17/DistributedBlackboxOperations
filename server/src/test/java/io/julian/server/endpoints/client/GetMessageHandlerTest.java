@@ -2,6 +2,7 @@ package io.julian.server.endpoints.client;
 
 import io.julian.server.components.Configuration;
 import io.julian.server.endpoints.AbstractHandlerTest;
+import io.julian.server.models.ServerStatus;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
@@ -13,13 +14,8 @@ public class GetMessageHandlerTest extends AbstractHandlerTest {
         String invalidID = "does-not-exist";
         setUpApiServer(context);
         WebClient client = WebClient.create(this.vertx);
-        client
-            .get(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, invalidID))
-            .send(context.asyncAssertSuccess(res -> {
-                context.assertEquals(res.statusCode(), 404);
-                context.assertEquals(res.bodyAsJsonObject().getInteger("statusCode"), 404);
-                context.assertEquals(res.bodyAsJsonObject().getString("error"), String.format("Could not find entry for uuid '%s'", invalidID));
-            }));
+        sendUnsuccessfulGETMessage(context, client, invalidID,
+            new Exception(String.format("Could not find entry for uuid '%s'", invalidID)), 404);
     }
 
     @Test
@@ -43,5 +39,36 @@ public class GetMessageHandlerTest extends AbstractHandlerTest {
                 context.assertEquals(res.statusCode(), 405);
                 context.assertNull(res.body());
             }));
+    }
+
+    @Test
+    public void TestFailsUnreachableGateMessage(final TestContext context) {
+        setUpApiServer(context);
+        WebClient client = WebClient.create(this.vertx);
+        server.getController().setStatus(ServerStatus.UNREACHABLE);
+
+        sendUnsuccessfulGETMessage(context, client, "random", UNREACHABLE_ERROR, 500);
+    }
+
+    @Test
+    public void TestFailsProbabilisticGateMessage(final TestContext context) {
+        setUpApiServer(context);
+        WebClient client = WebClient.create(this.vertx);
+        server.getController().setStatus(ServerStatus.PROBABILISTIC_FAILURE);
+        server.getController().setFailureChance(1);
+
+        sendUnsuccessfulGETMessage(context, client, "random", PROBABILISTIC_FAILURE_ERROR, 500);
+    }
+
+    @Test
+    public void TestPassesProbabilisticGateMessage(final TestContext context) {
+        setUpApiServer(context);
+        WebClient client = WebClient.create(this.vertx);
+        server.getController().setStatus(ServerStatus.PROBABILISTIC_FAILURE);
+        server.getController().setFailureChance(0);
+
+        JsonObject message = new JsonObject().put("test", "message");
+        sendSuccessfulPOSTMessage(context, client, message)
+            .compose(messageId -> sendSuccessfulGETMessage(context, client, messageId, message));
     }
 }
