@@ -13,14 +13,16 @@ public class Controller {
     public static final Logger log = LogManager.getLogger(Controller.class);
     public static final ServerStatus DEFAULT_SERVER_STATUS = ServerStatus.AVAILABLE;
     public static final String DEFAULT_LABEL = "";
+    public static final Double MESSAGE_FAILURE_CHANCE = 0.4;
 
     private final AtomicReference<ServerStatus> status = new AtomicReference<>(DEFAULT_SERVER_STATUS);
     private final AtomicReference<String> label = new AtomicReference<>(DEFAULT_LABEL);
     private final ConcurrentLinkedQueue<CoordinationMessage> coordinationMessages = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<JsonObject> initialPostMessages = new ConcurrentLinkedQueue<>();
+    private final AtomicReference<Double> failureChance = new AtomicReference<>(MESSAGE_FAILURE_CHANCE);
 
     public void setStatus(final ServerStatus newStatus) {
-        log.traceEntry(() -> status);
+        log.traceEntry(() -> newStatus);
         this.status.set(newStatus);
         log.traceExit();
     }
@@ -72,5 +74,16 @@ public class Controller {
     public JsonObject getInitialPostMessage() {
         log.traceEntry();
         return log.traceExit(initialPostMessages.poll());
+    }
+
+    public Double getFailureChance() {
+        log.traceEntry();
+        return log.traceExit(failureChance.get());
+    }
+
+    public void setFailureChance(final double failureChance) {
+        log.traceEntry(() -> failureChance);
+        this.failureChance.set(failureChance);
+        log.traceExit();
     }
 }

@@ -2,13 +2,17 @@ package io.julian.server.components;
 
 import io.julian.server.api.DistributedAlgorithm;
 import io.julian.server.api.DistributedAlgorithmVerticle;
-import io.julian.server.endpoints.coordination.CoordinationMessageHandler;
+import io.julian.server.endpoints.AbstractServerHandler;
 import io.julian.server.endpoints.ErrorHandler;
+import io.julian.server.endpoints.ServerComponents;
 import io.julian.server.endpoints.client.GetMessageHandler;
-import io.julian.server.endpoints.coordination.LabelHandler;
-import io.julian.server.endpoints.coordination.SetStatusHandler;
 import io.julian.server.endpoints.client.PostMessageHandler;
 import io.julian.server.endpoints.client.PutMessageHandler;
+import io.julian.server.endpoints.coordination.CoordinationMessageHandler;
+import io.julian.server.endpoints.coordination.LabelHandler;
+import io.julian.server.endpoints.coordination.SetStatusHandler;
+import io.julian.server.endpoints.gates.ProbabilisticFailureGate;
+import io.julian.server.endpoints.gates.UnreachableGate;
 import io.julian.server.models.DistributedAlgorithmSettings;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -18,6 +22,9 @@ import io.vertx.ext.web.api.contract.openapi3.OpenAPI3RouterFactory;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Getter
 public class Server {
@@ -58,7 +65,16 @@ public class Server {
         SetStatusHandler setStatusHandler = new SetStatusHandler();
         CoordinationMessageHandler coordinationMessageHandler = new CoordinationMessageHandler();
         LabelHandler labelHandler = new LabelHandler();
-        routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.handle(routingContext, messages, controller, vertx));
+
+        List<AbstractServerHandler> handlers = Arrays.asList(postMessageHandler);
+        // Gate Handlers
+        ProbabilisticFailureGate probabilisticFailureGate = new ProbabilisticFailureGate();
+        UnreachableGate unreachableGate = new UnreachableGate();
+        registerGates(handlers, probabilisticFailureGate, unreachableGate);
+
+        ServerComponents components = createServerComponents(vertx);
+
+        routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.runThroughHandlers(routingContext, components));
         routerFactory.addHandlerByOperationId("getMessage", routingContext -> getMessageHandler.handle(routingContext, messages));
         routerFactory.addHandlerByOperationId("putMessage", routingContext -> putMessageHandler.handle(routingContext, messages));
         routerFactory.addHandlerByOperationId("setStatus", routingContext -> setStatusHandler.handle(routingContext, controller));
@@ -109,5 +125,17 @@ public class Server {
             }
         });
         return log.traceExit(deployment.future());
+    }
+
+    // Exposed For Testing
+    public ServerComponents createServerComponents(final Vertx vertx) {
+        log.traceEntry();
+        return log.traceExit(new ServerComponents(messages, controller, vertx));
+    }
+
+    private void registerGates(final List<AbstractServerHandler> handlers,
+                               final ProbabilisticFailureGate probabilisticFailureGate,
+                               final UnreachableGate unreachableGate) {
+        handlers.forEach(handler -> handler.registerGates(probabilisticFailureGate, unreachableGate));
     }
 }

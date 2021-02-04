@@ -99,12 +99,14 @@ public abstract class AbstractHandlerTest {
         return completed.future();
     }
 
-    protected void sendUnsuccessfulPOSTMessage(final TestContext context, final WebClient client, final JsonObject message, final Throwable error) {
+    protected void sendUnsuccessfulPOSTMessage(final TestContext context, final WebClient client,
+                                               final JsonObject message, final Throwable error,
+                                               final int expectedStatusCode) {
         sendPOSTMessage(context, client, message)
             .compose(res -> {
-                context.assertEquals(res.statusCode(), 400);
+                context.assertEquals(res.statusCode(), expectedStatusCode);
                 if (error != null) {
-                    context.assertEquals(res.bodyAsJsonObject(), new ErrorResponse(400, error).toJson());
+                    context.assertEquals(res.bodyAsJsonObject(), new ErrorResponse(expectedStatusCode, error).toJson());
                 } else {
                     context.assertNull(res.bodyAsJsonObject());
                 }
