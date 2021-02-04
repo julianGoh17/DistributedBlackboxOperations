@@ -2,12 +2,17 @@ package io.julian.server.endpoints.coordination;
 
 import io.julian.server.components.Configuration;
 import io.julian.server.endpoints.AbstractHandlerTest;
+import io.julian.server.models.ServerStatus;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMessageTest;
 import io.julian.server.models.response.ErrorResponse;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import org.junit.Assert;
 import org.junit.Test;
@@ -22,18 +27,7 @@ public class CoordinationMessageHandlerTest extends AbstractHandlerTest {
         setUpApiServer(context);
         WebClient client = WebClient.create(this.vertx);
         CoordinationMessage message = CoordinationMessage.fromJson(CoordinationMessageTest.JSON);
-        client
-            .post(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", COORDINATOR_URI, COORDINATION_MESSAGE_ENDPOINT))
-            .sendJsonObject(message.toJson(), context.asyncAssertSuccess(res -> {
-                context.assertEquals(200, res.statusCode());
-
-                CoordinationMessage serverMessage = server.getController().getCoordinationMessage();
-                context.assertEquals(serverMessage.getDefinition(), message.getDefinition());
-                context.assertEquals(serverMessage.getMessage(), message.getMessage());
-
-                context.assertEquals(serverMessage.getMetadata().getFromServerId(), message.getMetadata().getFromServerId());
-                context.assertEquals(serverMessage.getMetadata().getTimestamp().toLocalDateTime(), message.getMetadata().getTimestamp().toLocalDateTime());
-            }));
+        sendSuccessfulCoordinateMessage(context, client, message);
     }
 
     @Test
@@ -43,13 +37,10 @@ public class CoordinationMessageHandlerTest extends AbstractHandlerTest {
 
         JsonObject missingMetadata = CoordinationMessageTest.JSON.copy();
         missingMetadata.remove(CoordinationMessage.METADATA_KEY);
-        client
-            .post(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", COORDINATOR_URI, COORDINATION_MESSAGE_ENDPOINT))
-            .sendJsonObject(missingMetadata, context.asyncAssertSuccess(res -> {
-                context.assertEquals(500, res.statusCode());
-                Assert.assertEquals(new ErrorResponse(500, new Exception(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.METADATA_KEY))).toJson().encodePrettily(), res.bodyAsString());
-                Assert.assertEquals(0, server.getController().getNumberOfCoordinationMessages());
-            }));
+
+        sendUnsuccessfulCoordinateMessage(context, client, missingMetadata,
+            new Exception(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.METADATA_KEY))
+        );
     }
 
     @Test
@@ -59,13 +50,10 @@ public class CoordinationMessageHandlerTest extends AbstractHandlerTest {
 
         JsonObject missingMessage = CoordinationMessageTest.JSON.copy();
         missingMessage.remove(CoordinationMessage.MESSAGE_KEY);
-        client
-            .post(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", COORDINATOR_URI, COORDINATION_MESSAGE_ENDPOINT))
-            .sendJsonObject(missingMessage, context.asyncAssertSuccess(res -> {
-                context.assertEquals(500, res.statusCode());
-                Assert.assertEquals(new ErrorResponse(500, new Exception(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.MESSAGE_KEY))).toJson().encodePrettily(), res.bodyAsString());
-                Assert.assertEquals(0, server.getController().getNumberOfCoordinationMessages());
-            }));
+
+        sendUnsuccessfulCoordinateMessage(context, client, missingMessage,
+            new Exception(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.MESSAGE_KEY))
+        );
     }
 
     @Test
@@ -75,12 +63,71 @@ public class CoordinationMessageHandlerTest extends AbstractHandlerTest {
 
         JsonObject missingDefinition = CoordinationMessageTest.JSON.copy();
         missingDefinition.remove(CoordinationMessage.DEFINITION_KEY);
+        sendUnsuccessfulCoordinateMessage(context, client, missingDefinition,
+            new Exception(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.DEFINITION_KEY))
+        );
+    }
+
+    @Test
+    public void TestFailsUnreachableGateMessage(final TestContext context) {
+        setUpApiServer(context);
+        WebClient client = WebClient.create(this.vertx);
+        server.getController().setStatus(ServerStatus.UNREACHABLE);
+
+        sendUnsuccessfulCoordinateMessage(context, client, CoordinationMessageTest.JSON, UNREACHABLE_ERROR);
+    }
+
+    @Test
+    public void TestFailsProbabilisticGateMessage(final TestContext context) {
+        setUpApiServer(context);
+        WebClient client = WebClient.create(this.vertx);
+        server.getController().setStatus(ServerStatus.PROBABILISTIC_FAILURE);
+        server.getController().setFailureChance(1);
+        sendUnsuccessfulCoordinateMessage(context, client, CoordinationMessageTest.JSON, PROBABILISTIC_FAILURE_ERROR);
+    }
+
+    @Test
+    public void TestPassesProbabilisticGateMessage(final TestContext context) {
+        setUpApiServer(context);
+        WebClient client = WebClient.create(this.vertx);
+        server.getController().setStatus(ServerStatus.PROBABILISTIC_FAILURE);
+        server.getController().setFailureChance(0);
+        sendSuccessfulCoordinateMessage(context, client, CoordinationMessage.fromJson(CoordinationMessageTest.JSON));
+    }
+
+    private void sendSuccessfulCoordinateMessage(final TestContext context, final WebClient client, final CoordinationMessage message) {
+        sendCoordinateMessage(context, client, message.toJson())
+            .compose(res -> {
+                context.assertEquals(200, res.statusCode());
+
+                CoordinationMessage serverMessage = server.getController().getCoordinationMessage();
+                context.assertEquals(serverMessage.getDefinition(), message.getDefinition());
+                context.assertEquals(serverMessage.getMessage(), message.getMessage());
+
+                context.assertEquals(serverMessage.getMetadata().getFromServerId(), message.getMetadata().getFromServerId());
+                context.assertEquals(serverMessage.getMetadata().getTimestamp().toLocalDateTime(), message.getMetadata().getTimestamp().toLocalDateTime());
+                return Future.succeededFuture();
+            });
+    }
+
+    private void sendUnsuccessfulCoordinateMessage(final TestContext context, final WebClient client, final JsonObject message,
+                                                   final Exception error) {
+        sendCoordinateMessage(context, client, message)
+            .compose(res -> {
+                context.assertEquals(500, res.statusCode());
+                context.assertEquals(res.bodyAsJsonObject(), new ErrorResponse(500, error).toJson());
+                Assert.assertEquals(0, server.getController().getNumberOfCoordinationMessages());
+                return Future.succeededFuture();
+            });
+    }
+
+    private Future<HttpResponse<Buffer>> sendCoordinateMessage(final TestContext context, final WebClient client, final JsonObject message) {
+        Promise<HttpResponse<Buffer>> response = Promise.promise();
+
         client
             .post(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", COORDINATOR_URI, COORDINATION_MESSAGE_ENDPOINT))
-            .sendJsonObject(missingDefinition, context.asyncAssertSuccess(res -> {
-                context.assertEquals(500, res.statusCode());
-                Assert.assertEquals(new ErrorResponse(500, new Exception(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.DEFINITION_KEY))).toJson().encodePrettily(), res.bodyAsString());
-                Assert.assertEquals(0, server.getController().getNumberOfCoordinationMessages());
-            }));
+            .sendJsonObject(message, context.asyncAssertSuccess(response::complete));
+
+        return response.future();
     }
 }

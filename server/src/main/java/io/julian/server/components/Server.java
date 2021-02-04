@@ -59,14 +59,18 @@ public class Server {
     public void addHandlers(final Vertx vertx) {
         log.traceEntry(() -> vertx);
         log.info("Adding handlers");
+        // Client Endpoints
         PostMessageHandler postMessageHandler = new PostMessageHandler();
         GetMessageHandler getMessageHandler = new GetMessageHandler();
         PutMessageHandler putMessageHandler = new PutMessageHandler();
-        SetStatusHandler setStatusHandler = new SetStatusHandler();
+
+        // Coordination Endpoints
         CoordinationMessageHandler coordinationMessageHandler = new CoordinationMessageHandler();
+        SetStatusHandler setStatusHandler = new SetStatusHandler();
         LabelHandler labelHandler = new LabelHandler();
 
-        List<AbstractServerHandler> handlers = Arrays.asList(postMessageHandler, putMessageHandler, getMessageHandler);
+        List<AbstractServerHandler> handlers = Arrays.asList(postMessageHandler, putMessageHandler, getMessageHandler,
+            coordinationMessageHandler, labelHandler);
         // Gate Handlers
         ProbabilisticFailureGate probabilisticFailureGate = new ProbabilisticFailureGate();
         UnreachableGate unreachableGate = new UnreachableGate();
@@ -77,9 +81,11 @@ public class Server {
         routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.runThroughHandlers(routingContext, components));
         routerFactory.addHandlerByOperationId("getMessage", routingContext -> getMessageHandler.runThroughHandlers(routingContext, components));
         routerFactory.addHandlerByOperationId("putMessage", routingContext -> putMessageHandler.runThroughHandlers(routingContext, components));
+        routerFactory.addHandlerByOperationId("setLabel", routingContext -> labelHandler.runThroughHandlers(routingContext, components));
+        routerFactory.addHandlerByOperationId("sendCoordinationMessage",
+            routingContext -> coordinationMessageHandler.runThroughHandlers(routingContext, components));
+
         routerFactory.addHandlerByOperationId("setStatus", routingContext -> setStatusHandler.handle(routingContext, controller));
-        routerFactory.addHandlerByOperationId("setLabel", routingContext -> labelHandler.handle(routingContext, controller));
-        routerFactory.addHandlerByOperationId("sendCoordinationMessage", routingContext -> coordinationMessageHandler.handle(routingContext, controller, vertx));
         addFailureHandlers();
         log.traceExit();
     }
