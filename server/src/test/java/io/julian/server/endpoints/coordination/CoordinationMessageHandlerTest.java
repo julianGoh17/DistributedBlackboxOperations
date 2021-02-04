@@ -1,6 +1,7 @@
-package io.julian.server.endpoints;
+package io.julian.server.endpoints.coordination;
 
 import io.julian.server.components.Configuration;
+import io.julian.server.endpoints.AbstractHandlerTest;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMessageTest;
 import io.julian.server.models.response.ErrorResponse;

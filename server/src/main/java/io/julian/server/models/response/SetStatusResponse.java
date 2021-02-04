@@ -1,7 +1,7 @@
 package io.julian.server.models.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.julian.server.endpoints.SetStatusHandler;
+import io.julian.server.endpoints.coordination.SetStatusHandler;
 import io.julian.server.models.ServerStatus;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;

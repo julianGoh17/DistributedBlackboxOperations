@@ -1,4 +1,4 @@
-package io.julian.server.endpoints;
+package io.julian.server.endpoints.coordination;
 
 import io.julian.server.api.DistributedAlgorithmVerticle;
 import io.julian.server.components.Controller;
@@ -13,9 +13,10 @@ public class CoordinationMessageHandler {
 
     public void handle(final RoutingContext context, final Controller controller, final Vertx vertx) {
         log.traceEntry(() -> context, () -> controller, () -> vertx);
-        controller.addToQueue(CoordinationMessage.fromJson(context.getBodyAsJson()));
+        controller.addToCoordinationQueue(CoordinationMessage.fromJson(context.getBodyAsJson()));
 
-        vertx.eventBus().send(DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.CONSUME_MESSAGE_POSTFIX), "random-message");
+        vertx.eventBus().send(
+            DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.COORDINATE_MESSAGE_POSTFIX), "");
 
         context.response()
             .setStatusCode(200)

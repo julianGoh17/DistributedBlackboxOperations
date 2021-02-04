@@ -13,12 +13,15 @@ public class Main extends DistributedAlgorithm {
         super(controller);
     }
 
-    public void consumeMessage() {
+    public void actOnCoordinateMessage() {
         CoordinationMessage message = getController().getCoordinationMessage();
-        getController().addToQueue(message);
-        getController().addToQueue(message);
+        getController().addToCoordinationQueue(message);
+        getController().addToCoordinationQueue(message);
         acceptedMessages.getAndIncrement();
     }
+
+    @Override
+    public void actOnInitialMessage() {}
 
     public int getAcceptedMessages() {
         return acceptedMessages.get();

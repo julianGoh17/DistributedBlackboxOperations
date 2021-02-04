@@ -17,6 +17,10 @@ public class CoordinationTimestamp {
         this.time = time;
     }
 
+    public CoordinationTimestamp() {
+        this.time = LocalDateTime.now();
+    }
+
     @JsonCreator
     public static CoordinationTimestamp fromJson(final String timestamp) {
         log.traceEntry(() -> timestamp);

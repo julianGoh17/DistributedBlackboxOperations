@@ -1,6 +1,7 @@
-package io.julian.server.endpoints;
+package io.julian.server.endpoints.client;
 
 import io.julian.server.components.Configuration;
+import io.julian.server.endpoints.AbstractHandlerTest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;

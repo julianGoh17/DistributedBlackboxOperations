@@ -2,6 +2,8 @@ package io.julian.integration;
 
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.After;
@@ -13,6 +15,7 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public class IntegrationTest extends AbstractServerBaseTest {
     private TestClient client;
+    private final static JsonObject TEST_MESSAGE = new JsonObject().put("Test", "Key");
 
     @Before
     public void before() {
@@ -28,7 +31,8 @@ public class IntegrationTest extends AbstractServerBaseTest {
     @Test
     public void TestCanSendMessageInToServerAndMessageIsDuplicated(final TestContext context) {
         setUpApiServer(context);
-        client.POST(TestClient.MESSAGE)
+        Async async = context.async();
+        client.POST_COORDINATE_MESSAGE(TestClient.MESSAGE)
             .onComplete(context.asyncAssertSuccess(res -> {
                 Assert.assertEquals(200, res.statusCode());
                 Assert.assertEquals(2, server.getController().getNumberOfCoordinationMessages());
@@ -38,7 +42,31 @@ public class IntegrationTest extends AbstractServerBaseTest {
                 }
 
                 Assert.assertEquals(0, server.getController().getNumberOfCoordinationMessages());
+                async.complete();
             }));
+
+        async.await();
+        tearDownServer(context);
+    }
+
+    @Test
+    public void TestCanSendPostMessageInToServer(final TestContext context) {
+        setUpApiServer(context);
+        Async async = context.async();
+        client.POST_MESSAGE(TEST_MESSAGE)
+            .onComplete(context.asyncAssertSuccess(res -> {
+                Assert.assertEquals(200, res.statusCode());
+                Assert.assertEquals(1, server.getController().getNumberOfInitialPostMessages());
+
+                Assert.assertEquals(TEST_MESSAGE.encodePrettily(),
+                    server.getController().getInitialPostMessage().encodePrettily());
+
+                Assert.assertEquals(0, server.getController().getNumberOfInitialPostMessages());
+                async.complete();
+            }));
+
+        async.await();
+        tearDownServer(context);
     }
 
     public void TestCoordinateMessagesAreTheSame(final CoordinationMessage expected, final CoordinationMessage found) {

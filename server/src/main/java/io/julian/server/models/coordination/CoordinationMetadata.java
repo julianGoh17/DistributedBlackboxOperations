@@ -23,6 +23,11 @@ public class CoordinationMetadata {
         this.timestamp = timestamp;
     }
 
+    public CoordinationMetadata(final String fromServerId) {
+        this.fromServerId = fromServerId;
+        this.timestamp = new CoordinationTimestamp();
+    }
+
     public JsonObject toJson() {
         log.traceEntry();
         return log.traceExit(new JsonObject()

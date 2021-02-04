@@ -13,7 +13,9 @@ public abstract class DistributedAlgorithm {
         this.controller = controller;
     }
 
-    public abstract void consumeMessage();
+    public abstract void actOnCoordinateMessage();
+
+    public abstract void actOnInitialMessage();
 
     public CoordinationMessage getCoordinationMessage() {
         log.traceEntry();
