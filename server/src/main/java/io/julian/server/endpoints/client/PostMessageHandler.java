@@ -1,4 +1,4 @@
-package io.julian.server.endpoints;
+package io.julian.server.endpoints.client;
 
 import io.julian.server.components.MessageStore;
 import io.vertx.core.http.HttpHeaders;

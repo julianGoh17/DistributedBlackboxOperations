@@ -1,4 +1,4 @@
-package io.julian.server.endpoints;
+package io.julian.server.endpoints.client;
 
 import io.julian.server.components.MessageStore;
 import io.vertx.core.http.HttpHeaders;
@@ -10,7 +10,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Optional;
 
-import static io.julian.server.endpoints.PostMessageHandler.MESSAGE_KEY;
+import static io.julian.server.endpoints.client.PostMessageHandler.MESSAGE_KEY;
 
 public class PutMessageHandler {
     private static final Logger log = LogManager.getLogger(PutMessageHandler.class);

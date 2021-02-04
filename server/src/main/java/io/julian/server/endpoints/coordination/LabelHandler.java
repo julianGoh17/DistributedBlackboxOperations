@@ -1,4 +1,4 @@
-package io.julian.server.endpoints;
+package io.julian.server.endpoints.coordination;
 
 import io.julian.server.components.Controller;
 import io.julian.server.models.response.LabelResponse;

@@ -1,4 +1,4 @@
-package io.julian.server.endpoints;
+package io.julian.server.endpoints.coordination;
 
 import io.julian.server.api.DistributedAlgorithmVerticle;
 import io.julian.server.components.Controller;

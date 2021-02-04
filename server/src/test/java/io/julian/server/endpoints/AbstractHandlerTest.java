@@ -27,9 +27,9 @@ public abstract class AbstractHandlerTest {
     public static final String CLIENT_URI = "/client";
     public static final String COORDINATOR_URI = "/coordinate";
 
-    Server server;
-    HttpServer api;
-    Vertx vertx;
+    public Server server;
+    public HttpServer api;
+    public Vertx vertx;
 
     @Before
     public void before() {
