@@ -20,7 +20,7 @@ public class PostMessageHandler {
     private static final Logger log =  LogManager.getLogger(PostMessageHandler.class);
 
     public void handle(final RoutingContext context, final MessageStore messages, final Controller controller, final Vertx vertx) {
-        log.traceEntry(() -> context, () -> messages);
+        log.traceEntry(() -> context, () -> messages, () -> controller, () -> vertx);
         log.info("Entering " + PostMessageHandler.class.getName());
         JsonObject postedMessage = context.getBodyAsJson();
         UUID uuid = UUID.randomUUID();
