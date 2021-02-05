@@ -5,6 +5,8 @@ import io.julian.server.endpoints.gates.HandlerGate;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -47,5 +49,12 @@ public abstract class AbstractServerHandler {
         runThroughGates(context, components.controller)
             .onSuccess(v -> handle(context, components));
         log.traceExit();
+    }
+
+    protected void sendResponseBack(final RoutingContext context, final int statusCode, final JsonObject message) {
+        context.response()
+            .setStatusCode(statusCode)
+            .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+            .end(message.encodePrettily());
     }
 }

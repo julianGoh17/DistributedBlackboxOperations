@@ -149,6 +149,30 @@ public abstract class AbstractHandlerTest {
             });
     }
 
+    protected Future<String> sendSuccessfulDELETEMessage(final TestContext context, final WebClient client, final String messageId) {
+        Promise<String> completed = Promise.promise();
+        sendDELETEMessage(context, client, messageId)
+            .compose(res -> {
+                context.assertEquals(204, res.statusCode());
+                context.assertEquals(new MessageIDResponse(messageId).toJson().encodePrettily(), res.bodyAsJsonObject().encodePrettily());
+                context.assertFalse(server.getMessages().hasUUID(messageId));
+                completed.complete(messageId);
+                return Future.succeededFuture();
+            });
+        return completed.future();
+    }
+
+    protected void sendUnsuccessfulDELETEMessage(final TestContext context, final WebClient client, final String messageId,
+                                                 final int expectedStatusCode, final Exception exception) {
+        sendDELETEMessage(context, client, messageId)
+            .compose(res -> {
+                context.assertEquals(expectedStatusCode, res.statusCode());
+                context.assertEquals(new ErrorResponse(expectedStatusCode, exception).toJson().encodePrettily(),
+                    res.bodyAsJsonObject().encodePrettily());
+                return Future.succeededFuture();
+            });
+    }
+
     protected Future<HttpResponse<Buffer>> sendGETMessage(final TestContext context, final WebClient client, final String messageId) {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
@@ -171,6 +195,14 @@ public abstract class AbstractHandlerTest {
         client
             .put(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, messageId))
             .sendJson(requestBody, context.asyncAssertSuccess(response::complete));
+        return response.future();
+    }
+
+    protected Future<HttpResponse<Buffer>> sendDELETEMessage(final TestContext context, final WebClient client, final String messageId) {
+        Promise<HttpResponse<Buffer>> response = Promise.promise();
+        client
+            .delete(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, messageId))
+            .send(context.asyncAssertSuccess(response::complete));
         return response.future();
     }
 }
