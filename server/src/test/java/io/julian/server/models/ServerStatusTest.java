@@ -12,7 +12,7 @@ public class ServerStatusTest {
         Map<String, ServerStatus> appropriateMappings = new HashMap<>();
         appropriateMappings.put("available", ServerStatus.AVAILABLE);
         appropriateMappings.put("unreachable", ServerStatus.UNREACHABLE);
-        appropriateMappings.put("unavailable", ServerStatus.UNAVAILABLE);
+        appropriateMappings.put("probabilistic_failure", ServerStatus.PROBABILISTIC_FAILURE);
         appropriateMappings.put("random", ServerStatus.UNKNOWN);
         appropriateMappings.put("unknown", ServerStatus.UNKNOWN);
 
@@ -26,7 +26,7 @@ public class ServerStatusTest {
         Map<ServerStatus, String> appropriateMappings = new HashMap<>();
         appropriateMappings.put(ServerStatus.AVAILABLE, "available");
         appropriateMappings.put(ServerStatus.UNREACHABLE, "unreachable");
-        appropriateMappings.put(ServerStatus.UNAVAILABLE, "unavailable");
+        appropriateMappings.put(ServerStatus.PROBABILISTIC_FAILURE, "probabilistic_failure");
         appropriateMappings.put(ServerStatus.UNKNOWN, "unknown");
 
         for (final ServerStatus status : appropriateMappings.keySet()) {

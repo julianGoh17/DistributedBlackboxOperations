@@ -1,5 +1,6 @@
 package io.julian.server.components;
 
+import io.julian.server.endpoints.ServerComponents;
 import io.julian.server.models.DistributedAlgorithmSettings;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -33,9 +34,8 @@ public class ServerTest {
     @Test
     public void TestServerDoesNotDeployJarWhenNoTestJarEnvInstantiated(final TestContext context) {
         Server server = new Server();
-        Controller controller = new Controller();
         server
-            .deployDistributedAlgorithmVerticle(controller, vertx, new DistributedAlgorithmSettings(false, true, "", ""))
+            .deployDistributedAlgorithmVerticle(server.getController(), vertx, new DistributedAlgorithmSettings(false, true, "", ""))
             .onComplete(context.asyncAssertSuccess(string -> Assert.assertEquals(
                 String.format("Skipping loading distributed algorithm because environmental variable '%s' or '%s' not instantiated", Configuration.JAR_FILE_PATH_ENV, Configuration.PACKAGE_NAME_ENV),
                 string
@@ -45,9 +45,8 @@ public class ServerTest {
     @Test
     public void TestServerDoesNotDeployJarWhenNoPackageNameEnvInstantiated(final TestContext context) {
         Server server = new Server();
-        Controller controller = new Controller();
         server
-            .deployDistributedAlgorithmVerticle(controller, vertx, new DistributedAlgorithmSettings(true, false, "", ""))
+            .deployDistributedAlgorithmVerticle(server.getController(), vertx, new DistributedAlgorithmSettings(true, false, "", ""))
             .onComplete(context.asyncAssertSuccess(string -> Assert.assertEquals(
                 String.format("Skipping loading distributed algorithm because environmental variable '%s' or '%s' not instantiated", Configuration.JAR_FILE_PATH_ENV, Configuration.PACKAGE_NAME_ENV),
                 string
@@ -57,10 +56,9 @@ public class ServerTest {
     @Test
     public void TestServerDoesNotDeployJarFilePathIsWrong(final TestContext context) {
         Server server = new Server();
-        Controller controller = new Controller();
         String wrongFilePath = String.format("%s-123", TEST_JAR_PATH);
         server
-            .deployDistributedAlgorithmVerticle(controller, vertx, new DistributedAlgorithmSettings(true, true, wrongFilePath, ""))
+            .deployDistributedAlgorithmVerticle(server.getController(), vertx, new DistributedAlgorithmSettings(true, true, wrongFilePath, ""))
             .onComplete(context.asyncAssertFailure(string -> Assert.assertEquals(
                 String.format("Could not find JAR file at path '%s'", wrongFilePath),
                 string.getLocalizedMessage()
@@ -70,10 +68,9 @@ public class ServerTest {
     @Test
     public void TestServerDoesNotDeployPackNameIsWrong(final TestContext context) {
         Server server = new Server();
-        Controller controller = new Controller();
         String wrongPackageName = PACKAGE_NAME + ".random";
         server
-            .deployDistributedAlgorithmVerticle(controller, vertx, new DistributedAlgorithmSettings(true, true, TEST_JAR_PATH, wrongPackageName))
+            .deployDistributedAlgorithmVerticle(server.getController(), vertx, new DistributedAlgorithmSettings(true, true, TEST_JAR_PATH, wrongPackageName))
             .onComplete(context.asyncAssertFailure(string -> Assert.assertEquals(
                 wrongPackageName,
                 string.getMessage()
@@ -83,9 +80,18 @@ public class ServerTest {
     @Test
     public void TestServerCanDeployIfCorrectVariablesGiven(final TestContext context) {
         Server server = new Server();
-        Controller controller = new Controller();
         server
-            .deployDistributedAlgorithmVerticle(controller, vertx, new DistributedAlgorithmSettings(true, true, TEST_JAR_PATH, PACKAGE_NAME))
+            .deployDistributedAlgorithmVerticle(server.getController(), vertx, new DistributedAlgorithmSettings(true, true, TEST_JAR_PATH, PACKAGE_NAME))
             .onComplete(context.asyncAssertSuccess(vertx::undeploy));
+    }
+
+    @Test
+    public void TestServerGetServerComponents() {
+        Server server = new Server();
+
+        ServerComponents components = server.createServerComponents(this.vertx);
+        Assert.assertNotNull(components.messageStore);
+        Assert.assertNotNull(components.vertx);
+        Assert.assertNotNull(components.controller);
     }
 }

@@ -2,13 +2,18 @@ package io.julian.server.components;
 
 import io.julian.server.api.DistributedAlgorithm;
 import io.julian.server.api.DistributedAlgorithmVerticle;
-import io.julian.server.endpoints.coordination.CoordinationMessageHandler;
+import io.julian.server.endpoints.AbstractServerHandler;
 import io.julian.server.endpoints.ErrorHandler;
+import io.julian.server.endpoints.ServerComponents;
 import io.julian.server.endpoints.client.GetMessageHandler;
-import io.julian.server.endpoints.coordination.LabelHandler;
-import io.julian.server.endpoints.coordination.SetStatusHandler;
 import io.julian.server.endpoints.client.PostMessageHandler;
 import io.julian.server.endpoints.client.PutMessageHandler;
+import io.julian.server.endpoints.control.GetServerSettingsHandler;
+import io.julian.server.endpoints.coordination.CoordinationMessageHandler;
+import io.julian.server.endpoints.coordination.LabelHandler;
+import io.julian.server.endpoints.control.SetServerSettingsHandler;
+import io.julian.server.endpoints.gates.ProbabilisticFailureGate;
+import io.julian.server.endpoints.gates.UnreachableGate;
 import io.julian.server.models.DistributedAlgorithmSettings;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -19,12 +24,16 @@ import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Arrays;
+import java.util.List;
+
 @Getter
 public class Server {
     private static final Logger log = LogManager.getLogger(Server.class);
     private OpenAPI3RouterFactory routerFactory;
     private final MessageStore messages;
-    private final static String[] OPERATION_IDS = new String[]{"postMessage", "getMessage", "putMessage", "setStatus", "setLabel", "sendCoordinationMessage"};
+    private final static String[] OPERATION_IDS = new String[]{"postMessage", "getMessage", "putMessage", "setServerSettings",
+        "getServerSettings", "setLabel", "sendCoordinationMessage"};
     private final Controller controller = new Controller();
 
     public Server() {
@@ -52,18 +61,38 @@ public class Server {
     public void addHandlers(final Vertx vertx) {
         log.traceEntry(() -> vertx);
         log.info("Adding handlers");
+        // Client Endpoints
         PostMessageHandler postMessageHandler = new PostMessageHandler();
         GetMessageHandler getMessageHandler = new GetMessageHandler();
         PutMessageHandler putMessageHandler = new PutMessageHandler();
-        SetStatusHandler setStatusHandler = new SetStatusHandler();
+
+        // Coordination Endpoints
         CoordinationMessageHandler coordinationMessageHandler = new CoordinationMessageHandler();
         LabelHandler labelHandler = new LabelHandler();
-        routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.handle(routingContext, messages, controller, vertx));
-        routerFactory.addHandlerByOperationId("getMessage", routingContext -> getMessageHandler.handle(routingContext, messages));
-        routerFactory.addHandlerByOperationId("putMessage", routingContext -> putMessageHandler.handle(routingContext, messages));
-        routerFactory.addHandlerByOperationId("setStatus", routingContext -> setStatusHandler.handle(routingContext, controller));
-        routerFactory.addHandlerByOperationId("setLabel", routingContext -> labelHandler.handle(routingContext, controller));
-        routerFactory.addHandlerByOperationId("sendCoordinationMessage", routingContext -> coordinationMessageHandler.handle(routingContext, controller, vertx));
+
+        List<AbstractServerHandler> handlers = Arrays.asList(postMessageHandler, putMessageHandler, getMessageHandler,
+            coordinationMessageHandler, labelHandler);
+        // Gate Handlers
+        ProbabilisticFailureGate probabilisticFailureGate = new ProbabilisticFailureGate();
+        UnreachableGate unreachableGate = new UnreachableGate();
+        registerGates(handlers, probabilisticFailureGate, unreachableGate);
+
+        // Server Control Handlers
+        SetServerSettingsHandler setServerSettingsHandler = new SetServerSettingsHandler();
+        GetServerSettingsHandler getServerSettingsHandler = new GetServerSettingsHandler();
+
+        ServerComponents components = createServerComponents(vertx);
+
+        routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.runThroughHandlers(routingContext, components));
+        routerFactory.addHandlerByOperationId("getMessage", routingContext -> getMessageHandler.runThroughHandlers(routingContext, components));
+        routerFactory.addHandlerByOperationId("putMessage", routingContext -> putMessageHandler.runThroughHandlers(routingContext, components));
+        routerFactory.addHandlerByOperationId("setLabel", routingContext -> labelHandler.runThroughHandlers(routingContext, components));
+        routerFactory.addHandlerByOperationId("sendCoordinationMessage",
+            routingContext -> coordinationMessageHandler.runThroughHandlers(routingContext, components));
+
+        routerFactory.addHandlerByOperationId("setServerSettings", routingContext -> setServerSettingsHandler.handle(routingContext, controller));
+        routerFactory.addHandlerByOperationId("getServerSettings", routingContext -> getServerSettingsHandler.handle(routingContext, controller));
+
         addFailureHandlers();
         log.traceExit();
     }
@@ -109,5 +138,17 @@ public class Server {
             }
         });
         return log.traceExit(deployment.future());
+    }
+
+    // Exposed For Testing
+    public ServerComponents createServerComponents(final Vertx vertx) {
+        log.traceEntry();
+        return log.traceExit(new ServerComponents(messages, controller, vertx));
+    }
+
+    private void registerGates(final List<AbstractServerHandler> handlers,
+                               final ProbabilisticFailureGate probabilisticFailureGate,
+                               final UnreachableGate unreachableGate) {
+        handlers.forEach(handler -> handler.registerGates(probabilisticFailureGate, unreachableGate));
     }
 }

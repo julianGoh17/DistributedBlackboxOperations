@@ -32,4 +32,10 @@ public class AbstractClientTest {
         }));
         async.awaitSuccess();
     }
+
+    protected void tearDownAPIServer(final TestContext context) {
+        api.close(context.asyncAssertSuccess());
+        server = null;
+        api = null;
+    }
 }

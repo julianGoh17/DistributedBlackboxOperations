@@ -8,7 +8,7 @@ import org.apache.logging.log4j.Logger;
 public enum ServerStatus {
     AVAILABLE("available"),
     UNREACHABLE("unreachable"),
-    UNAVAILABLE("unavailable"),
+    PROBABILISTIC_FAILURE("probabilistic_failure"),
     UNKNOWN("unknown");
 
     private final String str;
@@ -26,8 +26,8 @@ public enum ServerStatus {
                 return log.traceExit(AVAILABLE);
             case "unreachable":
                 return log.traceExit(UNREACHABLE);
-            case "unavailable":
-                return log.traceExit(UNAVAILABLE);
+            case "probabilistic_failure":
+                return log.traceExit(PROBABILISTIC_FAILURE);
             default:
                 return log.traceExit(UNKNOWN);
         }

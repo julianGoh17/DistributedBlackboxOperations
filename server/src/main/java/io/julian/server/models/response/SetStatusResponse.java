@@ -1,7 +1,7 @@
 package io.julian.server.models.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.julian.server.endpoints.coordination.SetStatusHandler;
+import io.julian.server.endpoints.control.SetServerSettingsHandler;
 import io.julian.server.models.ServerStatus;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
@@ -12,7 +12,7 @@ import org.apache.logging.log4j.Logger;
 @Getter
 @Setter
 public class SetStatusResponse {
-    private final static Logger log = LogManager.getLogger(SetStatusHandler.class.getName());
+    private final static Logger log = LogManager.getLogger(SetServerSettingsHandler.class.getName());
 
     private final ServerStatus status;
     public static final String STATUS_KEY = "status";

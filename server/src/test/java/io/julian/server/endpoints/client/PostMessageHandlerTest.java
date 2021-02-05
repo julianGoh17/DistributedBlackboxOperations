@@ -2,6 +2,7 @@ package io.julian.server.endpoints.client;
 
 import io.julian.server.components.Configuration;
 import io.julian.server.endpoints.AbstractHandlerTest;
+import io.julian.server.models.ServerStatus;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
@@ -18,7 +19,36 @@ public class PostMessageHandlerTest extends AbstractHandlerTest {
             context.assertEquals(1, server.getMessages().getNumberOfMessages());
             context.assertEquals(message, server.getMessages().getMessage(id.result()));
         });
+    }
 
+    @Test
+    public void TestFailsUnreachableGateMessage(final TestContext context) {
+        setUpApiServer(context);
+        WebClient client = WebClient.create(this.vertx);
+        server.getController().setStatus(ServerStatus.UNREACHABLE);
+
+        JsonObject message = createPostMessage(new JsonObject().put("test", "message"));
+        sendUnsuccessfulPOSTMessage(context, client, message, UNREACHABLE_ERROR, 500);
+    }
+
+    @Test
+    public void TestFailsProbabilisticGateMessage(final TestContext context) {
+        setUpApiServer(context);
+        WebClient client = WebClient.create(this.vertx);
+        server.getController().setStatus(ServerStatus.PROBABILISTIC_FAILURE);
+        server.getController().setFailureChance(1);
+        JsonObject message = createPostMessage(new JsonObject().put("test", "message"));
+        sendUnsuccessfulPOSTMessage(context, client, message, PROBABILISTIC_FAILURE_ERROR, 500);
+    }
+
+    @Test
+    public void TestPassesProbabilisticGateMessage(final TestContext context) {
+        setUpApiServer(context);
+        WebClient client = WebClient.create(this.vertx);
+        server.getController().setStatus(ServerStatus.PROBABILISTIC_FAILURE);
+        server.getController().setFailureChance(0);
+        JsonObject message = new JsonObject().put("test", "message");
+        sendSuccessfulPOSTMessage(context, client, message);
     }
 
     @Test
@@ -27,7 +57,7 @@ public class PostMessageHandlerTest extends AbstractHandlerTest {
 
         WebClient client = WebClient.create(this.vertx);
         sendUnsuccessfulPOSTMessage(context, client, new JsonObject(),
-            new Exception("$.message: is missing but it is required"));
+            new Exception("$.message: is missing but it is required"), 400);
     }
 
     @Test

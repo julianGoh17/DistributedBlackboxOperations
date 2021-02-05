@@ -1,10 +1,11 @@
 package io.julian.server.endpoints.client;
 
-import io.julian.server.components.MessageStore;
+import io.julian.server.endpoints.AbstractServerHandler;
+import io.julian.server.endpoints.ServerComponents;
+import io.julian.server.models.response.MessageIDResponse;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
-import io.julian.server.models.response.MessageIDResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -12,17 +13,17 @@ import java.util.Optional;
 
 import static io.julian.server.endpoints.client.PostMessageHandler.MESSAGE_KEY;
 
-public class PutMessageHandler {
+public class PutMessageHandler extends AbstractServerHandler {
     private static final Logger log = LogManager.getLogger(PutMessageHandler.class);
 
-    public void handle(final RoutingContext context, final MessageStore messageStore) {
-        log.traceEntry(() -> context, () -> messageStore);
+    public void handle(final RoutingContext context, final ServerComponents components) {
+        log.traceEntry(() -> context, () -> components);
         String messageID = context.pathParam("message_id");
         JsonObject message = context.getBodyAsJson();
 
-        if (messageStore.hasUUID(messageID)) {
+        if (components.messageStore.hasUUID(messageID)) {
             log.info(String.format("Found entry for uuid '%s', updating message.", messageID));
-            messageStore.putMessage(messageID, Optional.ofNullable(message)
+            components.messageStore.putMessage(messageID, Optional.ofNullable(message)
                 .map(mes -> mes.getJsonObject(MESSAGE_KEY))
                 .orElse(new JsonObject()));
 
