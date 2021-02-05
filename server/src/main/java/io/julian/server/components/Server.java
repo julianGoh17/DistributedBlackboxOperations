@@ -8,9 +8,10 @@ import io.julian.server.endpoints.ServerComponents;
 import io.julian.server.endpoints.client.GetMessageHandler;
 import io.julian.server.endpoints.client.PostMessageHandler;
 import io.julian.server.endpoints.client.PutMessageHandler;
+import io.julian.server.endpoints.control.GetServerSettingsHandler;
 import io.julian.server.endpoints.coordination.CoordinationMessageHandler;
 import io.julian.server.endpoints.coordination.LabelHandler;
-import io.julian.server.endpoints.coordination.SetStatusHandler;
+import io.julian.server.endpoints.control.SetServerSettingsHandler;
 import io.julian.server.endpoints.gates.ProbabilisticFailureGate;
 import io.julian.server.endpoints.gates.UnreachableGate;
 import io.julian.server.models.DistributedAlgorithmSettings;
@@ -31,7 +32,8 @@ public class Server {
     private static final Logger log = LogManager.getLogger(Server.class);
     private OpenAPI3RouterFactory routerFactory;
     private final MessageStore messages;
-    private final static String[] OPERATION_IDS = new String[]{"postMessage", "getMessage", "putMessage", "setStatus", "setLabel", "sendCoordinationMessage"};
+    private final static String[] OPERATION_IDS = new String[]{"postMessage", "getMessage", "putMessage", "setServerSettings",
+        "getServerSettings", "setLabel", "sendCoordinationMessage"};
     private final Controller controller = new Controller();
 
     public Server() {
@@ -66,7 +68,6 @@ public class Server {
 
         // Coordination Endpoints
         CoordinationMessageHandler coordinationMessageHandler = new CoordinationMessageHandler();
-        SetStatusHandler setStatusHandler = new SetStatusHandler();
         LabelHandler labelHandler = new LabelHandler();
 
         List<AbstractServerHandler> handlers = Arrays.asList(postMessageHandler, putMessageHandler, getMessageHandler,
@@ -75,6 +76,10 @@ public class Server {
         ProbabilisticFailureGate probabilisticFailureGate = new ProbabilisticFailureGate();
         UnreachableGate unreachableGate = new UnreachableGate();
         registerGates(handlers, probabilisticFailureGate, unreachableGate);
+
+        // Server Control Handlers
+        SetServerSettingsHandler setServerSettingsHandler = new SetServerSettingsHandler();
+        GetServerSettingsHandler getServerSettingsHandler = new GetServerSettingsHandler();
 
         ServerComponents components = createServerComponents(vertx);
 
@@ -85,7 +90,9 @@ public class Server {
         routerFactory.addHandlerByOperationId("sendCoordinationMessage",
             routingContext -> coordinationMessageHandler.runThroughHandlers(routingContext, components));
 
-        routerFactory.addHandlerByOperationId("setStatus", routingContext -> setStatusHandler.handle(routingContext, controller));
+        routerFactory.addHandlerByOperationId("setServerSettings", routingContext -> setServerSettingsHandler.handle(routingContext, controller));
+        routerFactory.addHandlerByOperationId("getServerSettings", routingContext -> getServerSettingsHandler.handle(routingContext, controller));
+
         addFailureHandlers();
         log.traceExit();
     }
