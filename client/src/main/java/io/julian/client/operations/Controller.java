@@ -94,7 +94,7 @@ public class Controller {
                             vertx.cancelTimer(id);
                             break;
                         case PRINT_OPERATION_CHAIN_NUMBER:
-                            runOperationChains();
+                            printOperationChains();
                             userWantsToContinue.complete(true);
                             vertx.cancelTimer(id);
                             break;
@@ -162,7 +162,7 @@ public class Controller {
         log.traceExit();
     }
 
-    private void runOperationChains() {
+    private void printOperationChains() {
         log.traceEntry();
         output.printOperationChains(client.getOperationChains());
         log.traceExit();

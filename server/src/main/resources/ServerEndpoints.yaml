@@ -23,14 +23,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MessageIDResponse"
-
-  /client/{message_id}:
     get:
       operationId: getMessage
       description: Retrieve the message stored in the Server for a given UUID
       parameters:
-        - name: message_id
-          in: path
+        - name: messageId
+          in: query
           description: The UUID of the message
           required: true
           schema:
@@ -52,8 +50,8 @@ paths:
       operationId: deleteMessage
       description: Delete message stored in the Server for a given UUID
       parameters:
-        - name: message_id
-          in: path
+        - name: messageId
+          in: query
           description: The UUID of the message
           required: true
           schema:
@@ -79,17 +77,17 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
     put:
       operationId: putMessage
-      description: Put message content stored in the Server for a given UUID
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
+      description: Move message with uuid to a new UUID. Note that this endpoint does not care if there exists a message with new UUID already.
       parameters:
-        - name: message_id
-          in: path
-          description: The UUID of the message
+        - name: originalId
+          in: query
+          description: The original UUID of the message to move
+          required: true
+          schema:
+            type: string
+        - name: newId
+          in: query
+          description: The new UUID to store the message as.
           required: true
           schema:
             type: string

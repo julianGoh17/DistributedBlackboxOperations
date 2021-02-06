@@ -1,7 +1,9 @@
 package io.julian.server.endpoints.client;
 
+import io.julian.server.components.Configuration;
 import io.julian.server.endpoints.control.AbstractServerHandlerTest;
 import io.julian.server.models.ServerStatus;
+import io.julian.server.models.response.ErrorResponse;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
@@ -63,5 +65,20 @@ public class DeleteMessageHandlerTest extends AbstractServerHandlerTest {
 
         sendSuccessfulPOSTMessage(context, client, TEST_MESSAGE)
             .compose(id -> sendSuccessfulDELETEMessage(context, client, id));
+    }
+
+    @Test
+    public void TestDELETEMessageFailsWhenNoPathParamPassedIn(final TestContext context) {
+        setUpApiServer(context);
+        WebClient client = WebClient.create(this.vertx);
+
+        client
+            .delete(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, CLIENT_URI)
+            .send(context.asyncAssertSuccess(res -> {
+                context.assertEquals(res.statusCode(), 400);
+                context.assertEquals(new ErrorResponse(400,
+                        new Exception("Error during validation of request. Parameter \"messageId\" inside query not found")).toJson().encodePrettily(),
+                    res.bodyAsJsonObject().encodePrettily());
+            }));
     }
 }

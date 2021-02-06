@@ -3,6 +3,8 @@ package io.julian.server.endpoints.client;
 import io.julian.server.api.DistributedAlgorithmVerticle;
 import io.julian.server.endpoints.AbstractServerHandler;
 import io.julian.server.endpoints.ServerComponents;
+import io.julian.server.models.HTTPRequest;
+import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.response.MessageIDResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.RoutingContext;
@@ -34,9 +36,9 @@ public class PostMessageHandler extends AbstractServerHandler {
 
         sendResponseBack(context, 200, new MessageIDResponse(uuid.toString()).toJson());
 
-        components.controller.addToInitialPostMessageQueue(userMessage);
+        components.controller.addToClientMessageQueue(new ClientMessage(HTTPRequest.POST, userMessage, uuid.toString()));
         components.vertx.eventBus().send(
-            DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.INITIAL_POST_MESSAGE_POSTFIX),
+            DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.CLIENT_MESSAGE_POSTFIX),
             "");
 
         log.traceExit();

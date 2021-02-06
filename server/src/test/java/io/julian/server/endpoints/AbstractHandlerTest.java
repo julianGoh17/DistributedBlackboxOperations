@@ -92,13 +92,13 @@ public abstract class AbstractHandlerTest {
         return uuid.future();
     }
 
-    protected Future<String> sendSuccessfulPUTMessage(final TestContext context, final WebClient client, final String messageId, final JsonObject message) {
+    protected Future<String> sendSuccessfulPUTMessage(final TestContext context, final WebClient client, final String originalId, final String newId) {
         Promise<String> completed = Promise.promise();
-        sendPUTMessage(context, client, createPostMessage(message), messageId)
+        sendPUTMessage(context, client, originalId, newId)
             .compose(res -> {
                 context.assertEquals(res.statusCode(), 200);
-                context.assertEquals(res.bodyAsJsonObject().getString(MessageIDResponse.MESSAGE_ID_KEY), messageId);
-                completed.complete(messageId);
+                context.assertEquals(res.bodyAsJsonObject().getString(MessageIDResponse.MESSAGE_ID_KEY), originalId);
+                completed.complete(originalId);
                 return Future.succeededFuture();
             });
         return completed.future();
@@ -135,9 +135,9 @@ public abstract class AbstractHandlerTest {
     }
 
     protected void sendUnsuccessfulPUTMessage(final TestContext context, final WebClient client,
-                                               final JsonObject message, final String messageId, final Throwable error,
-                                               final int expectedStatusCode) {
-        sendPUTMessage(context, client, message, messageId)
+                                              final String originalId, final String newId, final Throwable error,
+                                              final int expectedStatusCode) {
+        sendPUTMessage(context, client, originalId, newId)
             .compose(res -> {
                 context.assertEquals(res.statusCode(), expectedStatusCode);
                 if (error != null) {
@@ -176,7 +176,7 @@ public abstract class AbstractHandlerTest {
     protected Future<HttpResponse<Buffer>> sendGETMessage(final TestContext context, final WebClient client, final String messageId) {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
-            .get(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, messageId))
+            .get(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/?messageId=%s", CLIENT_URI, messageId))
             .send(context.asyncAssertSuccess(response::complete));
         return response.future();
     }
@@ -190,18 +190,19 @@ public abstract class AbstractHandlerTest {
     }
 
     protected Future<HttpResponse<Buffer>> sendPUTMessage(final TestContext context, final WebClient client,
-                                                          final JsonObject requestBody, final String messageId) {
+                                                          final String originalId, final String newId) {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
-            .put(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, messageId))
-            .sendJson(requestBody, context.asyncAssertSuccess(response::complete));
+            .put(Configuration.DEFAULT_SERVER_PORT,
+                Configuration.DEFAULT_SERVER_HOST, String.format("%s/?originalId=%s&newId=%s", CLIENT_URI, originalId, newId))
+            .send(context.asyncAssertSuccess(response::complete));
         return response.future();
     }
 
     protected Future<HttpResponse<Buffer>> sendDELETEMessage(final TestContext context, final WebClient client, final String messageId) {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
-            .delete(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, messageId))
+            .delete(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/?messageId=%s", CLIENT_URI, messageId))
             .send(context.asyncAssertSuccess(response::complete));
         return response.future();
     }

@@ -1,18 +1,16 @@
 package io.julian;
 
 import io.julian.server.components.Controller;
+import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
-import io.julian.server.models.coordination.CoordinationTimestamp;
 import io.vertx.core.json.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.time.LocalDateTime;
-
 public class MainTest {
     private final static CoordinationMessage MESSAGE = new CoordinationMessage(
-        new CoordinationMetadata("test-id", new CoordinationTimestamp(LocalDateTime.now())),
+        new CoordinationMetadata("test-id", HTTPRequest.GET),
         new JsonObject(),
         new JsonObject());
 

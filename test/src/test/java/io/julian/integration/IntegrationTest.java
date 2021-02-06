@@ -56,12 +56,12 @@ public class IntegrationTest extends AbstractServerBaseTest {
         client.POST_MESSAGE(TEST_MESSAGE)
             .onComplete(context.asyncAssertSuccess(res -> {
                 Assert.assertEquals(200, res.statusCode());
-                Assert.assertEquals(1, server.getController().getNumberOfInitialPostMessages());
+                Assert.assertEquals(1, server.getController().getNumberOfClientMessages());
 
                 Assert.assertEquals(TEST_MESSAGE.encodePrettily(),
-                    server.getController().getInitialPostMessage().encodePrettily());
+                    server.getController().getClientMessage().getMessage().encodePrettily());
 
-                Assert.assertEquals(0, server.getController().getNumberOfInitialPostMessages());
+                Assert.assertEquals(0, server.getController().getNumberOfClientMessages());
                 async.complete();
             }));
 

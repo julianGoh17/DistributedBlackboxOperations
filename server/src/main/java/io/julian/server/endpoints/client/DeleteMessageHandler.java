@@ -7,6 +7,8 @@ import io.vertx.ext.web.RoutingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Optional;
+
 public class DeleteMessageHandler extends AbstractServerHandler  {
     private final static Logger log = LogManager.getLogger(DeleteMessageHandler.class.getName());
     public final static String ERROR_RESPONSE = "Couldn't delete message with uuid '%s' from server";
@@ -14,7 +16,9 @@ public class DeleteMessageHandler extends AbstractServerHandler  {
     @Override
     protected void handle(final RoutingContext context, final ServerComponents components) {
         log.traceEntry(() -> components, () -> components);
-        String messageID = context.pathParam("message_id");
+        String messageID = Optional.ofNullable(context.queryParam("messageId"))
+            .map(params -> params.get(0))
+            .orElse(null);
 
         if (components.messageStore.hasUUID(messageID)) {
             components.messageStore.removeMessage(messageID);

@@ -8,7 +8,7 @@ public class DistributedAlgorithmVerticle extends AbstractVerticle {
     private static final Logger log = LogManager.getLogger(DistributedAlgorithmVerticle.class.getName());
     public static final String ALGORITHM_VERTICLE_ADDRESS = "algorithm";
     public static final String COORDINATE_MESSAGE_POSTFIX = "coordinate_message";
-    public static final String INITIAL_POST_MESSAGE_POSTFIX = "initial_post_message";
+    public static final String CLIENT_MESSAGE_POSTFIX = "client_message";
 
 
     private final DistributedAlgorithm algorithm;
@@ -22,7 +22,7 @@ public class DistributedAlgorithmVerticle extends AbstractVerticle {
         log.traceEntry();
         log.info(String.format("Algorithm Verticle '%s' Has Started", ALGORITHM_VERTICLE_ADDRESS));
         vertx.eventBus().consumer(formatAddress(COORDINATE_MESSAGE_POSTFIX), v -> algorithm.actOnCoordinateMessage());
-        vertx.eventBus().consumer(formatAddress(INITIAL_POST_MESSAGE_POSTFIX), v -> algorithm.actOnInitialMessage());
+        vertx.eventBus().consumer(formatAddress(CLIENT_MESSAGE_POSTFIX), v -> algorithm.actOnInitialMessage());
         log.traceExit();
     }
 
