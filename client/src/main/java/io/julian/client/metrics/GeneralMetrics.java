@@ -12,8 +12,6 @@ public class GeneralMetrics {
     private final AtomicInteger failedGets = new AtomicInteger();
     private final AtomicInteger succeededPosts = new AtomicInteger();
     private final AtomicInteger failedPosts = new AtomicInteger();
-    private final AtomicInteger succeededPuts = new AtomicInteger();
-    private final AtomicInteger failedPuts = new AtomicInteger();
 
     public void incrementSuccessMethod(final RequestMethod method) {
         log.traceEntry(() -> method);
@@ -23,9 +21,6 @@ public class GeneralMetrics {
                 break;
             case POST:
                 succeededPosts.getAndIncrement();
-                break;
-            case PUT:
-                succeededPuts.getAndIncrement();
                 break;
         }
         log.traceExit();
@@ -40,9 +35,6 @@ public class GeneralMetrics {
             case POST:
                 failedPosts.getAndIncrement();
                 break;
-            case PUT:
-                failedPuts.getAndIncrement();
-                break;
         }
         log.traceExit();
     }
@@ -54,15 +46,13 @@ public class GeneralMetrics {
                 return log.traceExit(succeededGets.get());
             case POST:
                 return log.traceExit(succeededPosts.get());
-            case PUT:
-                return log.traceExit(succeededPuts.get());
         }
         return log.traceExit(0);
     }
 
     public int getSucceeded() {
         log.traceEntry();
-        return log.traceExit(getSucceeded(RequestMethod.GET) + getSucceeded(RequestMethod.POST) + getSucceeded(RequestMethod.PUT));
+        return log.traceExit(getSucceeded(RequestMethod.GET) + getSucceeded(RequestMethod.POST));
     }
 
     public int getFailed(final RequestMethod method) {
@@ -72,15 +62,13 @@ public class GeneralMetrics {
                 return log.traceExit(failedGets.get());
             case POST:
                 return log.traceExit(failedPosts.get());
-            case PUT:
-                return log.traceExit(failedPuts.get());
         }
         return log.traceExit(0);
     }
 
     public int getFailed() {
         log.traceEntry();
-        return log.traceExit(getFailed(RequestMethod.GET) + getFailed(RequestMethod.POST) + getFailed(RequestMethod.PUT));
+        return log.traceExit(getFailed(RequestMethod.GET) + getFailed(RequestMethod.POST));
     }
 
     public int getTotal() {

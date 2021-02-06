@@ -92,32 +92,6 @@ public class Coordinator {
         return log.traceExit(isGETSuccessful.future());
     }
 
-    public Future<Void> sendPUT(final int oldMessageIndex, final int newMessageIndex) {
-        log.traceEntry(() -> oldMessageIndex, () -> newMessageIndex);
-        Promise<Void> isPUTSuccessful = Promise.promise();
-        try {
-            checkValidMessageIndex(newMessageIndex);
-            client.PUTMessage(memory.getExpectedIDForNum(oldMessageIndex), memory.getOriginalMessage(newMessageIndex))
-                .onSuccess(v -> {
-                    log.info(String.format("Successful PUT of new message number '%d' for old message number '%d'", oldMessageIndex, newMessageIndex));
-                    memory.associateNumberWithID(newMessageIndex, memory.getExpectedIDForNum(0));
-                    memory.disassociateNumberFromID(oldMessageIndex);
-                    isPUTSuccessful.complete();
-                })
-                .onFailure(throwable -> {
-                    ClientException exception = (ClientException) throwable;
-                    log.error(String.format("Unsuccessful PUT of new message number '%d' for old message number '%d' because: %s", oldMessageIndex, newMessageIndex, exception.getMessage()));
-                    isPUTSuccessful.fail(exception);
-                });
-        } catch (ArrayIndexOutOfBoundsException e) {
-            ClientException exception = new ClientException(e.getMessage(), 500);
-            log.error(String.format("Unsuccessful PUT of new message number '%d' for old message number '%d' because: %s", oldMessageIndex, newMessageIndex, exception.getMessage()));
-            isPUTSuccessful.fail(exception);
-        }
-
-        return log.traceExit(isPUTSuccessful.future());
-    }
-
     private void checkValidMessageIndex(final int messageIndex) throws ArrayIndexOutOfBoundsException {
         log.traceEntry(() -> messageIndex);
         if (!memory.hasOriginalMessageNumber(messageIndex)) {
@@ -229,10 +203,6 @@ public class Coordinator {
                     .onSuccess(v -> complete.complete())
                     .onFailure(complete::fail);
                 return complete.future();
-            case PUT:
-                log.debug(String.format("Running '%s' operation to update message '%d' to message '%d'", RequestMethod.PUT.toString(), operation.getAction().getMessageNumber(), operation.getAction().getNewMessageNumber()));
-                sendPUT(operation.getAction().getMessageNumber(), operation.getAction().getNewMessageNumber());
-                return sendPUT(operation.getAction().getMessageNumber(), operation.getAction().getNewMessageNumber());
             default:
                 complete.complete();
         }

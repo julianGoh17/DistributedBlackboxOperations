@@ -17,17 +17,6 @@
       "expected": {
         "statusCode": 404
       }
-    },
-    {
-      "action": {
-        "method": "PUT",
-        "messageNumber": 1,
-        "newMessageNumber": 2
-      },
-      "expected": {
-        "statusCode": 200,
-        "messageNumber": 1
-      }
     }
   ],
   "configuration": {

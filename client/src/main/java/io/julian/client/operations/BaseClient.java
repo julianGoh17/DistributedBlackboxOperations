@@ -50,7 +50,7 @@ public class BaseClient {
     public Future<JsonObject> GETMessage(final String messageId) {
         log.traceEntry(() -> messageId);
         Promise<JsonObject> getResponse = Promise.promise();
-        client.get(Configuration.getServerPort(), Configuration.getServerHost(), String.format("%s/?originalID=%s", CLIENT_URI, messageId))
+        client.get(Configuration.getServerPort(), Configuration.getServerHost(), String.format("%s/?messageId=%s", CLIENT_URI, messageId))
             .send(res -> {
                 if (res.succeeded()) {
                     GetMessageResponse get = res.result().bodyAsJsonObject().mapTo(GetMessageResponse.class);
@@ -72,12 +72,12 @@ public class BaseClient {
         return log.traceExit(getResponse.future());
     }
 
-    // TODO: Clean up log lines
-    public Future<String> PUTMessage(final String messageId, final JsonObject message) {
-        log.traceEntry(() -> messageId, () -> message);
+    public Future<String> PUTMessage(final String originalID, final String newId) {
+        log.traceEntry(() -> originalID, () -> newId);
         Promise<String> putResponse = Promise.promise();
-        client.put(Configuration.getServerPort(), Configuration.getServerHost(), String.format("%s/?originalId=%s", CLIENT_URI, messageId))
-            .sendJsonObject(new MessageWrapper(message).toJson(), res -> {
+        client.put(Configuration.getServerPort(), Configuration.getServerHost(),
+            String.format("%s/?originalId=%s&newId=%s", CLIENT_URI, originalID, newId))
+            .send(res -> {
                 if (res.succeeded()) {
                     MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
                     if (response.isError()) {

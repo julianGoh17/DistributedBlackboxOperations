@@ -92,18 +92,6 @@ public abstract class AbstractHandlerTest {
         return uuid.future();
     }
 
-    protected Future<String> sendSuccessfulPUTMessage(final TestContext context, final WebClient client, final String originalId, final String newId) {
-        Promise<String> completed = Promise.promise();
-        sendPUTMessage(context, client, originalId, newId)
-            .compose(res -> {
-                context.assertEquals(res.statusCode(), 200);
-                context.assertEquals(res.bodyAsJsonObject().getString(MessageIDResponse.MESSAGE_ID_KEY), originalId);
-                completed.complete(originalId);
-                return Future.succeededFuture();
-            });
-        return completed.future();
-    }
-
     protected void sendUnsuccessfulGETMessage(final TestContext context, final WebClient client,
                                                final String messageId, final Throwable error,
                                                final int expectedStatusCode) {
@@ -123,21 +111,6 @@ public abstract class AbstractHandlerTest {
                                                final JsonObject message, final Throwable error,
                                                final int expectedStatusCode) {
         sendPOSTMessage(context, client, message)
-            .compose(res -> {
-                context.assertEquals(res.statusCode(), expectedStatusCode);
-                if (error != null) {
-                    context.assertEquals(res.bodyAsJsonObject(), new ErrorResponse(expectedStatusCode, error).toJson());
-                } else {
-                    context.assertNull(res.bodyAsJsonObject());
-                }
-                return Future.succeededFuture();
-            });
-    }
-
-    protected void sendUnsuccessfulPUTMessage(final TestContext context, final WebClient client,
-                                              final String originalId, final String newId, final Throwable error,
-                                              final int expectedStatusCode) {
-        sendPUTMessage(context, client, originalId, newId)
             .compose(res -> {
                 context.assertEquals(res.statusCode(), expectedStatusCode);
                 if (error != null) {
@@ -186,16 +159,6 @@ public abstract class AbstractHandlerTest {
         client
             .post(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, CLIENT_URI)
             .sendJson(requestBody, context.asyncAssertSuccess(response::complete));
-        return response.future();
-    }
-
-    protected Future<HttpResponse<Buffer>> sendPUTMessage(final TestContext context, final WebClient client,
-                                                          final String originalId, final String newId) {
-        Promise<HttpResponse<Buffer>> response = Promise.promise();
-        client
-            .put(Configuration.DEFAULT_SERVER_PORT,
-                Configuration.DEFAULT_SERVER_HOST, String.format("%s/?originalId=%s&newId=%s", CLIENT_URI, originalId, newId))
-            .send(context.asyncAssertSuccess(response::complete));
         return response.future();
     }
 

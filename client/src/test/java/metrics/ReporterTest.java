@@ -48,10 +48,6 @@ public class ReporterTest {
         "----------------------------\n" +
         "Successful Requests: 0\n" +
         "Failed Requests: 0\n";
-    private final static String PUT_REPORT = String.format("General Statistics For %s:\n", RequestMethod.PUT.toString()) +
-        "---------------------------\n" +
-        "Successful Requests: 0\n" +
-        "Failed Requests: 0\n";
     private final static String MISMATCHED_RESPONSE_REPORT = String.format("Mismatched Response For %s Request\n", METHOD.toString()) +
         "-----------------------------------\n" +
         String.format("Message Number: %d\n", MESSAGE_NUMBER) +
@@ -145,7 +141,7 @@ public class ReporterTest {
     public void TestGetReport() {
         Reporter reporter = new Reporter();
         StringBuilder builder = reporter.getReport(Collections.singletonList(createTestMismatchedResponse()), new GeneralMetrics());
-        String expected = String.join("\n", GENERAL_REPORT, GET_REPORT, POST_REPORT, PUT_REPORT, MISMATCHED_RESPONSE_REPORT);
+        String expected = String.join("\n", GENERAL_REPORT, GET_REPORT, POST_REPORT, MISMATCHED_RESPONSE_REPORT);
         Assert.assertEquals(expected, builder.toString());
     }
 
@@ -161,9 +157,6 @@ public class ReporterTest {
         reporter.getGeneralStatistics(metrics, RequestMethod.POST, builder);
         Assert.assertEquals(POST_REPORT, builder.toString());
 
-        builder = new StringBuilder();
-        reporter.getGeneralStatistics(metrics, RequestMethod.PUT, builder);
-        Assert.assertEquals(PUT_REPORT, builder.toString());
     }
 
     @Test

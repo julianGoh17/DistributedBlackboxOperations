@@ -29,7 +29,6 @@ public class CoordinatorTest extends AbstractClientTest {
 
     private static final int POST_OPERATION_NUMBER = 0;
     private static final int GET_OPERATION_NUMBER = 1;
-    private static final int PUT_OPERATION_NUMBER = 2;
 
     private static final String CONNECTION_REFUSED_EXCEPTION = String.format("Connection refused: %s/127.0.0.1:%d", Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
     private static final String OUT_OF_BOUND_EXCEPTION = String.format("No original message with index '%d'", OUT_OF_BOUND_MESSAGE_INDEX);
@@ -113,32 +112,11 @@ public class CoordinatorTest extends AbstractClientTest {
      * SEQUENTIAL OPERATION TESTS
      */
     @Test
-    public void TestCoordinatorCanPUTSuccessfully(final TestContext context) throws IOException, NullPointerException {
-        setUpApiServer(context);
-        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
-        int oldIndex = 0;
-        int newIndex = 1;
-        client.sendPOST(oldIndex)
-            .compose(v -> {
-                Assert.assertNotNull(client.getMemory().getExpectedMapping().get(oldIndex));
-                Assert.assertNull(client.getMemory().getExpectedMapping().get(newIndex));
-                return client.sendPUT(oldIndex, newIndex);
-            })
-            .compose(v -> client.sendGET(newIndex))
-            .onComplete(context.asyncAssertSuccess(res -> {
-                Assert.assertNull(client.getMemory().getExpectedMapping().get(oldIndex));
-                Assert.assertNotNull(client.getMemory().getExpectedMapping().get(newIndex));
-                context.assertEquals(client.getMemory().getOriginalMessage(newIndex), res);
-                tearDownAPIServer(context);
-            }));
-    }
-
-    @Test
     public void TestCoordinatorCanRunOperationChain(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.runOperationChain(SEQUENTIAL_OPERATION_FILE_NAME).onComplete(context.asyncAssertSuccess(v -> {
-            checkCollectorGenericMetrics(1, 1, 1, 0, 0, 0);
+            checkCollectorGenericMetrics(1, 1, 0, 0, 0, 0);
             tearDownAPIServer(context);
         }));
     }
@@ -175,37 +153,6 @@ public class CoordinatorTest extends AbstractClientTest {
                 exception);
             tearDownAPIServer(context);
         }));
-    }
-
-    @Test
-    public void TestCoordinatorFailsOnPUTOperation(final TestContext context) throws IOException, NullPointerException {
-        setUpApiServer(context);
-        int impossibleMessage = 9999;
-        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
-        client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(PUT_OPERATION_NUMBER).getAction().setMessageNumber(impossibleMessage);
-        client.runOperationChain(SEQUENTIAL_OPERATION_FILE_NAME).onComplete(context.asyncAssertFailure(throwable -> {
-            ClientException exception = (ClientException) throwable;
-            Assert.assertEquals(404, exception.getStatusCode());
-            Assert.assertEquals("Could not find entry for uuid 'null'", exception.getMessage());
-            checkCollectorGenericMetrics(1, 1, 0, 0, 0, 1);
-
-            checkMismatchedResponse(client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(PUT_OPERATION_NUMBER),
-                client.getCollector().getMismatchedResponses().get(0),
-                exception);
-        }));
-    }
-
-    @Test
-    public void TestCoordinatorCanFailPUT(final TestContext context) throws IOException, NullPointerException {
-        setUpApiServer(context);
-        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
-        int oldIndex = 0;
-        int newIndex = 1;
-        client.sendPUT(oldIndex, newIndex)
-            .onComplete(context.asyncAssertFailure(throwable -> {
-                Assert.assertEquals("Could not find entry for uuid 'null'", throwable.getMessage());
-                tearDownAPIServer(context);
-            }));
     }
 
     /**
@@ -306,24 +253,6 @@ public class CoordinatorTest extends AbstractClientTest {
         }));
     }
 
-    @Test
-    public void TestCoordinatorThrowsOutOfBoundExceptionOnPUTOperation(final TestContext context) throws IOException, NullPointerException {
-        setUpApiServer(context);
-        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
-        client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(PUT_OPERATION_NUMBER).getAction().setNewMessageNumber(OUT_OF_BOUND_MESSAGE_INDEX);
-        client.runOperationChain(SEQUENTIAL_OPERATION_FILE_NAME).onComplete(context.asyncAssertFailure(throwable -> {
-            ClientException exception = (ClientException) throwable;
-            Assert.assertEquals(500, exception.getStatusCode());
-            Assert.assertEquals(OUT_OF_BOUND_EXCEPTION, exception.getMessage());
-            checkCollectorGenericMetrics(1, 1, 0, 0, 0, 1);
-
-            checkMismatchedResponse(client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(PUT_OPERATION_NUMBER),
-                client.getCollector().getMismatchedResponses().get(0),
-                exception);
-            tearDownAPIServer(context);
-        }));
-    }
-
     private void checkMismatchedResponse(final Operation operation, final MismatchedResponse response, final ClientException exception) {
         Assert.assertEquals(operation.getAction().getMethod(), response.getMethod());
         Assert.assertEquals(operation.getAction().getMessageNumber().intValue(), response.getMessageNumber());
@@ -343,11 +272,9 @@ public class CoordinatorTest extends AbstractClientTest {
 
         Assert.assertEquals(successfulGet, client.getCollector().getGeneral().getSucceeded(RequestMethod.GET));
         Assert.assertEquals(successfulPost, client.getCollector().getGeneral().getSucceeded(RequestMethod.POST));
-        Assert.assertEquals(successfulPut, client.getCollector().getGeneral().getSucceeded(RequestMethod.PUT));
 
         Assert.assertEquals(failedGet, client.getCollector().getGeneral().getFailed(RequestMethod.GET));
         Assert.assertEquals(failedPost, client.getCollector().getGeneral().getFailed(RequestMethod.POST));
-        Assert.assertEquals(failedPut, client.getCollector().getGeneral().getFailed(RequestMethod.PUT));
     }
 
     protected void setUpApiServer(final TestContext context) {

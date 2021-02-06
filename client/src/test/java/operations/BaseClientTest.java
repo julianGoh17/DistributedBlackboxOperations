@@ -1,7 +1,6 @@
 package operations;
 
 import io.julian.client.operations.BaseClient;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
@@ -54,37 +53,5 @@ public class BaseClientTest extends AbstractClientTest {
 
         baseClient.GETMessage(randomId)
             .onComplete(context.asyncAssertFailure(err -> context.assertEquals(String.format("Could not find entry for uuid '%s'", randomId), err.getMessage())));
-    }
-
-    @Test
-    public void TestSuccessfulPUTMessage(final TestContext context) {
-        setUpApiServer(context);
-        JsonObject originalMessage = new JsonObject().put("original", "message");
-        JsonObject newMessage = new JsonObject().put("new", "message");
-
-        baseClient.POSTMessage(originalMessage)
-            .compose(id -> baseClient.GETMessage(id)
-                .compose(returnedMessage -> {
-                    context.assertEquals(originalMessage, returnedMessage);
-                    return Future.succeededFuture(id);
-                })
-            )
-            .compose(id -> baseClient.PUTMessage(id, newMessage))
-            .compose(id -> baseClient.GETMessage(id).onComplete(context.asyncAssertSuccess(res -> {
-                context.assertNotEquals(originalMessage, res);
-                context.assertEquals(newMessage, res);
-            })));
-
-    }
-
-    @Test
-    public void TestUnsuccessfulPUTMessage(final TestContext context) {
-        setUpApiServer(context);
-        JsonObject message = new JsonObject().put("new", "message");
-        String nonExistentId = "random-id";
-
-        baseClient.PUTMessage(nonExistentId, message)
-            .onComplete(context.asyncAssertFailure(throwable ->
-                context.assertEquals(String.format("Could not find entry for uuid '%s'", nonExistentId), throwable.getMessage())));
     }
 }

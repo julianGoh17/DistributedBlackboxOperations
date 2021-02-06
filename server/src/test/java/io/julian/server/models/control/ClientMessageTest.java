@@ -12,8 +12,7 @@ public class ClientMessageTest {
     private static final List<String> REQUESTS = Arrays.asList("GET", "POST", "PUT", "DELETE", "any");
     private static final JsonObject EXPECTED_MESSAGE = new JsonObject()
         .put("random", new JsonObject().put("nested", "key"));
-    private static final String ORIGINAL_ID = "original-id-1234";
-    private static final String NEW_ID = "new-id-1234";
+    private static final String MESSAGE_ID = "original-id-1234";
 
     @Test
     public void TestCanMapFromValue() {
@@ -21,8 +20,7 @@ public class ClientMessageTest {
             JsonObject targetMessage = new JsonObject()
                 .put(ClientMessage.REQUEST_KEY, request)
                 .put(ClientMessage.MESSAGE_KEY, EXPECTED_MESSAGE)
-                .put(ClientMessage.ORIGINAL_ID_KEY, ORIGINAL_ID)
-                .put(ClientMessage.NEW_ID_KEY, NEW_ID);
+                .put(ClientMessage.MESSAGE_ID_KEY, MESSAGE_ID);
 
             ClientMessage message = ClientMessage.fromJson(targetMessage);
             Assert.assertEquals(HTTPRequest.forValue(request), message.getRequest());

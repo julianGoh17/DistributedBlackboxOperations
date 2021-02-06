@@ -75,35 +75,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-    put:
-      operationId: putMessage
-      description: Move message with uuid to a new UUID. Note that this endpoint does not care if there exists a message with new UUID already.
-      parameters:
-        - name: originalId
-          in: query
-          description: The original UUID of the message to move
-          required: true
-          schema:
-            type: string
-        - name: newId
-          in: query
-          description: The new UUID to store the message as.
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MessageIDResponse"
-        '404':
-          description: Could not find message with UUID
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
   ########################
   # Coordinate Endpoints #
   ########################
