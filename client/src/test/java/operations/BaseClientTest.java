@@ -1,5 +1,6 @@
 package operations;
 
+import io.julian.client.model.operation.Expected;
 import io.julian.client.operations.BaseClient;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
@@ -61,16 +62,16 @@ public class BaseClientTest extends AbstractClientTest {
         JsonObject message = new JsonObject().put("this", "message");
 
         baseClient.POSTMessage(message)
-            .compose(baseClient::DELETEMessage)
+            .compose(id -> baseClient.DELETEMessage(id, new Expected(200, null)))
             .onComplete(context.asyncAssertSuccess(context::assertNotNull));
     }
 
     @Test
-    public void TestUnsuccessfulDELETEMessage(final TestContext context) {
+    public void TestSuccessfulDELETEMessageIfMatchesStatusCode(final TestContext context) {
         setUpApiServer(context);
         String randomId = "random-id";
 
-        baseClient.DELETEMessage(randomId)
-            .onComplete(context.asyncAssertFailure(err -> context.assertEquals(String.format("Couldn't delete message with uuid '%s' from server", randomId), err.getMessage())));
+        baseClient.DELETEMessage(randomId, new Expected(404, 1))
+            .onComplete(context.asyncAssertSuccess(context::assertNull));
     }
 }

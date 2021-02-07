@@ -4,6 +4,7 @@ import io.julian.client.exception.ClientException;
 import io.julian.client.metrics.MetricsCollector;
 import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Configuration;
+import io.julian.client.model.operation.Expected;
 import io.julian.client.model.operation.Operation;
 import io.julian.client.model.operation.OperationChain;
 import io.vertx.core.Future;
@@ -92,12 +93,12 @@ public class Coordinator {
         return log.traceExit(isGETSuccessful.future());
     }
 
-    public Future<Void> sendDELETE(final int messageIndex) throws ArrayIndexOutOfBoundsException {
+    public Future<Void> sendDELETE(final int messageIndex, final Expected expected) throws ArrayIndexOutOfBoundsException {
         log.traceEntry(() -> messageIndex);
         Promise<Void> isDELETESuccessful = Promise.promise();
         try {
             checkValidMessageIndex(messageIndex);
-            client.DELETEMessage(memory.getExpectedIDForNum(messageIndex))
+            client.DELETEMessage(memory.getExpectedIDForNum(messageIndex), expected)
                 .onSuccess(id -> {
                     log.info(String.format("Successful DELETE of message number '%d' with id '%s'", messageIndex, id));
                     memory.disassociateNumberFromID(messageIndex);
@@ -229,7 +230,7 @@ public class Coordinator {
                 return log.traceExit(complete.future());
             case DELETE:
                 log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.DELETE.toString(), operation.getAction().getMessageNumber()));
-                sendDELETE(operation.getAction().getMessageNumber())
+                sendDELETE(operation.getAction().getMessageNumber(), operation.getExpected())
                     .onSuccess(v -> complete.complete())
                     .onFailure(complete::fail);
                 return log.traceExit(complete.future());

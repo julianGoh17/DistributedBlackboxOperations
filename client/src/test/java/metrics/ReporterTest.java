@@ -199,7 +199,7 @@ public class ReporterTest {
         action.setMessageNumber(MESSAGE_NUMBER);
         operation.setAction(action);
 
-        Expected expected = new Expected();
+        Expected expected = new Expected(1, null);
         expected.setStatusCode(EXPECTED_STATUS_CODE);
         operation.setExpected(expected);
 

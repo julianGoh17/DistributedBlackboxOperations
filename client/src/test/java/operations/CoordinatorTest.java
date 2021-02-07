@@ -1,12 +1,14 @@
 package operations;
 
 import io.julian.client.exception.ClientException;
+import io.julian.client.model.operation.Expected;
 import io.julian.client.model.response.MismatchedResponse;
 import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Operation;
 import io.julian.client.operations.Coordinator;
 import io.julian.server.components.Configuration;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.After;
@@ -165,7 +167,8 @@ public class CoordinatorTest extends AbstractClientTest {
         client.runOperationChain(SEQUENTIAL_OPERATION_FILE_NAME).onComplete(context.asyncAssertFailure(throwable -> {
             ClientException exception = (ClientException) throwable;
             Assert.assertEquals(404, exception.getStatusCode());
-            Assert.assertEquals("Couldn't delete message with uuid 'null' from server", exception.getMessage());
+            Assert.assertEquals(String.format(Expected.MISMATCHED_STATUS_CODE_ERROR_FORMAT, 404, 200)
+                + String.format(Expected.SERVER_ERROR, "Couldn't delete message with uuid 'null' from server"), exception.getMessage());
             checkCollectorGenericMetrics(1, 1, 0, 0, 0, 1);
 
             checkMismatchedResponse(client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(DELETE_OPERATION_NUMBER),
@@ -186,6 +189,42 @@ public class CoordinatorTest extends AbstractClientTest {
                 checkCollectorGenericMetrics(1, 1, 1, 0, 0, 0);
                 tearDownAPIServer(context);
             }));
+    }
+
+    @Test
+    public void TestCoordinatorFailsOperationChainIfMismatchedStatusCode(final TestContext context) throws IOException, NullPointerException {
+        setUpApiServer(context);
+        client = new Coordinator(vertx);
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(DELETE_OPERATION_NUMBER).getExpected().setStatusCode(1);
+        client.runOperationChain(SEQUENTIAL_OPERATION_FILE_NAME).onComplete(context.asyncAssertFailure(throwable -> {
+            ClientException exception = (ClientException) throwable;
+            Assert.assertEquals(200, exception.getStatusCode());
+            Assert.assertEquals(String.format(Expected.MISMATCHED_STATUS_CODE_ERROR_FORMAT, 200, 1) + Expected.CLIENT_ERROR, exception.getMessage());
+            checkCollectorGenericMetrics(1, 1, 0, 0, 0, 1);
+
+            checkMismatchedResponse(client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(DELETE_OPERATION_NUMBER),
+                client.getCollector().getMismatchedResponses().get(0),
+                exception);
+            tearDownAPIServer(context);
+        }));
+    }
+
+    @Test
+    public void TestCoordinatorPassesOperationChainIfStatusCodeMatches(final TestContext context) throws IOException, NullPointerException {
+        setUpApiServer(context);
+        int nonExistentID = 1;
+        client = new Coordinator(vertx);
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(DELETE_OPERATION_NUMBER).getAction().setMessageNumber(nonExistentID);
+        client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(DELETE_OPERATION_NUMBER).getExpected().setStatusCode(404);
+        client.getMemory().getOriginalMessages().add(new JsonObject());
+        client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().remove(1);
+        client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().remove(0);
+        client.runOperationChain(SEQUENTIAL_OPERATION_FILE_NAME).onComplete(context.asyncAssertSuccess(v -> {
+            checkCollectorGenericMetrics(0, 0, 1, 0, 0, 0);
+            tearDownAPIServer(context);
+        }));
     }
 
     /**

@@ -1,9 +1,10 @@
 package io.julian.client.operations;
 
 import io.julian.client.exception.ClientException;
-import io.julian.client.model.response.MessageIdResponse;
 import io.julian.client.model.MessageWrapper;
+import io.julian.client.model.operation.Expected;
 import io.julian.client.model.response.GetMessageResponse;
+import io.julian.client.model.response.MessageIdResponse;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -72,20 +73,26 @@ public class BaseClient {
         return log.traceExit(getResponse.future());
     }
 
-    public Future<String> DELETEMessage(final String messageId) {
+    public Future<String> DELETEMessage(final String messageId, final Expected expected) {
         log.traceEntry(() -> messageId);
         Promise<String> delete = Promise.promise();
         client.delete(Configuration.getServerPort(), Configuration.getServerHost(), String.format("%s/?messageId=%s", CLIENT_URI, messageId))
             .send(res -> {
                 if (res.succeeded()) {
                     MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
-                    if (response.isError()) {
-                        ClientException exception = new ClientException(response.getError(), response.getStatusCode());
+                    if (!expected.doesMatchExpectedStatusCode(res.result().statusCode())) {
+                        ClientException exception = expected.generateMismatchedException(res.result().statusCode(),
+                            response.getError());
                         log.error(exception);
                         delete.fail(exception);
                     } else {
-                        log.info(String.format("Successful DELETE for message id '%s'", messageId));
-                        delete.complete(response.getMessageId());
+                        if (response.isError()) {
+                            log.info(String.format("Correctly could not DELETE message id '%s'", messageId));
+                            delete.complete();
+                        } else {
+                            log.info(String.format("Successful DELETE for message id '%s'", messageId));
+                            delete.complete(response.getMessageId());
+                        }
                     }
                 } else {
                     ClientException exception = new ClientException(res.cause().getMessage(), 400);
