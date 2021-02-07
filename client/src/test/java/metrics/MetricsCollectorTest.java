@@ -124,7 +124,6 @@ public class MetricsCollectorTest {
         Action action = new Action();
         action.setMethod(method);
         action.setMessageNumber(MESSAGE_NUMBER);
-        action.setNewMessageNumber(2);
         operation.setAction(action);
 
         Expected expected = new Expected();

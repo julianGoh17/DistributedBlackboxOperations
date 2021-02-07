@@ -29,6 +29,7 @@ public class CoordinatorTest extends AbstractClientTest {
 
     private static final int POST_OPERATION_NUMBER = 0;
     private static final int GET_OPERATION_NUMBER = 1;
+    private static final int DELETE_OPERATION_NUMBER = 2;
 
     private static final String CONNECTION_REFUSED_EXCEPTION = String.format("Connection refused: %s/127.0.0.1:%d", Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
     private static final String OUT_OF_BOUND_EXCEPTION = String.format("No original message with index '%d'", OUT_OF_BOUND_MESSAGE_INDEX);
@@ -116,7 +117,7 @@ public class CoordinatorTest extends AbstractClientTest {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.runOperationChain(SEQUENTIAL_OPERATION_FILE_NAME).onComplete(context.asyncAssertSuccess(v -> {
-            checkCollectorGenericMetrics(1, 1, 0, 0, 0, 0);
+            checkCollectorGenericMetrics(1, 1, 1, 0, 0, 0);
             tearDownAPIServer(context);
         }));
     }
@@ -153,6 +154,38 @@ public class CoordinatorTest extends AbstractClientTest {
                 exception);
             tearDownAPIServer(context);
         }));
+    }
+
+    @Test
+    public void TestCoordinatorFailsOnDELETEOperation(final TestContext context) throws IOException, NullPointerException {
+        setUpApiServer(context);
+        client = new Coordinator(vertx);
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(DELETE_OPERATION_NUMBER).getAction().setMessageNumber(2);
+        client.runOperationChain(SEQUENTIAL_OPERATION_FILE_NAME).onComplete(context.asyncAssertFailure(throwable -> {
+            ClientException exception = (ClientException) throwable;
+            Assert.assertEquals(404, exception.getStatusCode());
+            Assert.assertEquals("Couldn't delete message with uuid 'null' from server", exception.getMessage());
+            checkCollectorGenericMetrics(1, 1, 0, 0, 0, 1);
+
+            checkMismatchedResponse(client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(DELETE_OPERATION_NUMBER),
+                client.getCollector().getMismatchedResponses().get(0),
+                exception);
+            tearDownAPIServer(context);
+        }));
+    }
+
+    @Test
+    public void TestCoordinatorPassesOperationChain(final TestContext context) throws IOException, NullPointerException {
+        setUpApiServer(context);
+        client = new Coordinator(vertx);
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(DELETE_OPERATION_NUMBER).getAction().setMessageNumber(1);
+        client.runOperationChain(SEQUENTIAL_OPERATION_FILE_NAME)
+            .onComplete(context.asyncAssertSuccess(res -> {
+                checkCollectorGenericMetrics(1, 1, 1, 0, 0, 0);
+                tearDownAPIServer(context);
+            }));
     }
 
     /**
@@ -261,9 +294,9 @@ public class CoordinatorTest extends AbstractClientTest {
         Assert.assertEquals(exception.getMessage(), response.getError());
     }
 
-    private void checkCollectorGenericMetrics(final int successfulGet, final int successfulPost, final int successfulPut, final int failedGet, final int failedPost, final int failedPut) {
-        int totalSuccess = successfulGet + successfulPost + successfulPut;
-        int totalFail = failedGet + failedPost + failedPut;
+    private void checkCollectorGenericMetrics(final int successfulGet, final int successfulPost, final int successfulDelete, final int failedGet, final int failedPost, final int failedDelete) {
+        int totalSuccess = successfulGet + successfulPost + successfulDelete;
+        int totalFail = failedGet + failedPost + failedDelete;
 
         Assert.assertEquals(totalSuccess + totalFail, client.getCollector().getGeneral().getTotal());
         Assert.assertEquals(totalFail, client.getCollector().getGeneral().getFailed());

@@ -54,4 +54,23 @@ public class BaseClientTest extends AbstractClientTest {
         baseClient.GETMessage(randomId)
             .onComplete(context.asyncAssertFailure(err -> context.assertEquals(String.format("Could not find entry for uuid '%s'", randomId), err.getMessage())));
     }
+
+    @Test
+    public void TestSuccessfulDeleteMessage(final TestContext context) {
+        setUpApiServer(context);
+        JsonObject message = new JsonObject().put("this", "message");
+
+        baseClient.POSTMessage(message)
+            .compose(baseClient::DELETEMessage)
+            .onComplete(context.asyncAssertSuccess(context::assertNotNull));
+    }
+
+    @Test
+    public void TestUnsuccessfulDELETEMessage(final TestContext context) {
+        setUpApiServer(context);
+        String randomId = "random-id";
+
+        baseClient.DELETEMessage(randomId)
+            .onComplete(context.asyncAssertFailure(err -> context.assertEquals(String.format("Couldn't delete message with uuid '%s' from server", randomId), err.getMessage())));
+    }
 }

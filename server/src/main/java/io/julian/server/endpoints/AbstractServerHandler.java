@@ -52,9 +52,11 @@ public abstract class AbstractServerHandler {
     }
 
     protected void sendResponseBack(final RoutingContext context, final int statusCode, final JsonObject message) {
+        log.traceEntry(() -> context, () -> statusCode, () -> message);
         context.response()
             .setStatusCode(statusCode)
             .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
             .end(message.encodePrettily());
+        log.traceExit();
     }
 }

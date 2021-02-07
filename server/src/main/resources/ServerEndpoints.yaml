@@ -57,7 +57,7 @@ paths:
           schema:
             type: string
       responses:
-        '204':
+        '200':
           description: Successful operation
           content:
             application/json:
@@ -65,12 +65,6 @@ paths:
                 $ref: "#/components/schemas/MessageIDResponse"
         '404':
           description: Could not find message with UUID
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        '504':
-          description: Operation timeout
           content:
             application/json:
               schema:

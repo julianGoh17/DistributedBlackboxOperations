@@ -126,7 +126,7 @@ public abstract class AbstractHandlerTest {
         Promise<String> completed = Promise.promise();
         sendDELETEMessage(context, client, messageId)
             .compose(res -> {
-                context.assertEquals(204, res.statusCode());
+                context.assertEquals(200, res.statusCode());
                 context.assertEquals(new MessageIDResponse(messageId).toJson().encodePrettily(), res.bodyAsJsonObject().encodePrettily());
                 context.assertFalse(server.getMessages().hasUUID(messageId));
                 completed.complete(messageId);
@@ -166,7 +166,9 @@ public abstract class AbstractHandlerTest {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
             .delete(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/?messageId=%s", CLIENT_URI, messageId))
-            .send(context.asyncAssertSuccess(response::complete));
+            .send(context.asyncAssertSuccess(res -> {
+                response.complete(res);
+            }));
         return response.future();
     }
 }

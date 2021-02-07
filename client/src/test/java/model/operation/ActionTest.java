@@ -17,7 +17,6 @@ public class ActionTest extends AbstractOperationModelTest {
         Action action = firstMessage.mapTo(Action.class);
         Assert.assertEquals(RequestMethod.GET, action.getMethod());
         Assert.assertEquals(1, action.getMessageNumber().intValue());
-        Assert.assertNull(action.getNewMessageNumber());
     }
 
     @Test
@@ -25,6 +24,5 @@ public class ActionTest extends AbstractOperationModelTest {
         Action action = new JsonObject().mapTo(Action.class);
         Assert.assertNull(action.getMethod());
         Assert.assertNull(action.getMessageNumber());
-        Assert.assertNull(action.getNewMessageNumber());
     }
 }

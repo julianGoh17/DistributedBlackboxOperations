@@ -17,6 +17,15 @@
       "expected": {
         "statusCode": 404
       }
+    },
+    {
+      "action": {
+        "method": "DELETE",
+        "messageNumber": 1
+      },
+      "expected": {
+        "statusCode": 404
+      }
     }
   ],
   "configuration": {

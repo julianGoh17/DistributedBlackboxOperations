@@ -15,7 +15,7 @@ public class OperationChainTest extends AbstractOperationModelTest {
     public void TestOperationChainMapsCorrectly() throws IOException {
         JsonObject content = readTestFile();
         OperationChain chain = content.mapTo(OperationChain.class);
-        Assert.assertEquals(2, chain.getOperations().size());
+        Assert.assertEquals(3, chain.getOperations().size());
         Assert.assertEquals(RequestMethod.POST, chain.getOperations().get(0).getAction().getMethod());
         Assert.assertEquals(1, chain.getOperations().get(0).getAction().getMessageNumber().intValue());
         Assert.assertEquals(200, chain.getOperations().get(0).getExpected().getStatusCode());
@@ -24,7 +24,12 @@ public class OperationChainTest extends AbstractOperationModelTest {
         Assert.assertEquals(RequestMethod.GET, chain.getOperations().get(1).getAction().getMethod());
         Assert.assertEquals(1, chain.getOperations().get(1).getAction().getMessageNumber().intValue());
         Assert.assertEquals(404, chain.getOperations().get(1).getExpected().getStatusCode());
-        Assert.assertNull(chain.getOperations().get(0).getExpected().getMessageNumber());
+        Assert.assertNull(chain.getOperations().get(1).getExpected().getMessageNumber());
+
+        Assert.assertEquals(RequestMethod.DELETE, chain.getOperations().get(2).getAction().getMethod());
+        Assert.assertEquals(1, chain.getOperations().get(2).getAction().getMessageNumber().intValue());
+        Assert.assertEquals(404, chain.getOperations().get(2).getExpected().getStatusCode());
+
 
         Assert.assertFalse(chain.getConfiguration().willRunInParallel());
     }

@@ -92,6 +92,30 @@ public class Coordinator {
         return log.traceExit(isGETSuccessful.future());
     }
 
+    public Future<Void> sendDELETE(final int messageIndex) throws ArrayIndexOutOfBoundsException {
+        log.traceEntry(() -> messageIndex);
+        Promise<Void> isDELETESuccessful = Promise.promise();
+        try {
+            checkValidMessageIndex(messageIndex);
+            client.DELETEMessage(memory.getExpectedIDForNum(messageIndex))
+                .onSuccess(id -> {
+                    log.info(String.format("Successful DELETE of message number '%d' with id '%s'", messageIndex, id));
+                    memory.disassociateNumberFromID(messageIndex);
+                    isDELETESuccessful.complete();
+                })
+                .onFailure(throwable -> {
+                    ClientException exception = (ClientException) throwable;
+                    log.error(String.format("Unsuccessful DELETE of message number '%d' because: %s", messageIndex, exception.getMessage()));
+                    isDELETESuccessful.fail(throwable);
+                });
+        } catch (ArrayIndexOutOfBoundsException e) {
+            ClientException exception = new ClientException(e.getMessage(), 500);
+            log.error(exception);
+            isDELETESuccessful.fail(exception);
+        }
+        return log.traceExit(isDELETESuccessful.future());
+    }
+
     private void checkValidMessageIndex(final int messageIndex) throws ArrayIndexOutOfBoundsException {
         log.traceEntry(() -> messageIndex);
         if (!memory.hasOriginalMessageNumber(messageIndex)) {
@@ -196,13 +220,19 @@ public class Coordinator {
         switch (operation.getAction().getMethod()) {
             case POST:
                 log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.POST.toString(), operation.getAction().getMessageNumber()));
-                return sendPOST(operation.getAction().getMessageNumber());
+                return log.traceExit(sendPOST(operation.getAction().getMessageNumber()));
             case GET:
                 log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.GET.toString(), operation.getAction().getMessageNumber()));
                 sendGET(operation.getAction().getMessageNumber())
                     .onSuccess(v -> complete.complete())
                     .onFailure(complete::fail);
-                return complete.future();
+                return log.traceExit(complete.future());
+            case DELETE:
+                log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.DELETE.toString(), operation.getAction().getMessageNumber()));
+                sendDELETE(operation.getAction().getMessageNumber())
+                    .onSuccess(v -> complete.complete())
+                    .onFailure(complete::fail);
+                return log.traceExit(complete.future());
             default:
                 complete.complete();
         }

@@ -58,6 +58,8 @@ public class Reporter {
         builder.append("\n");
         getGeneralStatistics(metrics, RequestMethod.POST, builder);
         builder.append("\n");
+        getGeneralStatistics(metrics, RequestMethod.DELETE, builder);
+        builder.append("\n");
 
         Optional.ofNullable(responses)
             .orElse(Collections.emptyList())

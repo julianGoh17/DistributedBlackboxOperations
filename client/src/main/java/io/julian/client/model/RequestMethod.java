@@ -7,4 +7,6 @@ public enum RequestMethod {
     GET,
     @JsonProperty("POST")
     POST,
+    @JsonProperty("DELETE")
+    DELETE,
 }

@@ -20,9 +20,9 @@ public class DeleteMessageHandler extends AbstractServerHandler  {
             .map(params -> params.get(0))
             .orElse(null);
 
-        if (components.messageStore.hasUUID(messageID)) {
+        if (components.messageStore.hasUUID(messageID) && messageID != null) {
             components.messageStore.removeMessage(messageID);
-            sendResponseBack(context, 204, new MessageIDResponse(messageID).toJson());
+            sendResponseBack(context, 200, new MessageIDResponse(messageID).toJson());
         } else {
             String errorMessage = String.format(ERROR_RESPONSE, messageID);
             log.error(errorMessage);
