@@ -52,4 +52,18 @@ public class TestClient {
             });
         return response.future();
     }
+
+    public Future<HttpResponse<Buffer>> DELETE_MESSAGE(final String uuid) {
+        Promise<HttpResponse<Buffer>> response = Promise.promise();
+        client
+            .delete(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("/client/?messageId=%s", uuid))
+            .send(res -> {
+                if (res.succeeded()) {
+                    response.complete(res.result());
+                } else {
+                    response.fail(res.cause());
+                }
+            });
+        return response.future();
+    }
 }

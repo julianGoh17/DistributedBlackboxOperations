@@ -1,7 +1,10 @@
 package io.julian.server.endpoints.client;
 
+import io.julian.server.api.DistributedAlgorithmVerticle;
 import io.julian.server.endpoints.AbstractServerHandler;
 import io.julian.server.endpoints.ServerComponents;
+import io.julian.server.models.HTTPRequest;
+import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.response.MessageIDResponse;
 import io.vertx.ext.web.RoutingContext;
 import org.apache.logging.log4j.LogManager;
@@ -28,6 +31,11 @@ public class DeleteMessageHandler extends AbstractServerHandler  {
             log.error(errorMessage);
             context.fail(404, new Exception(errorMessage));
         }
+
+        components.controller.addToClientMessageQueue(new ClientMessage(HTTPRequest.DELETE, null, messageID));
+        components.vertx.eventBus().send(
+            DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.CLIENT_MESSAGE_POSTFIX),
+            "");
 
         log.traceExit();
     }
