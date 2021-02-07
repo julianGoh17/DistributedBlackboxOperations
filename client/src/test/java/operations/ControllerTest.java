@@ -68,7 +68,6 @@ public class ControllerTest extends AbstractClientTest {
         Action action = new Action();
         action.setMethod(RequestMethod.GET);
         action.setMessageNumber(1);
-        action.setNewMessageNumber(2);
         operation.setAction(action);
 
         Expected expected = new Expected();

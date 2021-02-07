@@ -5,9 +5,9 @@ import io.julian.server.api.DistributedAlgorithmVerticle;
 import io.julian.server.endpoints.AbstractServerHandler;
 import io.julian.server.endpoints.ErrorHandler;
 import io.julian.server.endpoints.ServerComponents;
+import io.julian.server.endpoints.client.DeleteMessageHandler;
 import io.julian.server.endpoints.client.GetMessageHandler;
 import io.julian.server.endpoints.client.PostMessageHandler;
-import io.julian.server.endpoints.client.PutMessageHandler;
 import io.julian.server.endpoints.control.GetServerSettingsHandler;
 import io.julian.server.endpoints.coordination.CoordinationMessageHandler;
 import io.julian.server.endpoints.coordination.LabelHandler;
@@ -32,8 +32,8 @@ public class Server {
     private static final Logger log = LogManager.getLogger(Server.class);
     private OpenAPI3RouterFactory routerFactory;
     private final MessageStore messages;
-    private final static String[] OPERATION_IDS = new String[]{"postMessage", "getMessage", "putMessage", "setServerSettings",
-        "getServerSettings", "setLabel", "sendCoordinationMessage"};
+    private final static String[] OPERATION_IDS = new String[]{"postMessage", "getMessage", "deleteMessage",
+        "setServerSettings", "getServerSettings", "setLabel", "sendCoordinationMessage"};
     private final Controller controller = new Controller();
 
     public Server() {
@@ -64,13 +64,13 @@ public class Server {
         // Client Endpoints
         PostMessageHandler postMessageHandler = new PostMessageHandler();
         GetMessageHandler getMessageHandler = new GetMessageHandler();
-        PutMessageHandler putMessageHandler = new PutMessageHandler();
+        DeleteMessageHandler deleteMessageHandler = new DeleteMessageHandler();
 
         // Coordination Endpoints
         CoordinationMessageHandler coordinationMessageHandler = new CoordinationMessageHandler();
         LabelHandler labelHandler = new LabelHandler();
 
-        List<AbstractServerHandler> handlers = Arrays.asList(postMessageHandler, putMessageHandler, getMessageHandler,
+        List<AbstractServerHandler> handlers = Arrays.asList(postMessageHandler, getMessageHandler, deleteMessageHandler,
             coordinationMessageHandler, labelHandler);
         // Gate Handlers
         ProbabilisticFailureGate probabilisticFailureGate = new ProbabilisticFailureGate();
@@ -85,7 +85,8 @@ public class Server {
 
         routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.runThroughHandlers(routingContext, components));
         routerFactory.addHandlerByOperationId("getMessage", routingContext -> getMessageHandler.runThroughHandlers(routingContext, components));
-        routerFactory.addHandlerByOperationId("putMessage", routingContext -> putMessageHandler.runThroughHandlers(routingContext, components));
+        routerFactory.addHandlerByOperationId("deleteMessage", routingContext -> deleteMessageHandler.runThroughHandlers(routingContext, components));
+
         routerFactory.addHandlerByOperationId("setLabel", routingContext -> labelHandler.runThroughHandlers(routingContext, components));
         routerFactory.addHandlerByOperationId("sendCoordinationMessage",
             routingContext -> coordinationMessageHandler.runThroughHandlers(routingContext, components));

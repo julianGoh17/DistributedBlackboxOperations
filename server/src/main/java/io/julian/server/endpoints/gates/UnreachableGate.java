@@ -2,7 +2,6 @@ package io.julian.server.endpoints.gates;
 
 import io.julian.server.components.Controller;
 import io.julian.server.models.ServerStatus;
-import io.julian.server.models.response.ErrorResponse;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.ext.web.RoutingContext;
@@ -21,11 +20,8 @@ public class UnreachableGate implements HandlerGate {
         Promise<String> hasPassedGate = Promise.promise();
 
         if (ServerStatus.UNREACHABLE.equals(controller.getStatus())) {
-            context.response()
-                .setStatusCode(FAILURE_STATUS_CODE)
-                .end(new ErrorResponse(FAILURE_STATUS_CODE, new Exception(FAILURE_MESSAGE))
-                    .toJson()
-                    .encodePrettily());
+            log.error(FAILURE_MESSAGE);
+            context.fail(FAILURE_STATUS_CODE, new Exception(FAILURE_MESSAGE));
             hasPassedGate.fail(FAILURE_MESSAGE);
         } else {
             log.trace(SUCCESS_MESSAGE);

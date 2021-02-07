@@ -74,7 +74,8 @@ public class CoordinationMessageTest {
     @Test
     public void TestCoordinationResponseCanMapToJson() {
         CoordinationMessage response = new CoordinationMessage(
-            new CoordinationMetadata(CoordinationMetadataTest.SERVER_ID, new CoordinationTimestamp(CoordinationMetadataTest.TIME)),
+            new CoordinationMetadata(CoordinationMetadataTest.SERVER_ID, new CoordinationTimestamp(CoordinationMetadataTest.TIME),
+                CoordinationMetadataTest.REQUEST, CoordinationMetadataTest.ORIGINAL_ID, CoordinationMetadataTest.NEW_ID),
             MESSAGE,
             new JsonObject().put("user", USER));
 

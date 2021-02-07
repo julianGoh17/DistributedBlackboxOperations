@@ -15,8 +15,4 @@ public class Action {
     @JsonProperty("messageNumber")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private Integer messageNumber;
-
-    @JsonProperty("newMessageNumber")
-    @JsonInclude(JsonInclude.Include.NON_NULL)
-    private Integer newMessageNumber;
 }

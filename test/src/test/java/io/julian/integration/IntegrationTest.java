@@ -1,6 +1,9 @@
 package io.julian.integration;
 
+import io.julian.server.models.HTTPRequest;
+import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -50,18 +53,52 @@ public class IntegrationTest extends AbstractServerBaseTest {
     }
 
     @Test
-    public void TestCanSendPostMessageInToServer(final TestContext context) {
+    public void TestPOSTMessageAppearsInClientQueueInServer(final TestContext context) {
         setUpApiServer(context);
         Async async = context.async();
         client.POST_MESSAGE(TEST_MESSAGE)
             .onComplete(context.asyncAssertSuccess(res -> {
                 Assert.assertEquals(200, res.statusCode());
-                Assert.assertEquals(1, server.getController().getNumberOfInitialPostMessages());
-
+                Assert.assertEquals(1, server.getController().getNumberOfClientMessages());
+                final ClientMessage clientMessage = server.getController().getClientMessage();
                 Assert.assertEquals(TEST_MESSAGE.encodePrettily(),
-                    server.getController().getInitialPostMessage().encodePrettily());
+                    clientMessage.getMessage().encodePrettily());
+                Assert.assertEquals(HTTPRequest.POST, clientMessage.getRequest());
 
-                Assert.assertEquals(0, server.getController().getNumberOfInitialPostMessages());
+                Assert.assertEquals(0, server.getController().getNumberOfClientMessages());
+                async.complete();
+            }));
+
+        async.await();
+        tearDownServer(context);
+    }
+
+    @Test
+    public void TestDELETEMessageAppearsInClientQueueInServer(final TestContext context) {
+        setUpApiServer(context);
+        Async async = context.async();
+        client.POST_MESSAGE(TEST_MESSAGE)
+            .compose(res -> {
+                Assert.assertEquals(200, res.statusCode());
+                Assert.assertEquals(1, server.getController().getNumberOfClientMessages());
+
+                final ClientMessage clientMessage = server.getController().getClientMessage();
+                Assert.assertEquals(TEST_MESSAGE.encodePrettily(),
+                    clientMessage.getMessage().encodePrettily());
+                Assert.assertEquals(HTTPRequest.POST, clientMessage.getRequest());
+                Assert.assertEquals(0, server.getController().getNumberOfClientMessages());
+
+                return Future.succeededFuture(res.bodyAsJsonObject().getString("messageId"));
+            })
+            .compose(id -> client.DELETE_MESSAGE(id))
+            .onComplete(context.asyncAssertSuccess(res -> {
+                Assert.assertEquals(200, res.statusCode());
+                Assert.assertEquals(1, server.getController().getNumberOfClientMessages());
+
+                final ClientMessage clientMessage = server.getController().getClientMessage();
+                Assert.assertNull(clientMessage.getMessage());
+                Assert.assertEquals(HTTPRequest.DELETE, clientMessage.getRequest());
+                Assert.assertEquals(0, server.getController().getNumberOfClientMessages());
                 async.complete();
             }));
 

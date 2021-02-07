@@ -16,7 +16,7 @@ public enum ServerStatus {
         this.str = str;
     }
 
-    public static final Logger log = LogManager.getLogger(ServerStatus.class.getName());
+    private final static Logger log = LogManager.getLogger(ServerStatus.class.getName());
 
     @JsonCreator
     public static ServerStatus forValue(final String str) {

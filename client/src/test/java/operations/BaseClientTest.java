@@ -1,7 +1,6 @@
 package operations;
 
 import io.julian.client.operations.BaseClient;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
@@ -57,34 +56,21 @@ public class BaseClientTest extends AbstractClientTest {
     }
 
     @Test
-    public void TestSuccessfulPUTMessage(final TestContext context) {
+    public void TestSuccessfulDeleteMessage(final TestContext context) {
         setUpApiServer(context);
-        JsonObject originalMessage = new JsonObject().put("original", "message");
-        JsonObject newMessage = new JsonObject().put("new", "message");
+        JsonObject message = new JsonObject().put("this", "message");
 
-        baseClient.POSTMessage(originalMessage)
-            .compose(id -> baseClient.GETMessage(id)
-                .compose(returnedMessage -> {
-                    context.assertEquals(originalMessage, returnedMessage);
-                    return Future.succeededFuture(id);
-                })
-            )
-            .compose(id -> baseClient.PUTMessage(id, newMessage))
-            .compose(id -> baseClient.GETMessage(id).onComplete(context.asyncAssertSuccess(res -> {
-                context.assertNotEquals(originalMessage, res);
-                context.assertEquals(newMessage, res);
-            })));
-
+        baseClient.POSTMessage(message)
+            .compose(baseClient::DELETEMessage)
+            .onComplete(context.asyncAssertSuccess(context::assertNotNull));
     }
 
     @Test
-    public void TestUnsuccessfulPUTMessage(final TestContext context) {
+    public void TestUnsuccessfulDELETEMessage(final TestContext context) {
         setUpApiServer(context);
-        JsonObject message = new JsonObject().put("new", "message");
-        String nonExistentId = "random-id";
+        String randomId = "random-id";
 
-        baseClient.PUTMessage(nonExistentId, message)
-            .onComplete(context.asyncAssertFailure(throwable ->
-                context.assertEquals(String.format("Could not find entry for uuid '%s'", nonExistentId), throwable.getMessage())));
+        baseClient.DELETEMessage(randomId)
+            .onComplete(context.asyncAssertFailure(err -> context.assertEquals(String.format("Couldn't delete message with uuid '%s' from server", randomId), err.getMessage())));
     }
 }

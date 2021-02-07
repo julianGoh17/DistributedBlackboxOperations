@@ -92,18 +92,6 @@ public abstract class AbstractHandlerTest {
         return uuid.future();
     }
 
-    protected Future<String> sendSuccessfulPUTMessage(final TestContext context, final WebClient client, final String messageId, final JsonObject message) {
-        Promise<String> completed = Promise.promise();
-        sendPUTMessage(context, client, createPostMessage(message), messageId)
-            .compose(res -> {
-                context.assertEquals(res.statusCode(), 200);
-                context.assertEquals(res.bodyAsJsonObject().getString(MessageIDResponse.MESSAGE_ID_KEY), messageId);
-                completed.complete(messageId);
-                return Future.succeededFuture();
-            });
-        return completed.future();
-    }
-
     protected void sendUnsuccessfulGETMessage(final TestContext context, final WebClient client,
                                                final String messageId, final Throwable error,
                                                final int expectedStatusCode) {
@@ -134,17 +122,26 @@ public abstract class AbstractHandlerTest {
             });
     }
 
-    protected void sendUnsuccessfulPUTMessage(final TestContext context, final WebClient client,
-                                               final JsonObject message, final String messageId, final Throwable error,
-                                               final int expectedStatusCode) {
-        sendPUTMessage(context, client, message, messageId)
+    protected Future<String> sendSuccessfulDELETEMessage(final TestContext context, final WebClient client, final String messageId) {
+        Promise<String> completed = Promise.promise();
+        sendDELETEMessage(context, client, messageId)
             .compose(res -> {
-                context.assertEquals(res.statusCode(), expectedStatusCode);
-                if (error != null) {
-                    context.assertEquals(res.bodyAsJsonObject(), new ErrorResponse(expectedStatusCode, error).toJson());
-                } else {
-                    context.assertNull(res.bodyAsJsonObject());
-                }
+                context.assertEquals(200, res.statusCode());
+                context.assertEquals(new MessageIDResponse(messageId).toJson().encodePrettily(), res.bodyAsJsonObject().encodePrettily());
+                context.assertFalse(server.getMessages().hasUUID(messageId));
+                completed.complete(messageId);
+                return Future.succeededFuture();
+            });
+        return completed.future();
+    }
+
+    protected void sendUnsuccessfulDELETEMessage(final TestContext context, final WebClient client, final String messageId,
+                                                 final int expectedStatusCode, final Exception exception) {
+        sendDELETEMessage(context, client, messageId)
+            .compose(res -> {
+                context.assertEquals(expectedStatusCode, res.statusCode());
+                context.assertEquals(new ErrorResponse(expectedStatusCode, exception).toJson().encodePrettily(),
+                    res.bodyAsJsonObject().encodePrettily());
                 return Future.succeededFuture();
             });
     }
@@ -152,7 +149,7 @@ public abstract class AbstractHandlerTest {
     protected Future<HttpResponse<Buffer>> sendGETMessage(final TestContext context, final WebClient client, final String messageId) {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
-            .get(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, messageId))
+            .get(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/?messageId=%s", CLIENT_URI, messageId))
             .send(context.asyncAssertSuccess(response::complete));
         return response.future();
     }
@@ -165,12 +162,13 @@ public abstract class AbstractHandlerTest {
         return response.future();
     }
 
-    protected Future<HttpResponse<Buffer>> sendPUTMessage(final TestContext context, final WebClient client,
-                                                          final JsonObject requestBody, final String messageId) {
+    protected Future<HttpResponse<Buffer>> sendDELETEMessage(final TestContext context, final WebClient client, final String messageId) {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
-            .put(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/%s", CLIENT_URI, messageId))
-            .sendJson(requestBody, context.asyncAssertSuccess(response::complete));
+            .delete(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/?messageId=%s", CLIENT_URI, messageId))
+            .send(context.asyncAssertSuccess(res -> {
+                response.complete(res);
+            }));
         return response.future();
     }
 }

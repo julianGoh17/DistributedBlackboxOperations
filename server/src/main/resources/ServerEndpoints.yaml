@@ -23,14 +23,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MessageIDResponse"
-
-  /client/{message_id}:
     get:
       operationId: getMessage
       description: Retrieve the message stored in the Server for a given UUID
       parameters:
-        - name: message_id
-          in: path
+        - name: messageId
+          in: query
           description: The UUID of the message
           required: true
           schema:
@@ -52,43 +50,8 @@ paths:
       operationId: deleteMessage
       description: Delete message stored in the Server for a given UUID
       parameters:
-        - name: message_id
-          in: path
-          description: The UUID of the message
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/MessageIDResponse"
-        '404':
-          description: Could not find message with UUID
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        '504':
-          description: Operation timeout
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-    put:
-      operationId: putMessage
-      description: Put message content stored in the Server for a given UUID
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      parameters:
-        - name: message_id
-          in: path
+        - name: messageId
+          in: query
           description: The UUID of the message
           required: true
           schema:

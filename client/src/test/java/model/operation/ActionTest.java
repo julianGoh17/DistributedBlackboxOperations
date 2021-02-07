@@ -12,12 +12,11 @@ public class ActionTest extends AbstractOperationModelTest {
     @Test
     public void TestActionMapsCorrectly() throws IOException {
         JsonObject testContent = readTestFile();
-        JsonObject firstMessage = testContent.getJsonArray(OPERATIONS_KEY).getJsonObject(2).getJsonObject("action");
+        JsonObject firstMessage = testContent.getJsonArray(OPERATIONS_KEY).getJsonObject(1).getJsonObject("action");
 
         Action action = firstMessage.mapTo(Action.class);
-        Assert.assertEquals(RequestMethod.PUT, action.getMethod());
+        Assert.assertEquals(RequestMethod.GET, action.getMethod());
         Assert.assertEquals(1, action.getMessageNumber().intValue());
-        Assert.assertEquals(2, action.getNewMessageNumber().intValue());
     }
 
     @Test
@@ -25,6 +24,5 @@ public class ActionTest extends AbstractOperationModelTest {
         Action action = new JsonObject().mapTo(Action.class);
         Assert.assertNull(action.getMethod());
         Assert.assertNull(action.getMessageNumber());
-        Assert.assertNull(action.getNewMessageNumber());
     }
 }

@@ -92,30 +92,28 @@ public class Coordinator {
         return log.traceExit(isGETSuccessful.future());
     }
 
-    public Future<Void> sendPUT(final int oldMessageIndex, final int newMessageIndex) {
-        log.traceEntry(() -> oldMessageIndex, () -> newMessageIndex);
-        Promise<Void> isPUTSuccessful = Promise.promise();
+    public Future<Void> sendDELETE(final int messageIndex) throws ArrayIndexOutOfBoundsException {
+        log.traceEntry(() -> messageIndex);
+        Promise<Void> isDELETESuccessful = Promise.promise();
         try {
-            checkValidMessageIndex(newMessageIndex);
-            client.PUTMessage(memory.getExpectedIDForNum(oldMessageIndex), memory.getOriginalMessage(newMessageIndex))
-                .onSuccess(v -> {
-                    log.info(String.format("Successful PUT of new message number '%d' for old message number '%d'", oldMessageIndex, newMessageIndex));
-                    memory.associateNumberWithID(newMessageIndex, memory.getExpectedIDForNum(0));
-                    memory.disassociateNumberFromID(oldMessageIndex);
-                    isPUTSuccessful.complete();
+            checkValidMessageIndex(messageIndex);
+            client.DELETEMessage(memory.getExpectedIDForNum(messageIndex))
+                .onSuccess(id -> {
+                    log.info(String.format("Successful DELETE of message number '%d' with id '%s'", messageIndex, id));
+                    memory.disassociateNumberFromID(messageIndex);
+                    isDELETESuccessful.complete();
                 })
                 .onFailure(throwable -> {
                     ClientException exception = (ClientException) throwable;
-                    log.error(String.format("Unsuccessful PUT of new message number '%d' for old message number '%d' because: %s", oldMessageIndex, newMessageIndex, exception.getMessage()));
-                    isPUTSuccessful.fail(exception);
+                    log.error(String.format("Unsuccessful DELETE of message number '%d' because: %s", messageIndex, exception.getMessage()));
+                    isDELETESuccessful.fail(throwable);
                 });
         } catch (ArrayIndexOutOfBoundsException e) {
             ClientException exception = new ClientException(e.getMessage(), 500);
-            log.error(String.format("Unsuccessful PUT of new message number '%d' for old message number '%d' because: %s", oldMessageIndex, newMessageIndex, exception.getMessage()));
-            isPUTSuccessful.fail(exception);
+            log.error(exception);
+            isDELETESuccessful.fail(exception);
         }
-
-        return log.traceExit(isPUTSuccessful.future());
+        return log.traceExit(isDELETESuccessful.future());
     }
 
     private void checkValidMessageIndex(final int messageIndex) throws ArrayIndexOutOfBoundsException {
@@ -222,17 +220,19 @@ public class Coordinator {
         switch (operation.getAction().getMethod()) {
             case POST:
                 log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.POST.toString(), operation.getAction().getMessageNumber()));
-                return sendPOST(operation.getAction().getMessageNumber());
+                return log.traceExit(sendPOST(operation.getAction().getMessageNumber()));
             case GET:
                 log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.GET.toString(), operation.getAction().getMessageNumber()));
                 sendGET(operation.getAction().getMessageNumber())
                     .onSuccess(v -> complete.complete())
                     .onFailure(complete::fail);
-                return complete.future();
-            case PUT:
-                log.debug(String.format("Running '%s' operation to update message '%d' to message '%d'", RequestMethod.PUT.toString(), operation.getAction().getMessageNumber(), operation.getAction().getNewMessageNumber()));
-                sendPUT(operation.getAction().getMessageNumber(), operation.getAction().getNewMessageNumber());
-                return sendPUT(operation.getAction().getMessageNumber(), operation.getAction().getNewMessageNumber());
+                return log.traceExit(complete.future());
+            case DELETE:
+                log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.DELETE.toString(), operation.getAction().getMessageNumber()));
+                sendDELETE(operation.getAction().getMessageNumber())
+                    .onSuccess(v -> complete.complete())
+                    .onFailure(complete::fail);
+                return log.traceExit(complete.future());
             default:
                 complete.complete();
         }

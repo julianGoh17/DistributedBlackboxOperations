@@ -1,8 +1,8 @@
 package io.julian.server.components;
 
 import io.julian.server.models.ServerStatus;
+import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,7 +18,7 @@ public class Controller {
     private final AtomicReference<ServerStatus> status = new AtomicReference<>(DEFAULT_SERVER_STATUS);
     private final AtomicReference<String> label = new AtomicReference<>(DEFAULT_LABEL);
     private final ConcurrentLinkedQueue<CoordinationMessage> coordinationMessages = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<JsonObject> initialPostMessages = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<ClientMessage> clientMessages = new ConcurrentLinkedQueue<>();
     private final AtomicReference<Float> failureChance = new AtomicReference<>(DEFAULT_MESSAGE_FAILURE_CHANCE);
 
     public void setStatus(final ServerStatus newStatus) {
@@ -59,21 +59,20 @@ public class Controller {
         return log.traceExit(coordinationMessages.poll());
     }
 
-    public void addToInitialPostMessageQueue(final JsonObject message) {
+    public void addToClientMessageQueue(final ClientMessage message) {
         log.traceEntry(() -> message);
-        initialPostMessages.add(message);
+        clientMessages.add(message);
         log.traceExit();
     }
 
-
-    public int getNumberOfInitialPostMessages() {
+    public int getNumberOfClientMessages() {
         log.traceEntry();
-        return log.traceExit(initialPostMessages.size());
+        return log.traceExit(clientMessages.size());
     }
 
-    public JsonObject getInitialPostMessage() {
+    public ClientMessage getClientMessage() {
         log.traceEntry();
-        return log.traceExit(initialPostMessages.poll());
+        return log.traceExit(clientMessages.poll());
     }
 
     public Float getFailureChance() {

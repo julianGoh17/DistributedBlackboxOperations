@@ -1,6 +1,8 @@
 package io.julian.server.api;
 
 import io.julian.server.components.Controller;
+import io.julian.server.models.HTTPRequest;
+import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.server.models.coordination.CoordinationTimestamp;
@@ -11,7 +13,7 @@ import org.junit.Test;
 import java.time.LocalDateTime;
 
 public class DistributedAlgorithmTest {
-    public static final CoordinationMessage TEST_MESSAGE = new CoordinationMessage(new CoordinationMetadata("random-id", new CoordinationTimestamp(LocalDateTime.now())), new JsonObject(), new JsonObject());
+    public static final CoordinationMessage TEST_MESSAGE = new CoordinationMessage(new CoordinationMetadata("random-id", new CoordinationTimestamp(LocalDateTime.now()), HTTPRequest.GET, "test", "id"), new JsonObject(), new JsonObject());
     public static final JsonObject TEST_POST_MESSAGE = new JsonObject().put("test", "message");
 
     public static class ExampleAlgorithm extends DistributedAlgorithm {
@@ -26,7 +28,7 @@ public class DistributedAlgorithmTest {
 
         @Override
         public void actOnInitialMessage() {
-            getController().addToInitialPostMessageQueue(TEST_POST_MESSAGE);
+            getController().addToClientMessageQueue(new ClientMessage(HTTPRequest.POST, TEST_POST_MESSAGE, "test"));
         }
     }
 
@@ -59,10 +61,10 @@ public class DistributedAlgorithmTest {
             algorithm.actOnInitialMessage();
         }
 
-        Assert.assertEquals(messages, controller.getNumberOfInitialPostMessages());
+        Assert.assertEquals(messages, controller.getNumberOfClientMessages());
         while (controller.getNumberOfCoordinationMessages() > 0) {
-            JsonObject message = controller.getInitialPostMessage();
-            Assert.assertEquals(message.getString("test"), "message");
+            ClientMessage message = controller.getClientMessage();
+            Assert.assertEquals(message.getMessage().getString("test"), "message");
         }
     }
 }

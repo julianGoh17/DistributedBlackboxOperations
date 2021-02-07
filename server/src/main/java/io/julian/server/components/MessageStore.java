@@ -31,6 +31,19 @@ public class MessageStore {
         log.traceExit();
     }
 
+    public void removeMessage(final String uuid) {
+        log.traceEntry(() -> uuid);
+
+        if (hasUUID(uuid)) {
+            log.info(String.format("Removing message with UUID '%s' from server", uuid));
+            messages.remove(uuid);
+        } else {
+            log.info(String.format("Could not find with UUID '%s' to remove from server", uuid));
+        }
+
+        log.traceExit();
+    }
+
     public boolean hasUUID(final String uuid) {
         log.traceEntry(() -> uuid);
         return log.traceExit(messages.containsKey(uuid));

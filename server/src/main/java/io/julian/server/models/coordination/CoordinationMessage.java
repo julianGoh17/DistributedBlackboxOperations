@@ -3,6 +3,7 @@ package io.julian.server.models.coordination;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import io.julian.server.models.control.ClientMessage;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
@@ -35,9 +36,9 @@ public class CoordinationMessage {
         this.definition = definition;
     }
 
-    public CoordinationMessage(final String id, final JsonObject message, final JsonObject definition) {
-        this.metadata = new CoordinationMetadata(id);
-        this.message = message;
+    public CoordinationMessage(final String id, final ClientMessage message, final JsonObject definition) {
+        this.metadata = new CoordinationMetadata(id, message.getRequest());
+        this.message = message.getMessage();
         this.definition = definition;
     }
 

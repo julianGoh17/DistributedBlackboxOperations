@@ -36,10 +36,10 @@ public class DistributedAlgorithmVerticleTest {
         setUpTest(context);
         int messages = 5;
         Assert.assertNotEquals(DistributedAlgorithmVerticle.COORDINATE_MESSAGE_POSTFIX,
-            DistributedAlgorithmVerticle.INITIAL_POST_MESSAGE_POSTFIX);
+            DistributedAlgorithmVerticle.CLIENT_MESSAGE_POSTFIX);
         for (int i = 0; i < messages; i++) {
             vertx.eventBus().send(DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.COORDINATE_MESSAGE_POSTFIX), "random-message");
-            vertx.eventBus().send(DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.INITIAL_POST_MESSAGE_POSTFIX), "random-message");
+            vertx.eventBus().send(DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.CLIENT_MESSAGE_POSTFIX), "random-message");
         }
 
         Promise<Void> timerComplete = Promise.promise();
@@ -48,7 +48,7 @@ public class DistributedAlgorithmVerticleTest {
         Async async = context.async();
         timerComplete.future().onComplete(context.asyncAssertSuccess(v -> {
             Assert.assertEquals(messages, controller.getNumberOfCoordinationMessages());
-            Assert.assertEquals(messages, controller.getNumberOfInitialPostMessages());
+            Assert.assertEquals(messages, controller.getNumberOfClientMessages());
             async.complete();
         }));
 
