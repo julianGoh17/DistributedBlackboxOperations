@@ -23,25 +23,30 @@ public class BaseClient {
         client = WebClient.create(vertx);
     }
 
-    public Future<String> POSTMessage(final JsonObject message) {
+    public Future<String> POSTMessage(final JsonObject message, final Expected expected) {
         log.traceEntry(() -> message);
         Promise<String> messageID = Promise.promise();
         client.post(Configuration.getServerPort(), Configuration.getServerHost(), CLIENT_URI)
             .sendJson(new MessageWrapper(message).toJson(), res -> {
-                if (res.succeeded()) {
+                int statusCode = res.result() != null ? res.result().statusCode() : 500;
+                if (expected.doesNotMatchExpectedStatusCode(statusCode)) {
+                    String error = res.cause() != null ? res.cause().getMessage() : res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class).getError();
+                    ClientException exception = expected.generateMismatchedException(statusCode,
+                        error);
+                    log.error(exception);
+                    messageID.fail(exception);
+                } else if (res.succeeded()) {
                     MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
                     if (response.isError()) {
-                        ClientException exception = new ClientException(response.getError(), response.getStatusCode());
-                        log.error(exception);
-                        messageID.fail(exception);
+                        log.info("Successfully expected failed POST");
+                        messageID.complete();
                     } else {
                         log.info(String.format("Successful POST and returned id '%s'", response.getMessageId()));
                         messageID.complete(response.getMessageId());
                     }
                 } else {
-                    ClientException exception = new ClientException(res.cause().getMessage(), 400);
-                    log.error(exception);
-                    messageID.fail(exception);
+                    log.info("Correctly expected failed POST result");
+                    messageID.complete();
                 }
             });
 
@@ -53,26 +58,25 @@ public class BaseClient {
         Promise<JsonObject> getResponse = Promise.promise();
         client.get(Configuration.getServerPort(), Configuration.getServerHost(), String.format("%s/?messageId=%s", CLIENT_URI, messageId))
             .send(res -> {
-                if (res.succeeded()) {
-                    GetMessageResponse get = res.result().bodyAsJsonObject().mapTo(GetMessageResponse.class);
-                    if (expected.doesNotMatchExpectedStatusCode(res.result().statusCode())) {
-                        ClientException exception = expected.generateMismatchedException(res.result().statusCode(),
-                            get.getError());
-                        log.error(exception);
-                        getResponse.fail(exception);
-                    } else {
-                        if (get.isError()) {
-                            log.info(String.format("Correctly could not GET message id '%s'", messageId));
-                            getResponse.complete();
-                        } else {
-                            log.info(String.format("Successful GET for message id '%s'", messageId));
-                            getResponse.complete(get.getMessage());
-                        }
-                    }
-                } else {
-                    ClientException exception = new ClientException(res.cause().getMessage(), 400);
+                int statusCode = res.result() != null ? res.result().statusCode() : 500;
+                if (expected.doesNotMatchExpectedStatusCode(statusCode)) {
+                    String error = res.cause() != null ? res.cause().getMessage() : res.result().bodyAsJsonObject().mapTo(GetMessageResponse.class).getError();
+                    ClientException exception = expected.generateMismatchedException(statusCode,
+                        error);
                     log.error(exception);
                     getResponse.fail(exception);
+                } else if (res.succeeded()) {
+                    GetMessageResponse get = res.result().bodyAsJsonObject().mapTo(GetMessageResponse.class);
+                    if (get.isError()) {
+                        log.info(String.format("Correctly could not GET message id '%s'", messageId));
+                        getResponse.complete();
+                    } else {
+                        log.info(String.format("Successful GET for message id '%s'", messageId));
+                        getResponse.complete(get.getMessage());
+                    }
+                } else {
+                    log.info("Correctly expected failed GET result");
+                    getResponse.complete();
                 }
             });
 
@@ -84,26 +88,25 @@ public class BaseClient {
         Promise<String> delete = Promise.promise();
         client.delete(Configuration.getServerPort(), Configuration.getServerHost(), String.format("%s/?messageId=%s", CLIENT_URI, messageId))
             .send(res -> {
-                if (res.succeeded()) {
-                    MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
-                    if (expected.doesNotMatchExpectedStatusCode(res.result().statusCode())) {
-                        ClientException exception = expected.generateMismatchedException(res.result().statusCode(),
-                            response.getError());
-                        log.error(exception);
-                        delete.fail(exception);
-                    } else {
-                        if (response.isError()) {
-                            log.info(String.format("Correctly could not DELETE message id '%s'", messageId));
-                            delete.complete();
-                        } else {
-                            log.info(String.format("Successful DELETE for message id '%s'", messageId));
-                            delete.complete(response.getMessageId());
-                        }
-                    }
-                } else {
-                    ClientException exception = new ClientException(res.cause().getMessage(), 400);
+                int statusCode = res.result() != null ? res.result().statusCode() : 500;
+                if (expected.doesNotMatchExpectedStatusCode(statusCode)) {
+                    String error = res.cause() != null ? res.cause().getMessage() : res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class).getError();
+                    ClientException exception = expected.generateMismatchedException(statusCode,
+                        error);
                     log.error(exception);
                     delete.fail(exception);
+                } else if (res.succeeded()) {
+                    MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
+                    if (response.isError()) {
+                        log.info(String.format("Correctly could not DELETE message id '%s'", messageId));
+                        delete.complete();
+                    } else {
+                        log.info(String.format("Successful DELETE for message id '%s'", messageId));
+                        delete.complete(response.getMessageId());
+                    }
+                } else {
+                    log.info("Correctly expected failed DELETE result");
+                    delete.complete();
                 }
             });
 

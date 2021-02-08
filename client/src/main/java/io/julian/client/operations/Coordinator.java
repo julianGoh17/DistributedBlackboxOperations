@@ -52,12 +52,12 @@ public class Coordinator {
         log.traceExit();
     }
 
-    public Future<Void> sendPOST(final int messageIndex) throws ArrayIndexOutOfBoundsException {
+    public Future<Void> sendPOST(final int messageIndex, final Expected expected) throws ArrayIndexOutOfBoundsException {
         log.traceEntry(() -> messageIndex);
         Promise<Void> isPOSTSuccessful = Promise.promise();
         try {
             checkValidMessageIndex(messageIndex);
-            client.POSTMessage(memory.getOriginalMessage(messageIndex))
+            client.POSTMessage(memory.getOriginalMessage(messageIndex), expected)
                 .onSuccess(id -> {
                     log.info(String.format("Successful POST of message number '%d', received id '%s'", messageIndex, id));
                     memory.associateNumberWithID(messageIndex, id);
@@ -221,7 +221,7 @@ public class Coordinator {
         switch (operation.getAction().getMethod()) {
             case POST:
                 log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.POST.toString(), operation.getAction().getMessageNumber()));
-                return log.traceExit(sendPOST(operation.getAction().getMessageNumber()));
+                return log.traceExit(sendPOST(operation.getAction().getMessageNumber(), operation.getExpected()));
             case GET:
                 log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.GET.toString(), operation.getAction().getMessageNumber()));
                 sendGET(operation.getAction().getMessageNumber(), operation.getExpected())

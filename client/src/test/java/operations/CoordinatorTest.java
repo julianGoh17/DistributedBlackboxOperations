@@ -65,7 +65,7 @@ public class CoordinatorTest extends AbstractClientTest {
     public void TestCoordinatorCanPOSTSuccessfully(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
-        client.sendPOST(0)
+        client.sendPOST(0, new Expected(200))
             .onComplete(context.asyncAssertSuccess(res -> {
                 Assert.assertNull(res);
                 tearDownAPIServer(context);
@@ -76,8 +76,10 @@ public class CoordinatorTest extends AbstractClientTest {
     public void TestCoordinatorPOSTFail(final TestContext context) throws IOException, NullPointerException {
         client = new Coordinator(vertx);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
-        client.sendPOST(0).onComplete(context.asyncAssertFailure(throwable ->
-            Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, throwable.getMessage())));
+        Expected expected = new Expected(200);
+        client.sendPOST(0, expected)
+            .onComplete(context.asyncAssertFailure(throwable ->
+                Assert.assertEquals(expected.generateMismatchedException(500, CONNECTION_REFUSED_EXCEPTION).getMessage(), throwable.getMessage())));
     }
 
     @Test
@@ -85,7 +87,7 @@ public class CoordinatorTest extends AbstractClientTest {
         setUpApiServer(context);
         int messageNum = 0;
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
-        client.sendPOST(messageNum)
+        client.sendPOST(0, new Expected(200))
             .compose(v -> {
                 Assert.assertEquals(1, client.getMemory().getExpectedMapping().size());
                 Assert.assertNotNull(client.getMemory().getExpectedMapping().get(messageNum));
@@ -132,8 +134,8 @@ public class CoordinatorTest extends AbstractClientTest {
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.runOperationChain(SEQUENTIAL_OPERATION_FILE_NAME).onComplete(context.asyncAssertFailure(throwable -> {
             ClientException exception = (ClientException) throwable;
-            Assert.assertEquals(400, exception.getStatusCode());
-            Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, exception.getMessage());
+            Assert.assertEquals(500, exception.getStatusCode());
+            Assert.assertEquals(new Expected(200).generateMismatchedException(500, CONNECTION_REFUSED_EXCEPTION).getMessage(), exception.getMessage());
             checkCollectorGenericMetrics(0, 0, 0, 0, 1, 0);
 
             checkMismatchedResponse(client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(POST_OPERATION_NUMBER),
@@ -251,8 +253,8 @@ public class CoordinatorTest extends AbstractClientTest {
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.runOperationChain(PARALLEL_OPERATION_FILE_NAME).onComplete(context.asyncAssertFailure(error -> {
             ClientException exception = (ClientException) error;
-            Assert.assertEquals(400, exception.getStatusCode());
-            Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, exception.getMessage());
+            Assert.assertEquals(500, exception.getStatusCode());
+            Assert.assertEquals(new Expected(200).generateMismatchedException(500, CONNECTION_REFUSED_EXCEPTION).getMessage(), exception.getMessage());
             checkCollectorGenericMetrics(0, 0, 0, 0, 3, 0);
 
             checkMismatchedResponse(client.getOperationChains().get(PARALLEL_OPERATION_FILE_NAME).getOperations().get(0),
