@@ -35,7 +35,10 @@ public class BaseClientTest extends AbstractClientTest {
             .put("this", "message");
 
         baseClient.POSTMessage(message, new Expected(200))
-            .onComplete(context.asyncAssertSuccess(context::assertNotNull));
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertNotNull(res);
+                tearDownAPIServer(context);
+            }));
     }
 
     @Test
@@ -63,7 +66,10 @@ public class BaseClientTest extends AbstractClientTest {
 
         baseClient.POSTMessage(message, expectedSuccess)
             .compose(id -> baseClient.GETMessage(id, new Expected(200)))
-            .onComplete(context.asyncAssertSuccess(res -> context.assertEquals(message, res)));
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertEquals(message, res);
+                tearDownAPIServer(context);
+            }));
     }
 
     @Test
@@ -72,9 +78,12 @@ public class BaseClientTest extends AbstractClientTest {
         String randomId = "random-id";
 
         baseClient.GETMessage(randomId, expectedSuccess)
-            .onComplete(context.asyncAssertFailure(err -> context.assertEquals(
-                expectedSuccess.generateMismatchedException(404, String.format("Could not find entry for uuid '%s'", randomId)).getMessage(),
-                err.getMessage())));
+            .onComplete(context.asyncAssertFailure(err -> {
+                context.assertEquals(
+                    expectedSuccess.generateMismatchedException(404, String.format("Could not find entry for uuid '%s'", randomId)).getMessage(),
+                    err.getMessage());
+                tearDownAPIServer(context);
+            }));
     }
 
     @Test
@@ -119,7 +128,10 @@ public class BaseClientTest extends AbstractClientTest {
         String randomId = "random-id";
 
         baseClient.GETMessage(randomId, new Expected(404))
-            .onComplete(context.asyncAssertSuccess(context::assertNull));
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertNull(res);
+                tearDownAPIServer(context);
+            }));
     }
 
     @Test
@@ -129,7 +141,10 @@ public class BaseClientTest extends AbstractClientTest {
 
         baseClient.POSTMessage(message, new Expected(200))
             .compose(id -> baseClient.DELETEMessage(id, new Expected(200)))
-            .onComplete(context.asyncAssertSuccess(context::assertNotNull));
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertNotNull(res);
+                tearDownAPIServer(context);
+            }));
     }
 
     @Test
@@ -138,6 +153,9 @@ public class BaseClientTest extends AbstractClientTest {
         String randomId = "random-id";
 
         baseClient.DELETEMessage(randomId, new Expected(404))
-            .onComplete(context.asyncAssertSuccess(context::assertNull));
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertNull(res);
+                tearDownAPIServer(context);
+            }));
     }
 }
