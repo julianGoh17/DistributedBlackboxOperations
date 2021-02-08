@@ -23,4 +23,9 @@ public class ErrorResponse {
             .put(STATUS_CODE_KEY, this.statusCode)
             .put(ERROR_KEY, this.exception.getMessage());
     }
+
+    public static ErrorResponse fromJson(final JsonObject jsonObject) {
+        return new ErrorResponse(jsonObject.getInteger(STATUS_CODE_KEY),
+            new Exception(jsonObject.getString(ERROR_KEY)));
+    }
 }
