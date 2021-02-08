@@ -19,16 +19,14 @@ public class OperationChainTest extends AbstractOperationModelTest {
         Assert.assertEquals(RequestMethod.POST, chain.getOperations().get(0).getAction().getMethod());
         Assert.assertEquals(1, chain.getOperations().get(0).getAction().getMessageNumber().intValue());
         Assert.assertEquals(200, chain.getOperations().get(0).getExpected().getStatusCode());
-        Assert.assertNull(chain.getOperations().get(0).getExpected().getMessageNumber());
 
         Assert.assertEquals(RequestMethod.GET, chain.getOperations().get(1).getAction().getMethod());
         Assert.assertEquals(1, chain.getOperations().get(1).getAction().getMessageNumber().intValue());
-        Assert.assertEquals(404, chain.getOperations().get(1).getExpected().getStatusCode());
-        Assert.assertNull(chain.getOperations().get(1).getExpected().getMessageNumber());
+        Assert.assertEquals(200, chain.getOperations().get(1).getExpected().getStatusCode());
 
         Assert.assertEquals(RequestMethod.DELETE, chain.getOperations().get(2).getAction().getMethod());
         Assert.assertEquals(1, chain.getOperations().get(2).getAction().getMessageNumber().intValue());
-        Assert.assertEquals(404, chain.getOperations().get(2).getExpected().getStatusCode());
+        Assert.assertEquals(200, chain.getOperations().get(2).getExpected().getStatusCode());
 
 
         Assert.assertFalse(chain.getConfiguration().willRunInParallel());

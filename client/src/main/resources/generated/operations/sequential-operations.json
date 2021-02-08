@@ -20,13 +20,11 @@
     },
     {
       "action": {
-        "method": "PUT",
-        "messageNumber": 1,
-        "newMessageNumber": 2
+        "method": "DELETE",
+        "messageNumber": 1
       },
       "expected": {
-        "statusCode": 200,
-        "messageNumber": 1
+        "statusCode": 200
       }
     }
   ],

@@ -70,10 +70,7 @@ public class ControllerTest extends AbstractClientTest {
         action.setMessageNumber(1);
         operation.setAction(action);
 
-        Expected expected = new Expected();
-        expected.setMessageNumber(2);
-        expected.setStatusCode(202);
-        operation.setExpected(expected);
+        operation.setExpected(new Expected(202));
 
         OperationChain operationChain = new OperationChain(Collections.singletonList(operation), new Configuration());
         this.coordinator.setOperationChains(Collections.singletonMap(VALID_OPERATION_CHAIN_NAME, operationChain));
