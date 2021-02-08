@@ -24,8 +24,7 @@
         "messageNumber": 2
       },
       "expected": {
-        "statusCode": 200,
-        "messageNumber": 1
+        "statusCode": 200
       }
     }
   ],

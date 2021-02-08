@@ -43,7 +43,7 @@ public class BaseClientTest extends AbstractClientTest {
         JsonObject message = new JsonObject().put("this", "message");
 
         baseClient.POSTMessage(message)
-            .compose(baseClient::GETMessage)
+            .compose(id -> baseClient.GETMessage(id, new Expected(200)))
             .onComplete(context.asyncAssertSuccess(res -> context.assertEquals(message, res)));
     }
 
@@ -52,8 +52,22 @@ public class BaseClientTest extends AbstractClientTest {
         setUpApiServer(context);
         String randomId = "random-id";
 
-        baseClient.GETMessage(randomId)
-            .onComplete(context.asyncAssertFailure(err -> context.assertEquals(String.format("Could not find entry for uuid '%s'", randomId), err.getMessage())));
+        baseClient.GETMessage(randomId, new Expected(200))
+            .onComplete(context.asyncAssertFailure(err -> {
+                Expected expected = new Expected(200);
+                context.assertEquals(
+                    expected.generateMismatchedException(404, String.format("Could not find entry for uuid '%s'", randomId)).getMessage(),
+                    err.getMessage());
+            }));
+    }
+
+    @Test
+    public void TestSuccessfulGetMessageIfStatusCodeMatch(final TestContext context) {
+        setUpApiServer(context);
+        String randomId = "random-id";
+
+        baseClient.GETMessage(randomId, new Expected(404))
+            .onComplete(context.asyncAssertSuccess(context::assertNull));
     }
 
     @Test
@@ -62,7 +76,7 @@ public class BaseClientTest extends AbstractClientTest {
         JsonObject message = new JsonObject().put("this", "message");
 
         baseClient.POSTMessage(message)
-            .compose(id -> baseClient.DELETEMessage(id, new Expected(200, null)))
+            .compose(id -> baseClient.DELETEMessage(id, new Expected(200)))
             .onComplete(context.asyncAssertSuccess(context::assertNotNull));
     }
 
@@ -71,7 +85,7 @@ public class BaseClientTest extends AbstractClientTest {
         setUpApiServer(context);
         String randomId = "random-id";
 
-        baseClient.DELETEMessage(randomId, new Expected(404, 1))
+        baseClient.DELETEMessage(randomId, new Expected(404))
             .onComplete(context.asyncAssertSuccess(context::assertNull));
     }
 }

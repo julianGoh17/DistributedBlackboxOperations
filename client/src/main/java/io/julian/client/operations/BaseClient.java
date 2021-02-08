@@ -48,20 +48,26 @@ public class BaseClient {
         return log.traceExit(messageID.future());
     }
 
-    public Future<JsonObject> GETMessage(final String messageId) {
+    public Future<JsonObject> GETMessage(final String messageId, final Expected expected) {
         log.traceEntry(() -> messageId);
         Promise<JsonObject> getResponse = Promise.promise();
         client.get(Configuration.getServerPort(), Configuration.getServerHost(), String.format("%s/?messageId=%s", CLIENT_URI, messageId))
             .send(res -> {
                 if (res.succeeded()) {
                     GetMessageResponse get = res.result().bodyAsJsonObject().mapTo(GetMessageResponse.class);
-                    if (get.isError()) {
-                        ClientException exception = new ClientException(get.getError(), get.getStatusCode());
+                    if (expected.doesNotMatchExpectedStatusCode(res.result().statusCode())) {
+                        ClientException exception = expected.generateMismatchedException(res.result().statusCode(),
+                            get.getError());
                         log.error(exception);
                         getResponse.fail(exception);
                     } else {
-                        log.info(String.format("Successful GET for message id '%s'", messageId));
-                        getResponse.complete(get.getMessage());
+                        if (get.isError()) {
+                            log.info(String.format("Correctly could not GET message id '%s'", messageId));
+                            getResponse.complete();
+                        } else {
+                            log.info(String.format("Successful GET for message id '%s'", messageId));
+                            getResponse.complete(get.getMessage());
+                        }
                     }
                 } else {
                     ClientException exception = new ClientException(res.cause().getMessage(), 400);
@@ -80,7 +86,7 @@ public class BaseClient {
             .send(res -> {
                 if (res.succeeded()) {
                     MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
-                    if (!expected.doesMatchExpectedStatusCode(res.result().statusCode())) {
+                    if (expected.doesNotMatchExpectedStatusCode(res.result().statusCode())) {
                         ClientException exception = expected.generateMismatchedException(res.result().statusCode(),
                             response.getError());
                         log.error(exception);

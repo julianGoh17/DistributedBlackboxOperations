@@ -76,10 +76,10 @@ public class Coordinator {
         return log.traceExit(isPOSTSuccessful.future());
     }
 
-    public Future<JsonObject> sendGET(final int messageIndex) {
+    public Future<JsonObject> sendGET(final int messageIndex, final Expected expected) {
         log.traceEntry(() -> messageIndex);
         Promise<JsonObject> isGETSuccessful = Promise.promise();
-        client.GETMessage(memory.getExpectedIDForNum(messageIndex))
+        client.GETMessage(memory.getExpectedIDForNum(messageIndex), expected)
             .onSuccess(res -> {
                 log.info(String.format("Successful GET of message number '%d' for id '%s'", messageIndex, memory.getExpectedIDForNum(messageIndex)));
                 isGETSuccessful.complete(res);
@@ -224,7 +224,7 @@ public class Coordinator {
                 return log.traceExit(sendPOST(operation.getAction().getMessageNumber()));
             case GET:
                 log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.GET.toString(), operation.getAction().getMessageNumber()));
-                sendGET(operation.getAction().getMessageNumber())
+                sendGET(operation.getAction().getMessageNumber(), operation.getExpected())
                     .onSuccess(v -> complete.complete())
                     .onFailure(complete::fail);
                 return log.traceExit(complete.future());

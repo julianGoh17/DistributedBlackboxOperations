@@ -171,8 +171,7 @@ public class MetricsCollectorTest {
         action.setMessageNumber(MESSAGE_NUMBER);
         operation.setAction(action);
 
-        Expected expected = new Expected(1, null);
-        expected.setMessageNumber(EXPECTED_MESSAGE_NUMBER);
+        Expected expected = new Expected(1);
         expected.setStatusCode(EXPECTED_STATUS_CODE);
         operation.setExpected(expected);
 

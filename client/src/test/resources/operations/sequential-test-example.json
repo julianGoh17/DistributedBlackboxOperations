@@ -15,7 +15,7 @@
         "messageNumber": 1
       },
       "expected": {
-        "statusCode": 404
+        "statusCode": 200
       }
     },
     {

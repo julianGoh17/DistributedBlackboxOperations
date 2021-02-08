@@ -18,7 +18,6 @@ public class OperationTest extends AbstractOperationModelTest {
         Assert.assertEquals(RequestMethod.POST, expected.getAction().getMethod());
         Assert.assertEquals(1, expected.getAction().getMessageNumber().intValue());
 
-        Assert.assertNull(expected.getExpected().getMessageNumber());
         Assert.assertEquals(200, expected.getExpected().getStatusCode());
     }
 

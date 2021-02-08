@@ -15,13 +15,47 @@ public class ExpectedTest extends AbstractOperationModelTest {
 
         Expected expected = firstMessage.mapTo(Expected.class);
         Assert.assertEquals(200, expected.getStatusCode());
-        Assert.assertNull(expected.getMessageNumber());
     }
 
     @Test
     public void TestExpectedMapsFromEmptyJson() {
         Expected action = new JsonObject().mapTo(Expected.class);
-        Assert.assertNull(action.getMessageNumber());
         Assert.assertEquals(0, action.getStatusCode());
+    }
+
+    @Test
+    public void TestExpectedCorrectlyReturnsWhenStatusCodeUnequal() {
+        int correctStatusCode = 30314;
+        int incorrectStatusCode = -1;
+        Expected expected = new Expected(correctStatusCode);
+
+        Assert.assertTrue(expected.doesNotMatchExpectedStatusCode(incorrectStatusCode));
+        Assert.assertFalse(expected.doesNotMatchExpectedStatusCode(correctStatusCode));
+    }
+
+    @Test
+    public void TestExpectedCreatesServerErrorWhenStringPassedIn() {
+        int correctStatusCode = 30314;
+        int incorrectStatusCode = -1;
+        Expected expected = new Expected(correctStatusCode);
+
+        Assert.assertEquals(
+            String.format(Expected.MISMATCHED_STATUS_CODE_ERROR_FORMAT, incorrectStatusCode, correctStatusCode) +
+                String.format(Expected.SERVER_ERROR, "Server Error"),
+            expected.generateMismatchedException(incorrectStatusCode, "Server Error").getMessage()
+        );
+    }
+
+    @Test
+    public void TestExpectedCreatesClientErrorWhenNoStringPassedIn() {
+        int correctStatusCode = 30314;
+        int incorrectStatusCode = -1;
+        Expected expected = new Expected(correctStatusCode);
+
+        Assert.assertEquals(
+            String.format(Expected.MISMATCHED_STATUS_CODE_ERROR_FORMAT, incorrectStatusCode, correctStatusCode) +
+               Expected.CLIENT_ERROR,
+            expected.generateMismatchedException(incorrectStatusCode, null).getMessage()
+        );
     }
 }
