@@ -5,7 +5,6 @@ import io.julian.client.model.MessageWrapper;
 import io.julian.client.model.operation.Expected;
 import io.julian.client.model.response.GetMessageResponse;
 import io.julian.client.model.response.MessageIdResponse;
-import io.julian.server.endpoints.client.PostMessageHandler;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
