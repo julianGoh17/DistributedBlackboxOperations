@@ -18,7 +18,6 @@ public class ErrorHandler {
             .setStatusCode(context.statusCode())
             .putHeader(HttpHeaders.CONTENT_TYPE, "application/json")
             .end(error.toJson().encodePrettily());
-        context.fail(error.getException());
         log.traceExit();
     }
 }

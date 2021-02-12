@@ -23,6 +23,8 @@ public class Controller {
 
     public void setStatus(final ServerStatus newStatus) {
         log.traceEntry(() -> newStatus);
+        log.info(String.format("Setting server status to '%s'", newStatus));
+
         this.status.set(newStatus);
         log.traceExit();
     }
@@ -34,6 +36,7 @@ public class Controller {
 
     public void setLabel(final String label) {
         log.traceEntry(() -> label);
+        log.info(String.format("Setting server label to '%s'", label));
         this.label.set(label);
         log.traceExit();
     }
@@ -45,6 +48,7 @@ public class Controller {
 
     public void addToCoordinationQueue(final CoordinationMessage message) {
         log.traceEntry(() -> message);
+        log.info("Adding message to coordination queue");
         coordinationMessages.add(message);
         log.traceExit();
     }
@@ -61,6 +65,7 @@ public class Controller {
 
     public void addToClientMessageQueue(final ClientMessage message) {
         log.traceEntry(() -> message);
+        log.info("Adding message to client message queue");
         clientMessages.add(message);
         log.traceExit();
     }
@@ -82,6 +87,7 @@ public class Controller {
 
     public void setFailureChance(final float failureChance) {
         log.traceEntry(() -> failureChance);
+        log.info(String.format("Setting server failure chance to %.2f", failureChance));
         this.failureChance.set(failureChance);
         log.traceExit();
     }

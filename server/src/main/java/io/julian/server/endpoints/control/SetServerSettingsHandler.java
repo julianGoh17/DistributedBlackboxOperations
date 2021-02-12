@@ -13,6 +13,7 @@ public class SetServerSettingsHandler {
 
     public void handle(final RoutingContext routingContext, final Controller controller) {
         log.traceEntry(() -> routingContext, () -> controller);
+        log.info(String.format("%s updating ServerSettings", GetServerSettingsHandler.class.getSimpleName()));
         final ServerSettings settings = routingContext.getBodyAsJson().mapTo(ServerSettings.class);
 
         if (settings.getStatus() != ServerStatus.UNKNOWN) {

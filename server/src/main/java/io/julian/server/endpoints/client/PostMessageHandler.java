@@ -21,7 +21,6 @@ public class PostMessageHandler extends AbstractServerHandler {
 
     public void handle(final RoutingContext context, final ServerComponents components) {
         log.traceEntry(() -> context, () -> components);
-        log.info("Entering " + PostMessageHandler.class.getName());
         JsonObject postedMessage = context.getBodyAsJson();
         UUID uuid = UUID.randomUUID();
         while (components.messageStore.hasUUID(uuid.toString())) {
@@ -31,6 +30,7 @@ public class PostMessageHandler extends AbstractServerHandler {
         final JsonObject userMessage = Optional.ofNullable(postedMessage)
             .map(mes -> mes.getJsonObject(MESSAGE_KEY))
             .orElse(new JsonObject());
+        log.info(String.format("%s adding message to server", PostMessageHandler.class.getSimpleName()));
 
         components.messageStore.putMessage(uuid.toString(), userMessage);
 

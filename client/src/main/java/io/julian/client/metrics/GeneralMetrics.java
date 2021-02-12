@@ -17,6 +17,7 @@ public class GeneralMetrics {
 
     public void incrementSuccessMethod(final RequestMethod method) {
         log.traceEntry(() -> method);
+        log.info(String.format("Incrementing success for '%s'", method));
         switch (method) {
             case GET:
                 succeededGets.getAndIncrement();
@@ -33,6 +34,7 @@ public class GeneralMetrics {
 
     public void incrementFailedMethod(final RequestMethod method) {
         log.traceEntry(() -> method);
+        log.info(String.format("Incrementing fail for '%s'", method));
         switch (method) {
             case GET:
                 failedGets.getAndIncrement();
@@ -49,6 +51,7 @@ public class GeneralMetrics {
 
     public int getSucceeded(final RequestMethod method) {
         log.traceEntry(() -> method);
+        log.info(String.format("Retrieving successes for '%s'", method));
         switch (method) {
             case GET:
                 return log.traceExit(succeededGets.get());
@@ -67,6 +70,7 @@ public class GeneralMetrics {
 
     public int getFailed(final RequestMethod method) {
         log.traceEntry(() -> method);
+        log.info(String.format("Retrieving fails for '%s'", method));
         switch (method) {
             case GET:
                 return log.traceExit(failedGets.get());

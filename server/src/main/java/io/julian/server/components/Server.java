@@ -104,10 +104,12 @@ public class Server {
     private void addFailureHandlers() {
         log.traceEntry();
         ErrorHandler errorHandler = new ErrorHandler();
+        log.info("Loading failure handlers");
         for (String operationId : OPERATION_IDS) {
             log.trace(String.format("Adding failure handler for operation '%s'", operationId));
             routerFactory.addFailureHandlerByOperationId(operationId, errorHandler::handle);
         }
+        log.info("Finished loading failure handlers");
         log.traceExit();
     }
 
@@ -124,8 +126,10 @@ public class Server {
         try {
             T algorithm = loader.loadJar(settings.getJarPath(), settings.getPackageName(), controller, vertx);
             DistributedAlgorithmVerticle verticle = new DistributedAlgorithmVerticle(algorithm);
+            log.info("Successfully deployed distributed algorithm into vertx");
             return deployHelper(verticle, vertx);
         } catch (Exception e) {
+            log.info("Failed to deploy distributed algorithm");
             log.error(e);
             return Future.failedFuture(e);
         }
@@ -153,6 +157,12 @@ public class Server {
     private void registerGates(final List<AbstractServerHandler> handlers,
                                final ProbabilisticFailureGate probabilisticFailureGate,
                                final UnreachableGate unreachableGate) {
+        log.traceEntry(() -> handlers, () -> probabilisticFailureGate, () -> unreachableGate);
+        log.info(String.format("Registering '%s' and '%s' handler gates",
+            probabilisticFailureGate.getClass().getSimpleName(),
+            unreachableGate.getClass().getSimpleName()));
         handlers.forEach(handler -> handler.registerGates(probabilisticFailureGate, unreachableGate));
+        log.info("Finished registering handler gates");
+        log.traceExit();
     }
 }

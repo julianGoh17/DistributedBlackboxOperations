@@ -19,6 +19,7 @@ public class RegistryManager {
 
     public List<OtherServerConfiguration> getOtherServersWithLabel(final String label) {
         log.traceEntry(() -> label);
+        log.info(String.format("Retrieving servers with label '%s'", label));
         return log.traceExit(otherServers.stream()
             .filter(server -> label.equals(server.getLabel()))
             .collect(Collectors.toList()));
@@ -26,12 +27,14 @@ public class RegistryManager {
 
     public void registerServer(final String host, final int port) {
         log.traceEntry(() -> host, () -> port);
+        log.info(String.format("Registering server '%s:%d'", host, port));
         otherServers.add(new OtherServerConfiguration(host, port));
         log.traceExit();
     }
 
     public void registerServerWithLabel(final String host, final int port, final String label) {
         log.traceEntry(() -> host, () -> port, () -> label);
+        log.info(String.format("Registering server '%s:%d' with label '%s'", host, port, label));
         otherServers.add(new OtherServerConfiguration(host, port, label));
         log.traceExit();
     }

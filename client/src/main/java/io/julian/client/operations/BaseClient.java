@@ -26,10 +26,12 @@ public class BaseClient {
     public Future<String> POSTMessage(final JsonObject message, final Expected expected) {
         log.traceEntry(() -> message);
         Promise<String> messageID = Promise.promise();
+        log.info(String.format("%s sending POST request '%s:%d'", BaseClient.class.getSimpleName(), Configuration.getServerHost(), Configuration.getServerPort()));
         client.post(Configuration.getServerPort(), Configuration.getServerHost(), CLIENT_URI)
             .sendJson(new MessageWrapper(message).toJson(), res -> {
                 int statusCode = res.result() != null ? res.result().statusCode() : 500;
                 if (expected.doesNotMatchExpectedStatusCode(statusCode)) {
+                    log.info(String.format("%s POST request received an unexpected status code (%d) than expected (%d)", BaseClient.class.getSimpleName(), expected.getStatusCode(), statusCode));
                     String error = res.cause() != null ? res.cause().getMessage() : res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class).getError();
                     ClientException exception = expected.generateMismatchedException(statusCode,
                         error);
@@ -38,14 +40,14 @@ public class BaseClient {
                 } else if (res.succeeded()) {
                     MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
                     if (response.isError()) {
-                        log.info("Successfully expected failed POST");
+                        log.info(String.format("%s successfully expected failed POST request", BaseClient.class.getSimpleName()));
                         messageID.complete();
                     } else {
-                        log.info(String.format("Successful POST and returned id '%s'", response.getMessageId()));
+                        log.info(String.format("%s successful POST and returned id '%s'", BaseClient.class.getSimpleName(), response.getMessageId()));
                         messageID.complete(response.getMessageId());
                     }
                 } else {
-                    log.info("Correctly expected failed POST result");
+                    log.info(String.format("%s successfully expected failed POST request", BaseClient.class.getSimpleName()));
                     messageID.complete();
                 }
             });
@@ -56,10 +58,12 @@ public class BaseClient {
     public Future<JsonObject> GETMessage(final String messageId, final Expected expected) {
         log.traceEntry(() -> messageId);
         Promise<JsonObject> getResponse = Promise.promise();
+        log.info(String.format("%s sending GET request '%s:%d'", BaseClient.class.getSimpleName(), Configuration.getServerHost(), Configuration.getServerPort()));
         client.get(Configuration.getServerPort(), Configuration.getServerHost(), String.format("%s/?messageId=%s", CLIENT_URI, messageId))
             .send(res -> {
                 int statusCode = res.result() != null ? res.result().statusCode() : 500;
                 if (expected.doesNotMatchExpectedStatusCode(statusCode)) {
+                    log.info(String.format("%s GET request received an unexpected status code (%d) than expected (%d)", BaseClient.class.getSimpleName(), expected.getStatusCode(), statusCode));
                     String error = res.cause() != null ? res.cause().getMessage() : res.result().bodyAsJsonObject().mapTo(GetMessageResponse.class).getError();
                     ClientException exception = expected.generateMismatchedException(statusCode,
                         error);
@@ -68,14 +72,14 @@ public class BaseClient {
                 } else if (res.succeeded()) {
                     GetMessageResponse get = res.result().bodyAsJsonObject().mapTo(GetMessageResponse.class);
                     if (get.isError()) {
-                        log.info(String.format("Correctly could not GET message id '%s'", messageId));
+                        log.info(String.format("%s successfully expected failed GET request for id '%s'", BaseClient.class.getSimpleName(), messageId));
                         getResponse.complete();
                     } else {
-                        log.info(String.format("Successful GET for message id '%s'", messageId));
+                        log.info(String.format("%s Successful GET request for message id '%s'", BaseClient.class.getSimpleName(), messageId));
                         getResponse.complete(get.getMessage());
                     }
                 } else {
-                    log.info("Correctly expected failed GET result");
+                    log.info(String.format("%s successfully expected failed GET request", BaseClient.class.getSimpleName()));
                     getResponse.complete();
                 }
             });
@@ -86,10 +90,12 @@ public class BaseClient {
     public Future<String> DELETEMessage(final String messageId, final Expected expected) {
         log.traceEntry(() -> messageId);
         Promise<String> delete = Promise.promise();
+        log.info(String.format("%s sending DELETE request '%s:%d'", BaseClient.class.getSimpleName(), Configuration.getServerHost(), Configuration.getServerPort()));
         client.delete(Configuration.getServerPort(), Configuration.getServerHost(), String.format("%s/?messageId=%s", CLIENT_URI, messageId))
             .send(res -> {
                 int statusCode = res.result() != null ? res.result().statusCode() : 500;
                 if (expected.doesNotMatchExpectedStatusCode(statusCode)) {
+                    log.info(String.format("%s DELETE request received an unexpected status code (%d) than expected (%d)", BaseClient.class.getSimpleName(), expected.getStatusCode(), statusCode));
                     String error = res.cause() != null ? res.cause().getMessage() : res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class).getError();
                     ClientException exception = expected.generateMismatchedException(statusCode,
                         error);
@@ -98,14 +104,14 @@ public class BaseClient {
                 } else if (res.succeeded()) {
                     MessageIdResponse response = res.result().bodyAsJsonObject().mapTo(MessageIdResponse.class);
                     if (response.isError()) {
-                        log.info(String.format("Correctly could not DELETE message id '%s'", messageId));
+                        log.info(String.format("%s successfully expected failed DELETE request id '%s'", BaseClient.class.getSimpleName(), messageId));
                         delete.complete();
                     } else {
-                        log.info(String.format("Successful DELETE for message id '%s'", messageId));
+                        log.info(String.format("%s successful DELETE request for message id '%s'", BaseClient.class.getSimpleName(), messageId));
                         delete.complete(response.getMessageId());
                     }
                 } else {
-                    log.info("Correctly expected failed DELETE result");
+                    log.info(String.format("%s successfully expected failed DELETE request", BaseClient.class.getSimpleName()));
                     delete.complete();
                 }
             });

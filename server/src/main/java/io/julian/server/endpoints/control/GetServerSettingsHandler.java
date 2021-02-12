@@ -12,6 +12,7 @@ public class GetServerSettingsHandler {
 
     public void handle(final RoutingContext routingContext, final Controller controller) {
         log.traceEntry(() -> routingContext, () -> controller);
+        log.info(String.format("%s retrieving ServerSettings for sender", GetServerSettingsHandler.class.getSimpleName()));
 
         routingContext.response()
             .setStatusCode(200)

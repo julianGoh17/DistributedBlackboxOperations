@@ -29,4 +29,12 @@ public class OtherServerConfiguration {
         log.traceEntry();
         return log.traceExit(this.label != null);
     }
+
+    @Override
+    public String toString() {
+        log.traceEntry();
+        return log.traceExit(isLabeled() ?
+            String.format("'%s:%d with no label'", host, port) :
+            String.format("'%s:%d' with label '%s'", host, port, label));
+    }
 }

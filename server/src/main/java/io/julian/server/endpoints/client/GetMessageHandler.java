@@ -17,15 +17,17 @@ public class GetMessageHandler extends AbstractServerHandler {
         String messageID = Optional.ofNullable(context.queryParam("messageId"))
             .map(params -> params.get(0))
             .orElse(null);
+        log.info(String.format("%s Attempting to GET message with UUID '%s'", GetMessageHandler.class.getSimpleName(), messageID));
 
         if (components.messageStore.hasUUID(messageID)) {
-            log.info(String.format("Found entry for uuid '%s'", messageID));
+            log.info(String.format("%s successfully retrieved message with uuid '%s' and returning message to sender",
+                GetMessageHandler.class.getSimpleName(), messageID));
             sendResponseBack(context, 200,
                 new MessageResponse(components.messageStore.getMessage(messageID)).toJson());
         } else {
-            String errorMessage = String.format("Could not find entry for uuid '%s'", messageID);
-            log.error(errorMessage);
-            context.fail(404, new Exception(errorMessage));
+            log.error(String.format("%s failed to retrieve message for uuid '%s' and returning error to sender",
+                GetMessageHandler.class.getSimpleName(), messageID));
+            context.fail(404, new Exception(String.format("Could not find entry for uuid '%s'", messageID)));
         }
         log.traceExit();
     }
