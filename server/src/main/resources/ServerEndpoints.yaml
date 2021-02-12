@@ -95,6 +95,16 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+    get:
+      operationId: "getLabel"
+      description: Allows user to retrieve the label of a server
+      responses:
+        '200':
+          description: Successfully retrieved Server label
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerLabel"
 
   /coordinate/message:
     post:

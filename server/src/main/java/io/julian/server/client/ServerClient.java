@@ -3,6 +3,7 @@ package io.julian.server.client;
 import io.julian.server.models.control.OtherServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.response.ErrorResponse;
+import io.julian.server.models.response.LabelResponse;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -71,6 +72,35 @@ public class ServerClient {
                 }
             });
         return log.traceExit(result.future());
+    }
+
+    public Future<LabelResponse> getServerLabel(final OtherServerConfiguration configuration) {
+        log.traceEntry(() -> configuration);
+        Promise<LabelResponse> label = Promise.promise();
+
+        client
+            .get(configuration.getPort(), configuration.getHost(), String.format("%s/%s", COORDINATOR_URI, LABEL_SERVER_ENDPOINT))
+            .send(ar -> {
+                if (ar.succeeded()) {
+                    if (ar.result().statusCode() == 200) {
+                        log.info(String.format("Successful GET label from server '%s/%d' and updated configuration",
+                            configuration.getHost(), configuration.getPort()));
+                        LabelResponse retrievedLabel = ar.result().bodyAsJsonObject().mapTo(LabelResponse.class);
+                        configuration.setLabel(retrievedLabel.getLabel());
+                        label.complete(retrievedLabel);
+                    } else {
+                        ErrorResponse response = ErrorResponse.fromJson(ar.result().bodyAsJsonObject());
+                        log.error(response.getException());
+                        label.fail(response.getException());
+                    }
+                } else {
+                    ErrorResponse response = new ErrorResponse(500, ar.cause());
+                    log.error(response.getException());
+                    label.fail(response.getException());
+                }
+            });
+
+        return log.traceExit(label.future());
     }
 
     public WebClient getWebClient() {

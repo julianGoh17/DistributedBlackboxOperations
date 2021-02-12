@@ -36,7 +36,22 @@ public class ServerClientIntegrationTest extends AbstractServerBaseTest {
     }
 
     @Test
-    public void TestClientCanLabelServer(final TestContext context) {
+    public void TestClientReturnsErrorSendMessage(final TestContext context) {
+        ExampleDistributedAlgorithm algorithm = createExampleAlgorithm();
+
+        Async async = context.async();
+        algorithm.getRegistryManager().getOtherServers()
+            .forEach(otherServerConfiguration ->
+                algorithm.getClient().sendCoordinateMessageToServer(otherServerConfiguration, MESSAGE)
+                    .onComplete(context.asyncAssertFailure(err -> {
+                        context.assertEquals("Connection refused: localhost/127.0.0.1:8888", err.getMessage());
+                        async.complete();
+                    })));
+        async.await();
+    }
+
+    @Test
+    public void TestClientCanSETLabelServer(final TestContext context) {
         setUpApiServer(context);
         ExampleDistributedAlgorithm algorithm = createExampleAlgorithm();
         final String newLabel = "string";
@@ -54,18 +69,23 @@ public class ServerClientIntegrationTest extends AbstractServerBaseTest {
     }
 
     @Test
-    public void TestClientReturnsErrorSendMessage(final TestContext context) {
+    public void TestClientCanGETLabelServer(final TestContext context) {
+        setUpApiServer(context);
         ExampleDistributedAlgorithm algorithm = createExampleAlgorithm();
+        final String newLabel = "string";
+        server.getController().setLabel(newLabel);
+        context.assertEquals(newLabel, server.getController().getLabel());
 
         Async async = context.async();
         algorithm.getRegistryManager().getOtherServers()
             .forEach(otherServerConfiguration ->
-                algorithm.getClient().sendCoordinateMessageToServer(otherServerConfiguration, MESSAGE)
-                    .onComplete(context.asyncAssertFailure(err -> {
-                        context.assertEquals("Connection refused: localhost/127.0.0.1:8888", err.getMessage());
+                algorithm.getClient().getServerLabel(otherServerConfiguration)
+                    .onComplete(context.asyncAssertSuccess(v -> {
+                        context.assertEquals(1, algorithm.getRegistryManager().getOtherServersWithLabel(newLabel).size());
                         async.complete();
                     })));
-        async.await();
+        async.awaitSuccess();
+        tearDownServer(context);
     }
 
     private ExampleDistributedAlgorithm createExampleAlgorithm() {

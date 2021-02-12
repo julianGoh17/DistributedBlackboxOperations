@@ -16,7 +16,7 @@ import org.junit.Test;
 
 import static io.julian.server.components.Controller.DEFAULT_LABEL;
 
-public class LabelHandlerTest extends AbstractHandlerTest {
+public class SetLabelHandlerTest extends AbstractHandlerTest {
     public static final String LABEL_ENDPOINT = "label";
 
     @Test
@@ -84,7 +84,6 @@ public class LabelHandlerTest extends AbstractHandlerTest {
                 return Future.succeededFuture();
             });
     }
-
 
     private Future<HttpResponse<Buffer>> sendLabel(final TestContext context, final WebClient client, final String label) {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
