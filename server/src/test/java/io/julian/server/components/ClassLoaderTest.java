@@ -1,5 +1,6 @@
 package io.julian.server.components;
 
+import io.vertx.core.Vertx;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -11,22 +12,26 @@ public class ClassLoaderTest {
 
     @Test
     public void TestClassLoaderThrowsExceptionWhenCannotFindTestJar() {
+        Vertx vertx = Vertx.vertx();
         ClassLoader loader = new ClassLoader();
         String incorrectFilePath = String.format("%s-random", CORRECT_JAR_PATH);
         Controller controller = new Controller();
         try {
-            loader.loadJar(incorrectFilePath, PACKAGE_NAME, controller);
+            loader.loadJar(incorrectFilePath, PACKAGE_NAME, controller, vertx);
             Assert.fail();
         } catch (Exception e) {
             Assert.assertEquals(String.format(ClassLoader.JAR_FILE_NOT_FOUND_ERROR, incorrectFilePath), e.getMessage());
             Assert.assertEquals(FileNotFoundException.class, e.getClass());
         }
+        vertx.close();
     }
 
     @Test
     public void TestClassLoaderCanLoadJar() throws Exception {
+        Vertx vertx = Vertx.vertx();
         ClassLoader loader = new ClassLoader();
         Controller controller = new Controller();
-        Assert.assertNotNull(loader.loadJar(CORRECT_JAR_PATH, PACKAGE_NAME, controller));
+        Assert.assertNotNull(loader.loadJar(CORRECT_JAR_PATH, PACKAGE_NAME, controller, vertx));
+        vertx.close();
     }
 }

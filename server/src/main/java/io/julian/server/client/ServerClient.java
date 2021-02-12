@@ -15,7 +15,6 @@ public class ServerClient {
     public static final String COORDINATION_MESSAGE_ENDPOINT = "message";
     public static final String LABEL_SERVER_ENDPOINT = "label";
 
-
     private final Logger log = LogManager.getLogger(ServerClient.class.getName());
     private final WebClient client;
 
@@ -72,5 +71,10 @@ public class ServerClient {
                 }
             });
         return log.traceExit(result.future());
+    }
+
+    public WebClient getWebClient() {
+        log.traceEntry();
+        return log.traceExit(client);
     }
 }

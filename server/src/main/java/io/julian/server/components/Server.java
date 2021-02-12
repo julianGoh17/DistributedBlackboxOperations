@@ -119,7 +119,7 @@ public class Server {
         log.info("Loading distributed algorithm");
         ClassLoader loader = new ClassLoader();
         try {
-            T algorithm = loader.loadJar(settings.getJarPath(), settings.getPackageName(), controller);
+            T algorithm = loader.loadJar(settings.getJarPath(), settings.getPackageName(), controller, vertx);
             DistributedAlgorithmVerticle verticle = new DistributedAlgorithmVerticle(algorithm);
             return deployHelper(verticle, vertx);
         } catch (Exception e) {

@@ -1,16 +1,23 @@
 package io.julian.server.api;
 
+import io.julian.server.client.RegistryManager;
+import io.julian.server.client.ServerClient;
 import io.julian.server.components.Controller;
 import io.julian.server.models.coordination.CoordinationMessage;
+import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public abstract class DistributedAlgorithm {
     private static final Logger log = LogManager.getLogger(DistributedAlgorithm.class.getName());
     private final Controller controller;
+    private final ServerClient client;
+    private final RegistryManager registryManager;
 
-    public DistributedAlgorithm(final Controller controller) {
+    public DistributedAlgorithm(final Controller controller, final Vertx vertx) {
         this.controller = controller;
+        this.client = new ServerClient(vertx);
+        this.registryManager = new RegistryManager();
     }
 
     public abstract void actOnCoordinateMessage();
@@ -25,5 +32,15 @@ public abstract class DistributedAlgorithm {
     public Controller getController() {
         log.traceEntry();
         return log.traceExit(controller);
+    }
+
+    public ServerClient getClient() {
+        log.traceEntry();
+        return log.traceExit(client);
+    }
+
+    public RegistryManager getRegistryManager() {
+        log.traceEntry();
+        return log.traceExit(registryManager);
     }
 }
