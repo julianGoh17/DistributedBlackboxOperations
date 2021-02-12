@@ -24,7 +24,7 @@ public class UnreachableGate implements HandlerGate {
             context.fail(FAILURE_STATUS_CODE, new Exception(FAILURE_MESSAGE));
             hasPassedGate.fail(FAILURE_MESSAGE);
         } else {
-            log.trace(SUCCESS_MESSAGE);
+            log.info(SUCCESS_MESSAGE);
             hasPassedGate.complete(SUCCESS_MESSAGE);
         }
 

@@ -22,21 +22,21 @@ public class DeleteMessageHandler extends AbstractServerHandler  {
         String messageID = Optional.ofNullable(context.queryParam("messageId"))
             .map(params -> params.get(0))
             .orElse(null);
+        log.info(String.format("%s deleting message with uuid '%s' from server", DeleteMessageHandler.class.getSimpleName(), messageID));
 
         if (components.messageStore.hasUUID(messageID) && messageID != null) {
             components.messageStore.removeMessage(messageID);
+            log.info(String.format("%s successfully removed message with uuid '%s' from server", DeleteMessageHandler.class.getSimpleName(), messageID));
             sendResponseBack(context, 200, new MessageIDResponse(messageID).toJson());
+            components.vertx.eventBus().send(
+                DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.CLIENT_MESSAGE_POSTFIX),
+                "");
         } else {
-            String errorMessage = String.format(ERROR_RESPONSE, messageID);
-            log.error(errorMessage);
-            context.fail(404, new Exception(errorMessage));
+            log.error(String.format("%s failed to remove message with uuid '%s' from server", DeleteMessageHandler.class.getSimpleName(), messageID));
+            context.fail(404, new Exception(String.format(ERROR_RESPONSE, messageID)));
         }
 
         components.controller.addToClientMessageQueue(new ClientMessage(HTTPRequest.DELETE, null, messageID));
-        components.vertx.eventBus().send(
-            DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.CLIENT_MESSAGE_POSTFIX),
-            "");
-
         log.traceExit();
     }
 }

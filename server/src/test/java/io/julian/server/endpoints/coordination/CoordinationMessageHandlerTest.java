@@ -38,7 +38,7 @@ public class CoordinationMessageHandlerTest extends AbstractHandlerTest {
         JsonObject missingMetadata = CoordinationMessageTest.JSON.copy();
         missingMetadata.remove(CoordinationMessage.METADATA_KEY);
 
-        sendUnsuccessfulCoordinateMessage(context, client, missingMetadata,
+        sendUnsuccessfulCoordinateMessage(context, client, missingMetadata, 400,
             new Exception(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.METADATA_KEY))
         );
     }
@@ -51,7 +51,7 @@ public class CoordinationMessageHandlerTest extends AbstractHandlerTest {
         JsonObject missingMessage = CoordinationMessageTest.JSON.copy();
         missingMessage.remove(CoordinationMessage.MESSAGE_KEY);
 
-        sendUnsuccessfulCoordinateMessage(context, client, missingMessage,
+        sendUnsuccessfulCoordinateMessage(context, client, missingMessage, 400,
             new Exception(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.MESSAGE_KEY))
         );
     }
@@ -63,7 +63,7 @@ public class CoordinationMessageHandlerTest extends AbstractHandlerTest {
 
         JsonObject missingDefinition = CoordinationMessageTest.JSON.copy();
         missingDefinition.remove(CoordinationMessage.DEFINITION_KEY);
-        sendUnsuccessfulCoordinateMessage(context, client, missingDefinition,
+        sendUnsuccessfulCoordinateMessage(context, client, missingDefinition, 400,
             new Exception(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.DEFINITION_KEY))
         );
     }
@@ -74,7 +74,7 @@ public class CoordinationMessageHandlerTest extends AbstractHandlerTest {
         WebClient client = WebClient.create(this.vertx);
         server.getController().setStatus(ServerStatus.UNREACHABLE);
 
-        sendUnsuccessfulCoordinateMessage(context, client, CoordinationMessageTest.JSON, UNREACHABLE_ERROR);
+        sendUnsuccessfulCoordinateMessage(context, client, CoordinationMessageTest.JSON, 500, UNREACHABLE_ERROR);
     }
 
     @Test
@@ -83,7 +83,7 @@ public class CoordinationMessageHandlerTest extends AbstractHandlerTest {
         WebClient client = WebClient.create(this.vertx);
         server.getController().setStatus(ServerStatus.PROBABILISTIC_FAILURE);
         server.getController().setFailureChance(1);
-        sendUnsuccessfulCoordinateMessage(context, client, CoordinationMessageTest.JSON, PROBABILISTIC_FAILURE_ERROR);
+        sendUnsuccessfulCoordinateMessage(context, client, CoordinationMessageTest.JSON, 500, PROBABILISTIC_FAILURE_ERROR);
     }
 
     @Test
@@ -111,11 +111,11 @@ public class CoordinationMessageHandlerTest extends AbstractHandlerTest {
     }
 
     private void sendUnsuccessfulCoordinateMessage(final TestContext context, final WebClient client, final JsonObject message,
-                                                   final Exception error) {
+                                                   final int statusCode, final Exception error) {
         sendCoordinateMessage(context, client, message)
             .compose(res -> {
-                context.assertEquals(500, res.statusCode());
-                context.assertEquals(res.bodyAsJsonObject(), new ErrorResponse(500, error).toJson());
+                context.assertEquals(statusCode, res.statusCode());
+                context.assertEquals(res.bodyAsJsonObject(), new ErrorResponse(statusCode, error).toJson());
                 Assert.assertEquals(0, server.getController().getNumberOfCoordinationMessages());
                 return Future.succeededFuture();
             });

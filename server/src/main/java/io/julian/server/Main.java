@@ -26,6 +26,7 @@ public class Main {
                     .setPort(Configuration.getServerPort())
                     .setHost(Configuration.getServerHost()));
                 api.requestHandler(server.getRouterFactory().getRouter()).listen();
+                log.info(String.format("Successfully started server at %s:%d", Configuration.getServerHost(), Configuration.getServerPort()));
             })
             .onFailure(throwable -> {
                 log.error(throwable);

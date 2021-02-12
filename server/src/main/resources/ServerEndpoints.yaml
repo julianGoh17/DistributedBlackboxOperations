@@ -119,8 +119,8 @@ paths:
       responses:
         '200':
           description: Successfully sent coordination message
-        '504':
-          description: Sending coordination message timed out
+        '400':
+          description: Coordination Message contains missing field
           content:
             application/json:
               schema:

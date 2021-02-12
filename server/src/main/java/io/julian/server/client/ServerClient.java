@@ -25,6 +25,8 @@ public class ServerClient {
 
     public Future<Void> sendCoordinateMessageToServer(final OtherServerConfiguration configuration, final CoordinationMessage message) {
         log.traceEntry(() -> configuration, () -> message);
+        log.info(String.format("Sending POST Coordinate Message to %s", configuration.toString()));
+
         Promise<Void> result = Promise.promise();
         client.post(configuration.getPort(), configuration.getHost(), String.format("%s/%s", COORDINATOR_URI, COORDINATION_MESSAGE_ENDPOINT))
             .sendJsonObject(message.toJson(), res -> {
@@ -51,13 +53,12 @@ public class ServerClient {
     public Future<Void> sendLabelToServer(final OtherServerConfiguration configuration, final String label) {
         log.traceEntry(() -> configuration, () -> label);
         Promise<Void> result = Promise.promise();
-
+        log.info(String.format("Sending POST to %s to update with label '%s'", configuration.toString(), label));
         client.post(configuration.getPort(), configuration.getHost(), String.format("%s/%s?label=%s", COORDINATOR_URI, LABEL_SERVER_ENDPOINT, label))
             .send(res -> {
                 if (res.succeeded()) {
                     if (res.result().statusCode() == 202) {
-                        log.info(String.format("Successful POST label to server '%s/%d'",
-                            configuration.getHost(), configuration.getPort()));
+                        log.info(String.format("Successful POST label to %s", configuration.toString()));
                         configuration.setLabel(label);
                         result.complete();
                     } else {
@@ -77,14 +78,14 @@ public class ServerClient {
     public Future<LabelResponse> getServerLabel(final OtherServerConfiguration configuration) {
         log.traceEntry(() -> configuration);
         Promise<LabelResponse> label = Promise.promise();
-
+        log.info(String.format("Sending GET Label request to %s", configuration.toString()));
         client
             .get(configuration.getPort(), configuration.getHost(), String.format("%s/%s", COORDINATOR_URI, LABEL_SERVER_ENDPOINT))
             .send(ar -> {
                 if (ar.succeeded()) {
                     if (ar.result().statusCode() == 200) {
-                        log.info(String.format("Successful GET label from server '%s/%d' and updated configuration",
-                            configuration.getHost(), configuration.getPort()));
+                        log.info(String.format("Successful GET label from %s and updated configuration",
+                            configuration.toString()));
                         LabelResponse retrievedLabel = ar.result().bodyAsJsonObject().mapTo(LabelResponse.class);
                         configuration.setLabel(retrievedLabel.getLabel());
                         label.complete(retrievedLabel);

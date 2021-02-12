@@ -18,6 +18,8 @@ public class SetLabelHandler extends AbstractServerHandler {
         final String label = Optional.ofNullable(context.queryParam("label"))
             .map(params -> params.get(0))
             .orElse("");
+        log.info(String.format("%s updating server label to '%s'", SetLabelHandler.class.getSimpleName(), label));
+
         components.controller.setLabel(label);
         sendResponseBack(context, 202, new LabelResponse(label).toJson());
         log.traceExit();
