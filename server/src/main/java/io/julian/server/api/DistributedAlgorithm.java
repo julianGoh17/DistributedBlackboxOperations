@@ -43,4 +43,14 @@ public abstract class DistributedAlgorithm {
         log.traceEntry();
         return log.traceExit(registryManager);
     }
+
+    public <T> T mapMessageFromCoordinateMessageToClass(final CoordinationMessage coordinationMessage, final Class<T> objectClass) throws IllegalArgumentException {
+        log.traceEntry(() -> coordinationMessage, () -> objectClass);
+        return log.traceExit(coordinationMessage.getMessage().mapTo(objectClass));
+    }
+
+    public <T> T mapUserDefinitionFromCoordinateMessageToClass(final CoordinationMessage coordinationMessage, final Class<T> objectClass) throws IllegalArgumentException {
+        log.traceEntry(() -> coordinationMessage, () -> objectClass);
+        return log.traceExit(coordinationMessage.getDefinition().mapTo(objectClass));
+    }
 }

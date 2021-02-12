@@ -4,6 +4,7 @@ import io.julian.server.components.Configuration;
 import io.julian.server.endpoints.control.AbstractServerHandlerTest;
 import io.julian.server.models.control.OtherServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Test;
 
@@ -37,11 +38,15 @@ public class ServerClientTest extends AbstractServerHandlerTest {
         ServerClient client = new ServerClient(vertx);
         OtherServerConfiguration originalServerConfig = new OtherServerConfiguration(OTHER_SERVER_CONFIGURATION.getHost(), OTHER_SERVER_CONFIGURATION.getPort());
         context.assertNotEquals(newLabel, originalServerConfig.getLabel());
+        Async async = context.async();
         client.sendLabelToServer(originalServerConfig, newLabel)
             .onComplete(context.asyncAssertSuccess(res -> {
                 context.assertNull(res);
                 context.assertEquals(newLabel, originalServerConfig.getLabel());
+                async.complete();
             }));
+        async.awaitSuccess();
+
     }
 
     @Test

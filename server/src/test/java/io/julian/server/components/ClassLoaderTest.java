@@ -8,7 +8,7 @@ import java.io.FileNotFoundException;
 
 public class ClassLoaderTest {
     private static final String CORRECT_JAR_PATH = String.format("%s/../test/target/test-1.0-SNAPSHOT-jar-with-dependencies.jar", System.getProperty("user.dir"));
-    private static final String PACKAGE_NAME = "io.julian.Main";
+    private static final String PACKAGE_NAME = "io.julian.ExampleDistributedAlgorithm";
 
     @Test
     public void TestClassLoaderThrowsExceptionWhenCannotFindTestJar() {

@@ -44,34 +44,6 @@ public class CoordinationMessageTest {
     }
 
     @Test
-    public void TestCoordinationResponseCanGetAndMapUserDefinition() {
-        CoordinationMessage response = CoordinationMessage.fromJson(JSON);
-
-        Assert.assertNotNull(response.getMetadata());
-        Assert.assertNotNull(response.getDefinition());
-        Assert.assertNotNull(response.getMessage());
-
-        TestUserDefinition definition = response.getAndCastDefinition(TestUserDefinition.class);
-        Assert.assertEquals(USER, definition.getUser());
-    }
-
-    @Test
-    public void TestCoordinationResponseGetAndMapUserDefinitionThrowDecodeException() {
-        CoordinationMessage response = CoordinationMessage.fromJson(JSON);
-
-        Assert.assertNotNull(response.getMetadata());
-        Assert.assertNotNull(response.getDefinition());
-        Assert.assertNotNull(response.getMessage());
-
-        try {
-            response.getAndCastDefinition(WrongUserDefinition.class);
-            Assert.fail();
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("Unrecognized field \"user\""));
-        }
-    }
-
-    @Test
     public void TestCoordinationResponseCanMapToJson() {
         CoordinationMessage response = new CoordinationMessage(
             new CoordinationMetadata(CoordinationMetadataTest.SERVER_ID, new CoordinationTimestamp(CoordinationMetadataTest.TIME),
