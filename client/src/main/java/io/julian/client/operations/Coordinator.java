@@ -129,6 +129,7 @@ public class Coordinator {
 
     public Future<Void> runOperationChain(final String operationChainName) {
         log.traceEntry(() -> operationChainName);
+        log.info(String.format("Running operation chain '%s'", operationChainName));
 
         List<Operation> operations = Optional.ofNullable(operationChains.get(operationChainName))
             .map(OperationChain::getOperations)
@@ -139,10 +140,13 @@ public class Coordinator {
             .map(Configuration::willRunInParallel)
             .orElse(false);
 
+
         if (!operations.isEmpty()) {
             if (isParallel) {
+                log.info(String.format("Running operation chain '%s' in parallel", operationChainName));
                 return runOperationsInParallel(operations);
             } else {
+                log.info(String.format("Sequentially running operation chain '%s' ", operationChainName));
                 return runOperationsSequentially(operations.listIterator());
             }
         }
@@ -220,16 +224,16 @@ public class Coordinator {
         Promise<Void> complete = Promise.promise();
         switch (operation.getAction().getMethod()) {
             case POST:
-                log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.POST.toString(), operation.getAction().getMessageNumber()));
+                log.info(String.format("Running '%s' operation for message '%d'", RequestMethod.POST.toString(), operation.getAction().getMessageNumber()));
                 return log.traceExit(sendPOST(operation.getAction().getMessageNumber(), operation.getExpected()));
             case GET:
-                log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.GET.toString(), operation.getAction().getMessageNumber()));
+                log.info(String.format("Running '%s' operation for message '%d'", RequestMethod.GET.toString(), operation.getAction().getMessageNumber()));
                 sendGET(operation.getAction().getMessageNumber(), operation.getExpected())
                     .onSuccess(v -> complete.complete())
                     .onFailure(complete::fail);
                 return log.traceExit(complete.future());
             case DELETE:
-                log.debug(String.format("Running '%s' operation for message '%d'", RequestMethod.DELETE.toString(), operation.getAction().getMessageNumber()));
+                log.info(String.format("Running '%s' operation for message '%d'", RequestMethod.DELETE.toString(), operation.getAction().getMessageNumber()));
                 sendDELETE(operation.getAction().getMessageNumber(), operation.getExpected())
                     .onSuccess(v -> complete.complete())
                     .onFailure(complete::fail);

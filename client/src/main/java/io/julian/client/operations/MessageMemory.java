@@ -38,12 +38,14 @@ public class MessageMemory {
 
     public void associateNumberWithID(final int messageNumber, final String messageId) {
         log.traceEntry(() -> messageNumber, () -> messageId);
+        log.info(String.format("Associating message number '%d' with id '%s'", messageNumber, messageId));
         expectedMapping.put(messageNumber, messageId);
         log.traceExit();
     }
 
     public void disassociateNumberFromID(final int messageNumber) {
         log.traceEntry(() -> messageNumber);
+        log.info(String.format("Removing associated id for message number '%d'", messageNumber));
         expectedMapping.remove(messageNumber);
         log.traceExit();
     }

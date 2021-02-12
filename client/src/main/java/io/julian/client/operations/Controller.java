@@ -46,6 +46,7 @@ public class Controller {
         log.traceEntry(() -> reportFileLocation);
         final AtomicBoolean inFlightCommand = new AtomicBoolean(false);
         final Promise<Void> createdReport = Promise.promise();
+        log.info(String.format("Starting %s", Controller.class.getSimpleName()));
         vertx.setPeriodic(1000, id -> {
             if (!inFlightCommand.get()) {
                 inFlightCommand.set(true);
@@ -69,11 +70,14 @@ public class Controller {
         log.traceEntry();
         AtomicBoolean hasNotGivenValidOperation = new AtomicBoolean(true);
         Promise<Boolean> userWantsToContinue = Promise.promise();
+        log.info("Running Operation");
         vertx.setPeriodic(1000, id -> {
             while (hasNotGivenValidOperation.get()) {
+                log.info("Waiting for user to give operation");
                 hasNotGivenValidOperation.set(false);
                 output.printOperations();
                 input.getNumberFromInput().onSuccess(num -> {
+                    log.debug(String.format("Retrieved '%d' from commandline", num));
                     switch (num) {
                         case OPERATION_CHAIN_NUMBER:
                             runOperationChain()
@@ -84,21 +88,25 @@ public class Controller {
                             break;
                         // TODO: Add ability to send command line message
                         case SEND_COMMAND_LINE_MESSAGE_NUMBER:
+                            log.info("Sending command line message");
                             runSendCommandLineMessage();
                             userWantsToContinue.complete(true);
                             vertx.cancelTimer(id);
                             break;
                         case PRINT_MESSAGES_NUMBER:
-                            runPreconfiguredMessages();
+                            log.info("Printing messages");
+                            printPreconfiguredMessages();
                             userWantsToContinue.complete(true);
                             vertx.cancelTimer(id);
                             break;
                         case PRINT_OPERATION_CHAIN_NUMBER:
+                            log.info("Printing operation chains");
                             printOperationChains();
                             userWantsToContinue.complete(true);
                             vertx.cancelTimer(id);
                             break;
                         case EXIT_NUMBER:
+                            log.info("Exiting client");
                             runExit();
                             userWantsToContinue.complete(false);
                             vertx.cancelTimer(id);
@@ -130,12 +138,16 @@ public class Controller {
         AtomicBoolean inFlight = new AtomicBoolean();
         AtomicReference<String> suppliedName = new AtomicReference<>();
         Promise<Void> operationRes = Promise.promise();
+        log.info("Running Operation Chain");
         vertx.setPeriodic(1000, id -> {
             if (suppliedName.get() == null & !inFlight.get()) {
                 inFlight.set(true);
                 input.getStringFromInput().onComplete(name -> {
                     if (client.getOperationChains().containsKey(name.result())) {
+                        log.info(String.format("Running operation chain '%s'", name.result()));
                         suppliedName.set(name.result());
+                    } else {
+                        log.error(String.format("Could not find registered operation chain '%s'", name.result()));
                     }
                     inFlight.set(false);
                 });
@@ -156,7 +168,7 @@ public class Controller {
         log.traceExit();
     }
 
-    private void runPreconfiguredMessages() {
+    private void printPreconfiguredMessages() {
         log.traceEntry();
         output.printMessages(client.getMemory().getOriginalMessages());
         log.traceExit();

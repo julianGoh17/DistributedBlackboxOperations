@@ -1,7 +1,7 @@
 package io.julian.client.metrics;
 
-import io.julian.client.model.response.MismatchedResponse;
 import io.julian.client.model.RequestMethod;
+import io.julian.client.model.response.MismatchedResponse;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -23,13 +23,15 @@ public class Reporter {
 
     public Future<Void> createReportFile(final List<MismatchedResponse> responses, final GeneralMetrics metrics, final String reportFileLocation, final Vertx vertx) {
         log.traceEntry(() -> responses, () -> metrics, () -> reportFileLocation, () -> vertx);
+        log.info(String.format("%s attempting to create report at location '%s'", Reporter.class.getSimpleName(), reportFileLocation));
         Promise<Void> completedWrite = Promise.promise();
         vertx.fileSystem().writeFile(String.format("%s/%s", reportFileLocation, REPORT_FILE_NAME),
             Buffer.buffer(getReport(responses, metrics).toString()), res -> {
                 if (res.succeeded()) {
+                    log.info(String.format("%s successfully created report", Reporter.class.getSimpleName()));
                     completedWrite.complete();
                 } else {
-                    log.error(res.cause());
+                    log.error(String.format("%s failed to create report because: %s", Reporter.class.getName(), res.cause()));
                     completedWrite.fail(res.cause());
                 }
             });
@@ -38,12 +40,16 @@ public class Reporter {
 
     public void checkReportFolderExists(final String reportFolderLocation) throws FileNotFoundException {
         log.traceEntry(() -> reportFolderLocation);
+        log.info(String.format("Checking to see if report folder exists at '%s'", reportFolderLocation));
         File reportFolder = new File(reportFolderLocation);
         if (!reportFolder.exists()) {
+            log.error(String.format("Report folder does not exist at '%s'", reportFolderLocation));
             throw new FileNotFoundException(String.format("Could not find folder at '%s'", reportFolder));
         } else if (!reportFolder.isDirectory()) {
+            log.error(String.format("File exists at '%s' instead of folder", reportFolderLocation));
             throw new FileNotFoundException(String.format("Not a folder found at '%s'", reportFolder));
         }
+        log.info(String.format("Report folder does exist at '%s'", reportFolderLocation));
         log.traceExit();
     }
 
@@ -52,6 +58,7 @@ public class Reporter {
         log.traceEntry(() -> responses, () -> metrics);
         final StringBuilder builder = new StringBuilder();
 
+        log.info("Getting Report");
         getGeneralStatistics(metrics, builder);
         builder.append("\n");
         getGeneralStatistics(metrics, RequestMethod.GET, builder);
@@ -71,6 +78,7 @@ public class Reporter {
     // Exposed For Testing
     public void createMismatchedResponseEntry(final MismatchedResponse response, final StringBuilder builder) {
         log.traceEntry(() -> response, () -> builder);
+        log.info(String.format("Creating mismatched response for '%s'", response.getMethod()));
         String header = String.format("Mismatched Response For %s Request\n", response.getMethod().toString());
         builder
             .append(header)
@@ -85,6 +93,7 @@ public class Reporter {
     // Exposed For Testing
     public void getGeneralStatistics(final GeneralMetrics general, final RequestMethod method, final StringBuilder builder) {
         log.traceEntry(() -> general, () -> method, () -> builder);
+        log.info(String.format("Getting general statistics for method '%s'", method));
         String header = String.format("General Statistics For %s:\n", method.toString());
         builder
             .append(header)
@@ -98,6 +107,7 @@ public class Reporter {
     // Exposed For Testing
     public void getGeneralStatistics(final GeneralMetrics general, final StringBuilder builder) {
         log.traceEntry(() -> general, () -> builder);
+        log.info("Getting general statistics for method '%s'");
         String header = "General Statistics:\n";
         builder
             .append(header)

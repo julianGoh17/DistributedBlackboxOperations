@@ -25,12 +25,14 @@ public class MetricsCollector {
 
     public void addSucceededMetric(final Operation operation) {
         log.traceEntry(() -> operation);
+        log.info(String.format("%s adding succeeded metric", MetricsCollector.class.getSimpleName()));
         general.incrementSuccessMethod(operation.getAction().getMethod());
         log.traceExit();
     }
 
     public void addFailedMetric(final Operation operation, final ClientException exception) {
         log.traceEntry(() -> operation, () -> exception);
+        log.info(String.format("%s adding failed metric", MetricsCollector.class.getSimpleName()));
         general.incrementFailedMethod(operation.getAction().getMethod());
         mismatchedResponses.add(new MismatchedResponse(operation, exception));
         log.traceExit();
