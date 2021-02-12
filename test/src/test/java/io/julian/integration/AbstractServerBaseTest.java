@@ -10,6 +10,8 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.runner.RunWith;
 
 import java.io.File;
@@ -17,13 +19,23 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractServerBaseTest {
-    Server server;
+    protected Server server;
     HttpServer api;
-    Vertx vertx;
+    protected Vertx vertx;
 
     public static final String CORRECT_TEST_JAR_PATH = String.format("%s/../test/target/test-1.0-SNAPSHOT-jar-with-dependencies.jar", System.getProperty("user.dir"));
-    public static final String PACKAGE_NAME = "io.julian.Main";
+    public static final String PACKAGE_NAME = "io.julian.ExampleDistributedAlgorithm";
     private final AtomicReference<String> deploymentID = new AtomicReference<>();
+
+    @Before
+    public void before() {
+        this.vertx = Vertx.vertx();
+    }
+
+    @After
+    public void after() {
+        this.vertx.close();
+    }
 
     protected void setUpApiServer(final TestContext context) {
         server = new Server();
@@ -52,6 +64,6 @@ public abstract class AbstractServerBaseTest {
         api = null;
         Async async = context.async();
         vertx.undeploy(deploymentID.get(), context.asyncAssertSuccess(v -> async.complete()));
-        async.await();
+        async.awaitSuccess();
     }
 }

@@ -62,11 +62,6 @@ public class CoordinationMessage {
         return log.traceExit(new CoordinationMessage(metadata.get(), message.get(), userDefinition.get()));
     }
 
-    public <T> T getAndCastDefinition(final Class<T> mappedClass) throws IllegalArgumentException {
-        log.traceEntry(() -> mappedClass);
-        return log.traceExit(definition.mapTo(mappedClass));
-    }
-
     @JsonValue
     public JsonObject toJson() {
         log.traceEntry();

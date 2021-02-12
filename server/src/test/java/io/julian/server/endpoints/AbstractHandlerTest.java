@@ -166,9 +166,7 @@ public abstract class AbstractHandlerTest {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
             .delete(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/?messageId=%s", CLIENT_URI, messageId))
-            .send(context.asyncAssertSuccess(res -> {
-                response.complete(res);
-            }));
+            .send(context.asyncAssertSuccess(response::complete));
         return response.future();
     }
 }

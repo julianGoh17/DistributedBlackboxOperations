@@ -58,7 +58,7 @@ public class DistributedAlgorithmVerticleTest {
 
     private void setUpTest(final TestContext context) {
         controller = new Controller();
-        DistributedAlgorithmTest.ExampleAlgorithm algorithm = new DistributedAlgorithmTest.ExampleAlgorithm(controller);
+        DistributedAlgorithmTest.ExampleAlgorithm algorithm = new DistributedAlgorithmTest.ExampleAlgorithm(controller, vertx);
         verticle = new DistributedAlgorithmVerticle(algorithm);
 
         Async async = context.async();

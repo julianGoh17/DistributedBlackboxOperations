@@ -13,7 +13,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(VertxUnitRunner.class)
 public class ServerTest {
-    public static final String PACKAGE_NAME = "io.julian.Main";
+    public static final String PACKAGE_NAME = "io.julian.ExampleDistributedAlgorithm";
     public static final String TEST_JAR_PATH = String.format("%s/../test/target/test-1.0-SNAPSHOT-jar-with-dependencies.jar", System.getProperty("user.dir"));
 
     private Vertx vertx;

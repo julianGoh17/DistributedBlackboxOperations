@@ -10,7 +10,8 @@ import io.julian.server.endpoints.client.GetMessageHandler;
 import io.julian.server.endpoints.client.PostMessageHandler;
 import io.julian.server.endpoints.control.GetServerSettingsHandler;
 import io.julian.server.endpoints.coordination.CoordinationMessageHandler;
-import io.julian.server.endpoints.coordination.LabelHandler;
+import io.julian.server.endpoints.coordination.GetLabelHandler;
+import io.julian.server.endpoints.coordination.SetLabelHandler;
 import io.julian.server.endpoints.control.SetServerSettingsHandler;
 import io.julian.server.endpoints.gates.ProbabilisticFailureGate;
 import io.julian.server.endpoints.gates.UnreachableGate;
@@ -33,7 +34,7 @@ public class Server {
     private OpenAPI3RouterFactory routerFactory;
     private final MessageStore messages;
     private final static String[] OPERATION_IDS = new String[]{"postMessage", "getMessage", "deleteMessage",
-        "setServerSettings", "getServerSettings", "setLabel", "sendCoordinationMessage"};
+        "setServerSettings", "getServerSettings", "setLabel", "getLabel", "sendCoordinationMessage"};
     private final Controller controller = new Controller();
 
     public Server() {
@@ -68,10 +69,11 @@ public class Server {
 
         // Coordination Endpoints
         CoordinationMessageHandler coordinationMessageHandler = new CoordinationMessageHandler();
-        LabelHandler labelHandler = new LabelHandler();
+        SetLabelHandler setLabelHandler = new SetLabelHandler();
+        GetLabelHandler getLabelHandler = new GetLabelHandler();
 
         List<AbstractServerHandler> handlers = Arrays.asList(postMessageHandler, getMessageHandler, deleteMessageHandler,
-            coordinationMessageHandler, labelHandler);
+            coordinationMessageHandler, setLabelHandler, getLabelHandler);
         // Gate Handlers
         ProbabilisticFailureGate probabilisticFailureGate = new ProbabilisticFailureGate();
         UnreachableGate unreachableGate = new UnreachableGate();
@@ -87,7 +89,8 @@ public class Server {
         routerFactory.addHandlerByOperationId("getMessage", routingContext -> getMessageHandler.runThroughHandlers(routingContext, components));
         routerFactory.addHandlerByOperationId("deleteMessage", routingContext -> deleteMessageHandler.runThroughHandlers(routingContext, components));
 
-        routerFactory.addHandlerByOperationId("setLabel", routingContext -> labelHandler.runThroughHandlers(routingContext, components));
+        routerFactory.addHandlerByOperationId("setLabel", routingContext -> setLabelHandler.runThroughHandlers(routingContext, components));
+        routerFactory.addHandlerByOperationId("getLabel", routingContext -> getLabelHandler.runThroughHandlers(routingContext, components));
         routerFactory.addHandlerByOperationId("sendCoordinationMessage",
             routingContext -> coordinationMessageHandler.runThroughHandlers(routingContext, components));
 
@@ -119,7 +122,7 @@ public class Server {
         log.info("Loading distributed algorithm");
         ClassLoader loader = new ClassLoader();
         try {
-            T algorithm = loader.loadJar(settings.getJarPath(), settings.getPackageName(), controller);
+            T algorithm = loader.loadJar(settings.getJarPath(), settings.getPackageName(), controller, vertx);
             DistributedAlgorithmVerticle verticle = new DistributedAlgorithmVerticle(algorithm);
             return deployHelper(verticle, vertx);
         } catch (Exception e) {

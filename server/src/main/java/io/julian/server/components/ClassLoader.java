@@ -1,6 +1,7 @@
 package io.julian.server.components;
 
 import io.julian.server.api.DistributedAlgorithm;
+import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -14,7 +15,7 @@ public class ClassLoader {
 
     public static final String JAR_FILE_NOT_FOUND_ERROR = "Could not find JAR file at path '%s'";
 
-    public <T extends DistributedAlgorithm> T loadJar(final String jarFilePath, final String packageName, final Controller controller) throws Exception {
+    public <T extends DistributedAlgorithm> T loadJar(final String jarFilePath, final String packageName, final Controller controller, final Vertx vertx) throws Exception {
         log.traceEntry(() -> jarFilePath, () -> packageName, () -> controller);
         File jarFile = getJarFile(jarFilePath);
         URLClassLoader child = new URLClassLoader(
@@ -22,7 +23,7 @@ public class ClassLoader {
             this.getClass().getClassLoader()
         );
         Class classToLoad = Class.forName(packageName, true, child);
-        T algorithm = (T) classToLoad.getConstructor(Controller.class).newInstance(controller);
+        T algorithm = (T) classToLoad.getConstructor(Controller.class, Vertx.class).newInstance(controller, vertx);
         return log.traceExit(algorithm);
     }
 

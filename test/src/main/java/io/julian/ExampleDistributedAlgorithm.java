@@ -3,14 +3,15 @@ package io.julian;
 import io.julian.server.api.DistributedAlgorithm;
 import io.julian.server.components.Controller;
 import io.julian.server.models.coordination.CoordinationMessage;
+import io.vertx.core.Vertx;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Main extends DistributedAlgorithm {
+public class ExampleDistributedAlgorithm extends DistributedAlgorithm {
     private final AtomicInteger acceptedMessages = new AtomicInteger(0);
 
-    public Main(final Controller controller) {
-        super(controller);
+    public ExampleDistributedAlgorithm(final Controller controller, final Vertx vertx) {
+        super(controller, vertx);
     }
 
     public void actOnCoordinateMessage() {
