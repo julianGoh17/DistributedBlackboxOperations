@@ -14,34 +14,29 @@ public class CoordinationMetadata {
     private static final Logger log = LogManager.getLogger(CoordinationMetadata.class.getName());
     private final String fromServerId;
     private final HTTPRequest request;
-    private final String originalID;
-    private final String newID;
+    private final String messageID;
     private final CoordinationTimestamp timestamp;
 
     public static final String FROM_SERVER_ID_KEY = "fromServerId";
     public static final String TIMESTAMP_KEY = "timestamp";
     public static final String REQUEST_KEY = "request";
-    public static final String ORIGINAL_ID_KEY = "originalId";
-    public static final String NEW_ID_KEY = "newId";
+    public static final String MESSAGE_ID_KEY = "messageId";
 
     public CoordinationMetadata(@JsonProperty(FROM_SERVER_ID_KEY) final String fromServerId,
                                 @JsonProperty(TIMESTAMP_KEY) final CoordinationTimestamp timestamp,
                                 @JsonProperty(REQUEST_KEY) final HTTPRequest request,
-                                @JsonProperty(ORIGINAL_ID_KEY) final String originalID,
-                                @JsonProperty(NEW_ID_KEY) final String newID) {
+                                @JsonProperty(MESSAGE_ID_KEY) final String messageID) {
         this.fromServerId = fromServerId;
         this.timestamp = timestamp;
         this.request = request;
-        this.originalID = originalID;
-        this.newID = newID;
+        this.messageID = messageID;
     }
 
     public CoordinationMetadata(final String fromServerId, final HTTPRequest request) {
         this.fromServerId = fromServerId;
         this.timestamp = new CoordinationTimestamp();
         this.request = request;
-        this.originalID = null;
-        this.newID = null;
+        this.messageID = null;
     }
 
     public JsonObject toJson() {
@@ -50,7 +45,6 @@ public class CoordinationMetadata {
             .put(FROM_SERVER_ID_KEY, this.fromServerId)
             .put(TIMESTAMP_KEY, this.timestamp.toValue())
             .put(REQUEST_KEY, this.request.toValue())
-            .put(ORIGINAL_ID_KEY, this.originalID)
-            .put(NEW_ID_KEY, this.newID));
+            .put(MESSAGE_ID_KEY, this.messageID));
     }
 }

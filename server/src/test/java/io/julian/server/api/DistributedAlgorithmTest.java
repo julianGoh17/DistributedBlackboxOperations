@@ -22,7 +22,7 @@ import java.time.LocalDateTime;
 
 @RunWith(VertxUnitRunner.class)
 public class DistributedAlgorithmTest {
-    public static final CoordinationMessage TEST_MESSAGE = new CoordinationMessage(new CoordinationMetadata("random-id", new CoordinationTimestamp(LocalDateTime.now()), HTTPRequest.GET, "test", "id"), new JsonObject(), new JsonObject());
+    public static final CoordinationMessage TEST_MESSAGE = new CoordinationMessage(new CoordinationMetadata("random-id", new CoordinationTimestamp(LocalDateTime.now()), HTTPRequest.GET, "test"), new JsonObject(), new JsonObject());
     public static final JsonObject TEST_POST_MESSAGE = new JsonObject().put("test", "message");
 
     private Vertx vertx;
@@ -89,32 +89,29 @@ public class DistributedAlgorithmTest {
 
     @Test
     public void TestExampleAlgorithmWillThrowErrorWhenIDPresentInMessages() {
-        String uuid = "random-uuid";
-        JsonObject message = new JsonObject().put("random", "key");
         ExampleAlgorithm algorithm = createExampleAlgorithm();
-        algorithm.getMessageStore().putMessage(uuid, message);
-        Assert.assertTrue(algorithm.getMessageStore().hasUUID(uuid));
+        algorithm.getMessageStore().putMessage(TEST_MESSAGE.getMetadata().getMessageID(), TEST_MESSAGE.getMessage());
+        Assert.assertTrue(algorithm.getMessageStore().hasUUID(TEST_MESSAGE.getMetadata().getMessageID()));
 
         try {
-            algorithm.addMessageToServer(new ClientMessage(HTTPRequest.POST, message, uuid));
+            algorithm.addMessageToServer(TEST_MESSAGE);
             Assert.fail();
         } catch (SameIDException e) {
-            Assert.assertEquals(uuid, e.getId());
-            Assert.assertEquals(String.format("Server already contains message with id '%s'", uuid), e.toString());
+            Assert.assertEquals(TEST_MESSAGE.getMetadata().getMessageID(), e.getId());
+            Assert.assertEquals(String.format("Server already contains message with id '%s'", TEST_MESSAGE.getMetadata().getMessageID()), e.toString());
         }
     }
 
     @Test
     public void TestExampleAlgorithmDoesNotFailToPutMessageWhenIDDoesNotExistInMessages() {
-        String uuid = "random-uuid";
-        JsonObject message = new JsonObject().put("random", "key");
         ExampleAlgorithm algorithm = createExampleAlgorithm();
-        Assert.assertFalse(algorithm.getMessageStore().hasUUID(uuid));
+        Assert.assertFalse(algorithm.getMessageStore().hasUUID(TEST_MESSAGE.getMetadata().getMessageID()));
 
         try {
-            algorithm.addMessageToServer(new ClientMessage(HTTPRequest.POST, message, uuid));
-            Assert.assertTrue(algorithm.getMessageStore().hasUUID(uuid));
-            Assert.assertEquals(message.encodePrettily(), algorithm.getMessageStore().getMessage(uuid).encodePrettily());
+            algorithm.addMessageToServer(TEST_MESSAGE);
+            Assert.assertTrue(algorithm.getMessageStore().hasUUID(TEST_MESSAGE.getMetadata().getMessageID()));
+            Assert.assertEquals(TEST_MESSAGE.getMessage().encodePrettily(),
+                algorithm.getMessageStore().getMessage(TEST_MESSAGE.getMetadata().getMessageID()).encodePrettily());
         } catch (SameIDException e) {
             Assert.fail();
         }
@@ -122,29 +119,27 @@ public class DistributedAlgorithmTest {
 
     @Test
     public void TestExampleAlgorithmDeleteMessageWillThrowErrorWhenNoIDPresentInMessages() {
-        String uuid = "random-uuid";
         ExampleAlgorithm algorithm = createExampleAlgorithm();
-        Assert.assertFalse(algorithm.getMessageStore().hasUUID(uuid));
+        Assert.assertFalse(algorithm.getMessageStore().hasUUID(TEST_MESSAGE.getMetadata().getMessageID()));
 
         try {
-            algorithm.deleteMessageFromServer(new ClientMessage(HTTPRequest.DELETE, new JsonObject(), uuid));
+            algorithm.deleteMessageFromServer(TEST_MESSAGE);
             Assert.fail();
         } catch (NoIDException e) {
-            Assert.assertEquals(uuid, e.getId());
-            Assert.assertEquals(String.format("Server does not contain message with id '%s'", uuid), e.toString());
+            Assert.assertEquals(TEST_MESSAGE.getMetadata().getMessageID(), e.getId());
+            Assert.assertEquals(String.format("Server does not contain message with id '%s'", TEST_MESSAGE.getMetadata().getMessageID()), e.toString());
         }
     }
 
     @Test
     public void TestExampleAlgorithmDeleteMessageDoesNotWhenIDPresentInMessages() {
-        String uuid = "random-uuid";
         ExampleAlgorithm algorithm = createExampleAlgorithm();
-        algorithm.getMessageStore().putMessage(uuid, new JsonObject());
-        Assert.assertTrue(algorithm.getMessageStore().hasUUID(uuid));
+        algorithm.getMessageStore().putMessage(TEST_MESSAGE.getMetadata().getMessageID(), TEST_MESSAGE.getMessage());
+        Assert.assertTrue(algorithm.getMessageStore().hasUUID(TEST_MESSAGE.getMetadata().getMessageID()));
 
         try {
-            algorithm.deleteMessageFromServer(new ClientMessage(HTTPRequest.DELETE, new JsonObject(), uuid));
-            Assert.assertFalse(algorithm.getMessageStore().hasUUID(uuid));
+            algorithm.deleteMessageFromServer(TEST_MESSAGE);
+            Assert.assertFalse(algorithm.getMessageStore().hasUUID(TEST_MESSAGE.getMetadata().getMessageID()));
         } catch (NoIDException e) {
             Assert.fail();
         }
