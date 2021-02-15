@@ -1,6 +1,7 @@
 package io.julian;
 
 import io.julian.server.components.Controller;
+import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
@@ -35,7 +36,8 @@ public class ExampleDistributedAlgorithmTest {
     @Test
     public void TestCanIncrementAcceptedMessages() {
         Controller controller = new Controller();
-        ExampleDistributedAlgorithm example = new ExampleDistributedAlgorithm(controller, vertx);
+        MessageStore messageStore = new MessageStore();
+        ExampleDistributedAlgorithm example = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         int messages = 5;
         for (int i = 0; i < messages; i++) {
             controller.addToCoordinationQueue(MESSAGE);

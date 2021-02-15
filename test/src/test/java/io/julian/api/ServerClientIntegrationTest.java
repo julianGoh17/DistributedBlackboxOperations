@@ -4,6 +4,7 @@ import io.julian.ExampleDistributedAlgorithm;
 import io.julian.integration.AbstractServerBaseTest;
 import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
+import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
@@ -90,7 +91,8 @@ public class ServerClientIntegrationTest extends AbstractServerBaseTest {
 
     private ExampleDistributedAlgorithm createExampleAlgorithm() {
         Controller controller = new Controller();
-        ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, vertx);
+        MessageStore messageStore = new MessageStore();
+        ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         algorithm.getRegistryManager().registerServer(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
         return algorithm;
     }

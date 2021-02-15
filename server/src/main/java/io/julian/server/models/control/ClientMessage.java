@@ -17,17 +17,17 @@ public class ClientMessage {
 
     private final HTTPRequest request;
     private final JsonObject message;
-    private final String originalId;
+    private final String messageId;
 
     public static final String REQUEST_KEY = "request";
     public static final String MESSAGE_KEY = "message";
     public static final String MESSAGE_ID_KEY = "messageId";
 
 
-    public ClientMessage(final HTTPRequest request, final JsonObject message, final String originalId) {
+    public ClientMessage(final HTTPRequest request, final JsonObject message, final String messageId) {
         this.request = request;
         this.message = message;
-        this.originalId = originalId;
+        this.messageId = messageId;
     }
 
     public JsonObject toJson() {
@@ -35,7 +35,7 @@ public class ClientMessage {
         return log.traceExit(new JsonObject()
             .put(REQUEST_KEY, this.request.toValue())
             .put(MESSAGE_KEY, this.message)
-            .put(MESSAGE_ID_KEY, this.originalId));
+            .put(MESSAGE_ID_KEY, this.messageId));
     }
 
     @JsonCreator

@@ -17,7 +17,7 @@ public class MessageStore {
 
     public JsonObject getMessage(final String uuid) {
         log.traceEntry(() -> uuid);
-        log.info("Getting message from Message Store");
+        log.info(String.format("Getting message with id '%s' from Message Store", uuid));
         if (messages.containsKey(uuid)) {
             return log.traceExit(messages.get(uuid));
         }
@@ -27,7 +27,7 @@ public class MessageStore {
 
     public void putMessage(final String uuid, final JsonObject message) {
         log.traceEntry(() -> uuid, () -> message);
-        log.info(String.format("Putting message with uuid '%s' in Message Store", uuid));
+        log.info(String.format("Putting message with id '%s' in Message Store", uuid));
         messages.put(uuid, message);
         log.traceExit();
     }
@@ -35,12 +35,12 @@ public class MessageStore {
     public void removeMessage(final String uuid) {
         log.traceEntry(() -> uuid);
 
-        log.info(String.format("Attempting to remove message with uuid '%s' from Message Store", uuid));
+        log.info(String.format("Attempting to remove message with id '%s' from Message Store", uuid));
         if (hasUUID(uuid)) {
-            log.info(String.format("Removing message with UUID '%s' from server", uuid));
+            log.info(String.format("Removing message with id '%s' from server", uuid));
             messages.remove(uuid);
         } else {
-            log.info(String.format("Could not find with UUID '%s' to remove from server", uuid));
+            log.info(String.format("Could not find with id '%s' to remove from server", uuid));
         }
 
         log.traceExit();
