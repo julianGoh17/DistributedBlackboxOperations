@@ -7,7 +7,7 @@ IMAGE_TAG="latest"
 CWD="$(pwd)"
 DEFAULT_JAR_FOLDER="${CWD}/test/target"
 DEFAULT_JAR_FILE="test-1.0-SNAPSHOT-jar-with-dependencies.jar"
-DEFAULT_PACKAGE_NAME="io.julian.Main"
+DEFAULT_PACKAGE_NAME="io.julian.ExampleDistributedAlgorithm"
 DEFAULT_HOST="localhost"
 DEFAULT_PORT="8888"
 
@@ -16,7 +16,7 @@ echo "    Arg 1: the folder that contains the JAR of the distributed algorithm y
 echo "    Arg 2: the name of the JAR of the distributed algorithm (default: ${DEFAULT_JAR_FILE})"
 echo "    Arg 3: the name of the package of the distributed algorithm (default: ${DEFAULT_PACKAGE_NAME})"
 echo "    Arg 3: the host of the server you want the server to start up on (default: ${DEFAULT_HOST})"
-echo "    Arg 4: the port of the server you want the server to start up on (defuault: ${DEFAULT_PORT})"
+echo "    Arg 4: the port of the server you want the server to start up on (default: ${DEFAULT_PORT})"
 
 JAR_FOLDER="${1:-${DEFAULT_JAR_FOLDER}}"
 JAR_NAME="${2:-${DEFAULT_JAR_FILE}}"

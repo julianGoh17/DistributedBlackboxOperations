@@ -6,6 +6,7 @@ import io.julian.server.api.exceptions.NoIDException;
 import io.julian.server.api.exceptions.SameIDException;
 import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
+import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
@@ -45,6 +46,15 @@ public abstract class DistributedAlgorithm {
     public CoordinationMessage getCoordinationMessage() {
         log.traceEntry();
         return log.traceExit(controller.getCoordinationMessage());
+    }
+
+    /**
+     * Retrieve and remove the earliest message from the client message queue
+     * @return the earliest client message
+     */
+    public ClientMessage getClientMessageMessage() {
+        log.traceEntry();
+        return log.traceExit(controller.getClientMessage());
     }
 
     /**
