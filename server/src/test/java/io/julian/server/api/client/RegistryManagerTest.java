@@ -1,4 +1,4 @@
-package io.julian.server.client;
+package io.julian.server.api.client;
 
 import io.julian.server.models.control.OtherServerConfiguration;
 import org.junit.Assert;

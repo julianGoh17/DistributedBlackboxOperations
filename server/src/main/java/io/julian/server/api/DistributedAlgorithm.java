@@ -1,7 +1,7 @@
 package io.julian.server.api;
 
-import io.julian.server.client.RegistryManager;
-import io.julian.server.client.ServerClient;
+import io.julian.server.api.client.RegistryManager;
+import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Controller;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.vertx.core.Vertx;
