@@ -1,6 +1,7 @@
 package io.julian.server.api;
 
 import io.julian.server.components.Controller;
+import io.julian.server.components.MessageStore;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
@@ -58,7 +59,8 @@ public class DistributedAlgorithmVerticleTest {
 
     private void setUpTest(final TestContext context) {
         controller = new Controller();
-        DistributedAlgorithmTest.ExampleAlgorithm algorithm = new DistributedAlgorithmTest.ExampleAlgorithm(controller, vertx);
+        MessageStore messageStore = new MessageStore();
+        DistributedAlgorithmTest.ExampleAlgorithm algorithm = new DistributedAlgorithmTest.ExampleAlgorithm(controller, messageStore, vertx);
         verticle = new DistributedAlgorithmVerticle(algorithm);
 
         Async async = context.async();

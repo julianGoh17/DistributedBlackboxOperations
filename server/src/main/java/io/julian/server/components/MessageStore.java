@@ -17,7 +17,7 @@ public class MessageStore {
 
     public JsonObject getMessage(final String uuid) {
         log.traceEntry(() -> uuid);
-        log.info("Getting message from Message Store");
+        log.info(String.format("Getting message with id '%s' from Message Store", uuid));
         if (messages.containsKey(uuid)) {
             return log.traceExit(messages.get(uuid));
         }

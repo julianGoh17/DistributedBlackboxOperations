@@ -15,15 +15,16 @@ public class ClassLoader {
 
     public static final String JAR_FILE_NOT_FOUND_ERROR = "Could not find JAR file at path '%s'";
 
-    public <T extends DistributedAlgorithm> T loadJar(final String jarFilePath, final String packageName, final Controller controller, final Vertx vertx) throws Exception {
-        log.traceEntry(() -> jarFilePath, () -> packageName, () -> controller);
+    public <T extends DistributedAlgorithm> T loadJar(final String jarFilePath, final String packageName, final Controller controller, final MessageStore messageStore, final Vertx vertx) throws Exception {
+        log.traceEntry(() -> jarFilePath, () -> packageName, () -> controller, () -> messageStore, () -> controller);
         File jarFile = getJarFile(jarFilePath);
         URLClassLoader child = new URLClassLoader(
             new URL[]{jarFile.toURI().toURL()},
             this.getClass().getClassLoader()
         );
         Class classToLoad = Class.forName(packageName, true, child);
-        T algorithm = (T) classToLoad.getConstructor(Controller.class, Vertx.class).newInstance(controller, vertx);
+        T algorithm = (T) classToLoad.getConstructor(Controller.class, MessageStore.class, Vertx.class)
+            .newInstance(controller, messageStore, vertx);
         return log.traceExit(algorithm);
     }
 

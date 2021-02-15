@@ -124,7 +124,7 @@ public class Server {
         log.info("Loading distributed algorithm");
         ClassLoader loader = new ClassLoader();
         try {
-            T algorithm = loader.loadJar(settings.getJarPath(), settings.getPackageName(), controller, vertx);
+            T algorithm = loader.loadJar(settings.getJarPath(), settings.getPackageName(), controller, messages, vertx);
             DistributedAlgorithmVerticle verticle = new DistributedAlgorithmVerticle(algorithm);
             log.info("Successfully deployed distributed algorithm into vertx");
             return deployHelper(verticle, vertx);

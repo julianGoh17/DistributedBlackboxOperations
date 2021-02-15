@@ -2,6 +2,7 @@ package io.julian.api;
 
 import io.julian.ExampleDistributedAlgorithm;
 import io.julian.server.components.Controller;
+import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
@@ -28,7 +29,8 @@ public class TestAPIMapping {
     @Test
     public void TestSuccessfulMappingMessage() throws IllegalArgumentException {
         Controller controller = new Controller();
-        ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, vertx);
+        MessageStore messageStore = new MessageStore();
+        ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         ID mapped = algorithm.mapMessageFromCoordinateMessageToClass(
             new CoordinationMessage(new CoordinationMetadata("blah", HTTPRequest.GET), ID.EXAMPLE.toJson(), LoadConfiguration.EXAMPLE.toJson()),
             ID.class);
@@ -40,8 +42,9 @@ public class TestAPIMapping {
     @Test
     public void TestFailedMappingMessage() {
         Controller controller = new Controller();
+        MessageStore messageStore = new MessageStore();
+        ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         JsonObject jsonThatWillFail = ID.EXAMPLE.toJson().put("random", "key");
-        ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, vertx);
         try {
             algorithm.mapMessageFromCoordinateMessageToClass(
                 new CoordinationMessage(new CoordinationMetadata("blah", HTTPRequest.GET), jsonThatWillFail, LoadConfiguration.EXAMPLE.toJson()),
@@ -56,7 +59,8 @@ public class TestAPIMapping {
     @Test
     public void TestSuccessfulMappingUserDefinition() throws IllegalArgumentException {
         Controller controller = new Controller();
-        ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, vertx);
+        MessageStore messageStore = new MessageStore();
+        ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         LoadConfiguration mapped = algorithm.mapUserDefinitionFromCoordinateMessageToClass(
             new CoordinationMessage(new CoordinationMetadata("blah", HTTPRequest.GET), ID.EXAMPLE.toJson(), LoadConfiguration.EXAMPLE.toJson()),
             LoadConfiguration.class);
@@ -68,8 +72,9 @@ public class TestAPIMapping {
     @Test
     public void TestFailedMappingUserDefinition() {
         Controller controller = new Controller();
+        MessageStore messageStore = new MessageStore();
+        ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         JsonObject jsonThatWillFail = LoadConfiguration.EXAMPLE.toJson().put("random", "key");
-        ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, vertx);
         try {
             algorithm.mapUserDefinitionFromCoordinateMessageToClass(
                 new CoordinationMessage(new CoordinationMetadata("blah", HTTPRequest.GET), ID.EXAMPLE.toJson(), jsonThatWillFail),

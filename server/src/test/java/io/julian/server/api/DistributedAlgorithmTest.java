@@ -1,6 +1,9 @@
 package io.julian.server.api;
 
+import io.julian.server.api.exceptions.NoIDException;
+import io.julian.server.api.exceptions.SameIDException;
 import io.julian.server.components.Controller;
+import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
@@ -35,8 +38,8 @@ public class DistributedAlgorithmTest {
     }
 
     public static class ExampleAlgorithm extends DistributedAlgorithm {
-        public ExampleAlgorithm(final Controller controller, final Vertx vertx) {
-            super(controller, vertx);
+        public ExampleAlgorithm(final Controller controller, final MessageStore messageStore, final Vertx vertx) {
+            super(controller, messageStore, vertx);
         }
 
         @Override
@@ -52,16 +55,15 @@ public class DistributedAlgorithmTest {
 
     @Test
     public void TestExampleAlgorithmActOnCoordinationMessage() {
-        Controller controller = new Controller();
-        ExampleAlgorithm algorithm = new ExampleAlgorithm(controller, vertx);
+        ExampleAlgorithm algorithm = createExampleAlgorithm();
         int messages = 5;
         for (int i = 0; i < messages; i++) {
             algorithm.actOnCoordinateMessage();
         }
 
-        Assert.assertEquals(messages, controller.getNumberOfCoordinationMessages());
-        while (controller.getNumberOfCoordinationMessages() > 0) {
-            CoordinationMessage message = controller.getCoordinationMessage();
+        Assert.assertEquals(messages, algorithm.getController().getNumberOfCoordinationMessages());
+        while (algorithm.getController().getNumberOfCoordinationMessages() > 0) {
+            CoordinationMessage message = algorithm.getController().getCoordinationMessage();
 
             Assert.assertEquals(TEST_MESSAGE.getDefinition().encodePrettily(), message.getDefinition().encodePrettily());
             Assert.assertEquals(TEST_MESSAGE.getMessage().encodePrettily(), message.getMessage().encodePrettily());
@@ -72,17 +74,85 @@ public class DistributedAlgorithmTest {
 
     @Test
     public void TestExampleAlgorithmActOnInitialPostMessage() {
-        Controller controller = new Controller();
-        ExampleAlgorithm algorithm = new ExampleAlgorithm(controller, vertx);
+        ExampleAlgorithm algorithm = createExampleAlgorithm();
         int messages = 5;
         for (int i = 0; i < messages; i++) {
             algorithm.actOnInitialMessage();
         }
 
-        Assert.assertEquals(messages, controller.getNumberOfClientMessages());
-        while (controller.getNumberOfCoordinationMessages() > 0) {
-            ClientMessage message = controller.getClientMessage();
+        Assert.assertEquals(messages, algorithm.getController().getNumberOfClientMessages());
+        while (algorithm.getController().getNumberOfCoordinationMessages() > 0) {
+            ClientMessage message = algorithm.getController().getClientMessage();
             Assert.assertEquals(message.getMessage().getString("test"), "message");
         }
+    }
+
+    @Test
+    public void TestExampleAlgorithmWillThrowErrorWhenIDPresentInMessages() {
+        String uuid = "random-uuid";
+        JsonObject message = new JsonObject().put("random", "key");
+        ExampleAlgorithm algorithm = createExampleAlgorithm();
+        algorithm.getMessageStore().putMessage(uuid, message);
+        Assert.assertTrue(algorithm.getMessageStore().hasUUID(uuid));
+
+        try {
+            algorithm.addMessageToServer(new ClientMessage(HTTPRequest.POST, message, uuid));
+            Assert.fail();
+        } catch (SameIDException e) {
+            Assert.assertEquals(uuid, e.getId());
+            Assert.assertEquals(String.format("Server already contains message with id '%s'", uuid), e.toString());
+        }
+    }
+
+    @Test
+    public void TestExampleAlgorithmDoesNotFailToPutMessageWhenIDDoesNotExistInMessages() {
+        String uuid = "random-uuid";
+        JsonObject message = new JsonObject().put("random", "key");
+        ExampleAlgorithm algorithm = createExampleAlgorithm();
+        Assert.assertFalse(algorithm.getMessageStore().hasUUID(uuid));
+
+        try {
+            algorithm.addMessageToServer(new ClientMessage(HTTPRequest.POST, message, uuid));
+            Assert.assertTrue(algorithm.getMessageStore().hasUUID(uuid));
+            Assert.assertEquals(message.encodePrettily(), algorithm.getMessageStore().getMessage(uuid).encodePrettily());
+        } catch (SameIDException e) {
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void TestExampleAlgorithmDeleteMessageWillThrowErrorWhenNoIDPresentInMessages() {
+        String uuid = "random-uuid";
+        ExampleAlgorithm algorithm = createExampleAlgorithm();
+        Assert.assertFalse(algorithm.getMessageStore().hasUUID(uuid));
+
+        try {
+            algorithm.deleteMessageFromServer(new ClientMessage(HTTPRequest.DELETE, new JsonObject(), uuid));
+            Assert.fail();
+        } catch (NoIDException e) {
+            Assert.assertEquals(uuid, e.getId());
+            Assert.assertEquals(String.format("Server does not contain message with id '%s'", uuid), e.toString());
+        }
+    }
+
+    @Test
+    public void TestExampleAlgorithmDeleteMessageDoesNotWhenIDPresentInMessages() {
+        String uuid = "random-uuid";
+        ExampleAlgorithm algorithm = createExampleAlgorithm();
+        algorithm.getMessageStore().putMessage(uuid, new JsonObject());
+        Assert.assertTrue(algorithm.getMessageStore().hasUUID(uuid));
+
+        try {
+            algorithm.deleteMessageFromServer(new ClientMessage(HTTPRequest.DELETE, new JsonObject(), uuid));
+            Assert.assertFalse(algorithm.getMessageStore().hasUUID(uuid));
+        } catch (NoIDException e) {
+            Assert.fail();
+        }
+    }
+
+    private ExampleAlgorithm createExampleAlgorithm() {
+        Controller controller = new Controller();
+        MessageStore messageStore = new MessageStore();
+        return new ExampleAlgorithm(controller, messageStore, vertx);
     }
 }

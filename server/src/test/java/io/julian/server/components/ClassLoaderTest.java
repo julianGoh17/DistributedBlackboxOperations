@@ -16,8 +16,9 @@ public class ClassLoaderTest {
         ClassLoader loader = new ClassLoader();
         String incorrectFilePath = String.format("%s-random", CORRECT_JAR_PATH);
         Controller controller = new Controller();
+        MessageStore messageStore = new MessageStore();
         try {
-            loader.loadJar(incorrectFilePath, PACKAGE_NAME, controller, vertx);
+            loader.loadJar(incorrectFilePath, PACKAGE_NAME, controller, messageStore, vertx);
             Assert.fail();
         } catch (Exception e) {
             Assert.assertEquals(String.format(ClassLoader.JAR_FILE_NOT_FOUND_ERROR, incorrectFilePath), e.getMessage());
@@ -31,7 +32,8 @@ public class ClassLoaderTest {
         Vertx vertx = Vertx.vertx();
         ClassLoader loader = new ClassLoader();
         Controller controller = new Controller();
-        Assert.assertNotNull(loader.loadJar(CORRECT_JAR_PATH, PACKAGE_NAME, controller, vertx));
+        MessageStore messageStore = new MessageStore();
+        Assert.assertNotNull(loader.loadJar(CORRECT_JAR_PATH, PACKAGE_NAME, controller, messageStore, vertx));
         vertx.close();
     }
 }
