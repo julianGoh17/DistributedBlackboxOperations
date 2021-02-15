@@ -1,6 +1,6 @@
 # README
 
-This file provides a quick overview of the project and the requirements to get the project working.
+This file provides a quick overview of the project, and the requirements to get the project working.
 
 ## Distributed Algorithm Simulation
 
@@ -9,7 +9,7 @@ to simulate their system in various situations and obtain metrics about the simu
 simulation emulates the situation where a client sends and receives messages from a system of servers. When a client 
 message to one of the servers, that server must coordinate with other servers to fulfill the client's request. 
 
-To create the distributed system, the user must create a class that extends AbstractDistributedAlgorithm, which will 
+To create the distributed system, the user must create a class which extends AbstractDistributedAlgorithm, which will 
 then get loaded in each server. Thus, the user will write a single program that controls how a server acts, 
 which will include: 
 * what does the server do when a client sends a message in
