@@ -2,6 +2,7 @@ package io.julian.server.components;
 
 import io.julian.server.models.ServerStatus;
 import io.julian.server.models.control.ClientMessage;
+import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -90,5 +91,10 @@ public class Controller {
         log.info(String.format("Setting server failure chance to %.2f", failureChance));
         this.failureChance.set(failureChance);
         log.traceExit();
+    }
+
+    public ServerConfiguration getServerConfiguration() {
+        log.traceEntry();
+        return log.traceExit(new ServerConfiguration(Configuration.getServerHost(), Configuration.getServerPort()));
     }
 }

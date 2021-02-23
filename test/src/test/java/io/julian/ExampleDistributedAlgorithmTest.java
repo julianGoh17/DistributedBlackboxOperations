@@ -17,7 +17,7 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public class ExampleDistributedAlgorithmTest {
     private final static CoordinationMessage MESSAGE = new CoordinationMessage(
-        new CoordinationMetadata("test-id", HTTPRequest.GET),
+        new CoordinationMetadata(HTTPRequest.GET),
         new JsonObject(),
         new JsonObject());
 

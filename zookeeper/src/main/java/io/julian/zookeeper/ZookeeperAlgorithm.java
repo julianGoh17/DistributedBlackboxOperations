@@ -1,3 +1,5 @@
+package io.julian.zookeeper;
+
 import io.julian.server.api.DistributedAlgorithm;
 import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;

@@ -2,7 +2,7 @@ package io.julian.server.api.client;
 
 import io.julian.server.components.Configuration;
 import io.julian.server.endpoints.control.AbstractServerHandlerTest;
-import io.julian.server.models.control.OtherServerConfiguration;
+import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.response.LabelResponse;
 import io.vertx.ext.unit.Async;
@@ -12,8 +12,8 @@ import org.junit.Test;
 import static io.julian.server.models.coordination.CoordinationMessageTest.JSON;
 
 public class ServerClientTest extends AbstractServerHandlerTest {
-    public static final OtherServerConfiguration OTHER_SERVER_CONFIGURATION =
-        new OtherServerConfiguration(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
+    public static final ServerConfiguration OTHER_SERVER_CONFIGURATION =
+        new ServerConfiguration(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
     private final String connectionRefusedFormat = "Connection refused: %s/127.0.0.1:%s";
 
     @Test
@@ -37,7 +37,7 @@ public class ServerClientTest extends AbstractServerHandlerTest {
         setUpApiServer(context);
         String newLabel = "label";
         ServerClient client = new ServerClient(vertx);
-        OtherServerConfiguration originalServerConfig = new OtherServerConfiguration(OTHER_SERVER_CONFIGURATION.getHost(), OTHER_SERVER_CONFIGURATION.getPort());
+        ServerConfiguration originalServerConfig = new ServerConfiguration(OTHER_SERVER_CONFIGURATION.getHost(), OTHER_SERVER_CONFIGURATION.getPort());
         context.assertNotEquals(newLabel, originalServerConfig.getLabel());
         Async async = context.async();
         client.sendLabelToServer(originalServerConfig, newLabel)
@@ -55,7 +55,7 @@ public class ServerClientTest extends AbstractServerHandlerTest {
         String newLabel = "label";
         server.getController().setLabel(newLabel);
         ServerClient client = new ServerClient(vertx);
-        OtherServerConfiguration originalServerConfig = new OtherServerConfiguration(OTHER_SERVER_CONFIGURATION.getHost(), OTHER_SERVER_CONFIGURATION.getPort());
+        ServerConfiguration originalServerConfig = new ServerConfiguration(OTHER_SERVER_CONFIGURATION.getHost(), OTHER_SERVER_CONFIGURATION.getPort());
 
         context.assertNotEquals(newLabel, originalServerConfig.getLabel());
         context.assertEquals(newLabel, server.getController().getLabel());

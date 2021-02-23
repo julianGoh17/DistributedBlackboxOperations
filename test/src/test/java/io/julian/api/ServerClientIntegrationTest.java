@@ -15,7 +15,7 @@ import org.junit.Test;
 
 public class ServerClientIntegrationTest extends AbstractServerBaseTest {
     private final static CoordinationMessage MESSAGE = new CoordinationMessage(
-        new CoordinationMetadata("test-id", HTTPRequest.GET),
+        new CoordinationMetadata(HTTPRequest.GET),
         new JsonObject(),
         new JsonObject());
 

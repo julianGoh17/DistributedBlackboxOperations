@@ -1,6 +1,7 @@
 package io.julian.server.models.coordination;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.julian.server.models.HTTPRequest;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
@@ -18,8 +19,6 @@ public class CoordinationMessageTest {
         }
     }
 
-    public static class WrongUserDefinition { }
-
     private static final JsonObject MESSAGE = new JsonObject().put("test", "message");
     private static final String USER = "test-user";
     public static final JsonObject JSON = new JsonObject()
@@ -35,7 +34,6 @@ public class CoordinationMessageTest {
         Assert.assertNotNull(response.getDefinition());
         Assert.assertNotNull(response.getMessage());
 
-        Assert.assertEquals(CoordinationMetadataTest.SERVER_ID, response.getMetadata().getFromServerId());
         Assert.assertEquals(CoordinationMetadataTest.TIME, response.getMetadata().getTimestamp().toLocalDateTime());
 
         Assert.assertEquals(MESSAGE, response.getMessage());
@@ -46,7 +44,7 @@ public class CoordinationMessageTest {
     @Test
     public void TestCoordinationResponseCanMapToJson() {
         CoordinationMessage response = new CoordinationMessage(
-            new CoordinationMetadata(CoordinationMetadataTest.SERVER_ID, new CoordinationTimestamp(CoordinationMetadataTest.TIME),
+            new CoordinationMetadata(new CoordinationTimestamp(CoordinationMetadataTest.TIME),
                 CoordinationMetadataTest.REQUEST, CoordinationMetadataTest.MESSAGE_ID),
             MESSAGE,
             new JsonObject().put("user", USER));
@@ -91,5 +89,21 @@ public class CoordinationMessageTest {
         } catch (DecodeException e) {
             Assert.assertEquals(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.DEFINITION_KEY), e.getMessage());
         }
+    }
+
+    @Test
+    public void TestCoordinateMessageCanMapToJsonWithoutClientMessage() {
+        JsonObject userObject = new JsonObject().put("test", 1234);
+        CoordinationMessage message = new CoordinationMessage(HTTPRequest.DELETE, userObject);
+
+        JsonObject json = message.toJson();
+        Assert.assertNotNull(json.getJsonObject(CoordinationMessage.METADATA_KEY));
+        Assert.assertNull(json.getJsonObject(CoordinationMessage.MESSAGE_KEY));
+        Assert.assertEquals(userObject.encodePrettily(), json.getJsonObject(CoordinationMessage.DEFINITION_KEY).encodePrettily());
+
+
+        CoordinationMessage mapped = CoordinationMessage.fromJson(json);
+        Assert.assertNull(mapped.getMessage());
+        Assert.assertEquals(message.getDefinition().encodePrettily(), mapped.getDefinition().encodePrettily());
     }
 }

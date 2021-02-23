@@ -1,4 +1,4 @@
-package models;
+package io.julian.zookeeper.models;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -13,13 +13,13 @@ public class CandidateLeadershipInformation {
 
     private final String host;
     private final int port;
-    private final int candidateNumber;
+    private final long candidateNumber;
 
     @JsonCreator
 
     public CandidateLeadershipInformation(@JsonProperty(HOST_KEY) final String host,
                                           @JsonProperty(PORT_KEY) final int port,
-                                          @JsonProperty(CANDIDATE_NUMBER_KEY) final int candidateNumber) {
+                                          @JsonProperty(CANDIDATE_NUMBER_KEY) final long candidateNumber) {
         this.host = host;
         this.port = port;
         this.candidateNumber = candidateNumber;

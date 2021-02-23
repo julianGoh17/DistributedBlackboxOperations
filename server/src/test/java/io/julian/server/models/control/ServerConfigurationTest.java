@@ -3,7 +3,7 @@ package io.julian.server.models.control;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class OtherServerConfigurationTest {
+public class ServerConfigurationTest {
 
     @Test
     public void TestOtherServerConfigurationGetterAndSetter() {
@@ -15,7 +15,7 @@ public class OtherServerConfigurationTest {
 
         String newLabel = "label";
 
-        OtherServerConfiguration config = new OtherServerConfiguration(originalHost, originalPort);
+        ServerConfiguration config = new ServerConfiguration(originalHost, originalPort);
         Assert.assertEquals(originalHost, config.getHost());
         Assert.assertEquals(originalPort, config.getPort());
         Assert.assertNull(config.getLabel());

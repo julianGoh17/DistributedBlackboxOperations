@@ -1,12 +1,12 @@
 package io.julian.server.api.client;
 
-import io.julian.server.models.control.OtherServerConfiguration;
+import io.julian.server.models.control.ServerConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
 
 public class RegistryManagerTest {
-    public static final OtherServerConfiguration NO_LABEL_CONFIGURATION = new OtherServerConfiguration("host", 9999);
-    public static final OtherServerConfiguration LABEL_CONFIGURATION = new OtherServerConfiguration("new-host", -134, "label");
+    public static final ServerConfiguration NO_LABEL_CONFIGURATION = new ServerConfiguration("host", 9999);
+    public static final ServerConfiguration LABEL_CONFIGURATION = new ServerConfiguration("new-host", -134, "label");
 
     @Test
     public void TestRegistryMangerInit() {

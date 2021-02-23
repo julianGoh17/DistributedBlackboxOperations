@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
 @RunWith(VertxUnitRunner.class)
 public class DistributedAlgorithmTest {
     public static final CoordinationMessage TEST_MESSAGE = new CoordinationMessage(
-        new CoordinationMetadata("random-id", new CoordinationTimestamp(LocalDateTime.now()), HTTPRequest.GET, "test"),
+        new CoordinationMetadata(new CoordinationTimestamp(LocalDateTime.now()), HTTPRequest.GET, "test"),
         new JsonObject().put("some", "random"),
         new JsonObject().put("not", new JsonObject().put("equal", "keys")));
     public static final JsonObject TEST_POST_MESSAGE = new JsonObject().put("test", "message");
@@ -70,7 +70,6 @@ public class DistributedAlgorithmTest {
 
             Assert.assertEquals(TEST_MESSAGE.getDefinition().encodePrettily(), message.getDefinition().encodePrettily());
             Assert.assertEquals(TEST_MESSAGE.getMessage().encodePrettily(), message.getMessage().encodePrettily());
-            Assert.assertEquals(TEST_MESSAGE.getMetadata().getFromServerId(), message.getMetadata().getFromServerId());
             Assert.assertEquals(TEST_MESSAGE.getMetadata().getTimestamp().toValue(), message.getMetadata().getTimestamp().toValue());
         }
     }

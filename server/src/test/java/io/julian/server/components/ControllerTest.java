@@ -1,6 +1,7 @@
 package io.julian.server.components;
 
 import io.julian.server.models.ServerStatus;
+import io.julian.server.models.control.ServerConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -25,5 +26,13 @@ public class ControllerTest {
         Controller controller = new Controller();
         controller.setLabel(label);
         Assert.assertEquals(label, controller.getLabel());
+    }
+
+    @Test
+    public void TestControllerGetServerConfiguration() {
+        Controller controller = new Controller();
+        ServerConfiguration configuration = controller.getServerConfiguration();
+        Assert.assertEquals(Configuration.DEFAULT_SERVER_HOST, configuration.getHost());
+        Assert.assertEquals(Configuration.DEFAULT_SERVER_PORT, configuration.getPort());
     }
 }

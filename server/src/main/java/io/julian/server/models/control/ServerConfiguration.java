@@ -7,19 +7,19 @@ import org.apache.logging.log4j.Logger;
 
 @Getter
 @Setter
-public class OtherServerConfiguration {
-    private final Logger log = LogManager.getLogger(OtherServerConfiguration.class.getName());
+public class ServerConfiguration {
+    private final Logger log = LogManager.getLogger(ServerConfiguration.class.getName());
     private String host;
     private int port;
     private String label;
 
-    public OtherServerConfiguration(final String host, final int port, final String label) {
+    public ServerConfiguration(final String host, final int port, final String label) {
         this.host = host;
         this.port = port;
         this.label = label;
     }
 
-    public OtherServerConfiguration(final String host, final int port) {
+    public ServerConfiguration(final String host, final int port) {
         this.host = host;
         this.port = port;
         this.label = null;
