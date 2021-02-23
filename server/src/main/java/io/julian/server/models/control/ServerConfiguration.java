@@ -5,6 +5,8 @@ import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Optional;
+
 @Getter
 @Setter
 public class ServerConfiguration {
@@ -36,5 +38,22 @@ public class ServerConfiguration {
         return log.traceExit(isLabeled() ?
             String.format("'%s:%d with no label'", host, port) :
             String.format("'%s:%d' with label '%s'", host, port, label));
+    }
+
+    public boolean isEqual(final ServerConfiguration otherServer) {
+        log.traceEntry(() -> otherServer);
+
+        // Strings can be null, this prevents NPE in later check
+        String filteredCurrentLabel = Optional.ofNullable(label).orElse("");
+        String filteredOtherLabel = Optional.ofNullable(otherServer.getLabel()).orElse("");
+
+        return log.traceExit(isHostAndPortEqual(otherServer) &&
+            filteredCurrentLabel.equals(filteredOtherLabel));
+    }
+
+    public boolean isHostAndPortEqual(final ServerConfiguration otherServer) {
+        log.traceEntry(() -> otherServer);
+        return log.traceExit(otherServer.getHost().equals(host) &&
+            otherServer.getPort() == port);
     }
 }
