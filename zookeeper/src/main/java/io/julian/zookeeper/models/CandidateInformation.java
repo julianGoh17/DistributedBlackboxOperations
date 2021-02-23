@@ -6,7 +6,7 @@ import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 
 @Getter
-public class CandidateLeadershipInformation {
+public class CandidateInformation {
     public static final String HOST_KEY = "host";
     public static final String PORT_KEY = "port";
     public static final String CANDIDATE_NUMBER_KEY = "candidate_number";
@@ -17,9 +17,9 @@ public class CandidateLeadershipInformation {
 
     @JsonCreator
 
-    public CandidateLeadershipInformation(@JsonProperty(HOST_KEY) final String host,
-                                          @JsonProperty(PORT_KEY) final int port,
-                                          @JsonProperty(CANDIDATE_NUMBER_KEY) final long candidateNumber) {
+    public CandidateInformation(@JsonProperty(HOST_KEY) final String host,
+                                @JsonProperty(PORT_KEY) final int port,
+                                @JsonProperty(CANDIDATE_NUMBER_KEY) final long candidateNumber) {
         this.host = host;
         this.port = port;
         this.candidateNumber = candidateNumber;

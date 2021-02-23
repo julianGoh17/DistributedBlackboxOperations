@@ -7,7 +7,7 @@ import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.julian.zookeeper.models.CandidateLeadershipInformation;
+import io.julian.zookeeper.models.CandidateInformation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,7 +32,7 @@ public class BroadcastCandidateInformationHandler {
      */
     public CoordinationMessage createCandidateInformationMessage(final long candidateNumber, final ServerConfiguration serverConfig) {
         logger.traceEntry(() -> candidateNumber, () -> serverConfig);
-        return logger.traceExit(new CoordinationMessage(HTTPRequest.POST,
-            new CandidateLeadershipInformation(serverConfig.getHost(), serverConfig.getPort(), candidateNumber).toJson()));
+        return logger.traceExit(new CoordinationMessage(HTTPRequest.UNKNOWN,
+            new CandidateInformation(serverConfig.getHost(), serverConfig.getPort(), candidateNumber).toJson()));
     }
 }

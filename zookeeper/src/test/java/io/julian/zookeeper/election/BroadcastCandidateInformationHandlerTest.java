@@ -7,7 +7,7 @@ import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.zookeeper.AbstractServerBase;
-import io.julian.zookeeper.models.CandidateLeadershipInformationTest;
+import io.julian.zookeeper.models.CandidateInformationTest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
@@ -23,8 +23,8 @@ public class BroadcastCandidateInformationHandlerTest extends AbstractServerBase
         RegistryManager manager = createTestRegistryManager();
         ServerClient client = createServerClient();
 
-        handler.broadcast(manager, client, CandidateLeadershipInformationTest.CANDIDATE_NUMBER,
-            new ServerConfiguration(CandidateLeadershipInformationTest.HOST, CandidateLeadershipInformationTest.PORT))
+        handler.broadcast(manager, client, CandidateInformationTest.CANDIDATE_NUMBER,
+            new ServerConfiguration(CandidateInformationTest.HOST, CandidateInformationTest.PORT))
             .onComplete(context.asyncAssertSuccess(future -> {
                 context.assertEquals(1, future.size());
                 context.assertTrue(future.succeeded(0));
@@ -38,29 +38,29 @@ public class BroadcastCandidateInformationHandlerTest extends AbstractServerBase
         RegistryManager manager = createTestRegistryManager();
         ServerClient client = createServerClient();
 
-        handler.broadcast(manager, client, CandidateLeadershipInformationTest.CANDIDATE_NUMBER,
-            new ServerConfiguration(CandidateLeadershipInformationTest.HOST, CandidateLeadershipInformationTest.PORT))
+        handler.broadcast(manager, client, CandidateInformationTest.CANDIDATE_NUMBER,
+            new ServerConfiguration(CandidateInformationTest.HOST, CandidateInformationTest.PORT))
             .onComplete(context.asyncAssertFailure(future ->
                 context.assertEquals(CONNECTION_REFUSED_EXCEPTION, future.getMessage())));
     }
 
     @Test
     public void TestCreateCoordinateMessage() {
-        ServerConfiguration configuration = new ServerConfiguration(CandidateLeadershipInformationTest.HOST, CandidateLeadershipInformationTest.PORT);
+        ServerConfiguration configuration = new ServerConfiguration(CandidateInformationTest.HOST, CandidateInformationTest.PORT);
         BroadcastCandidateInformationHandler handler = new BroadcastCandidateInformationHandler();
 
-        CoordinationMessage message = handler.createCandidateInformationMessage(CandidateLeadershipInformationTest.CANDIDATE_NUMBER,
+        CoordinationMessage message = handler.createCandidateInformationMessage(CandidateInformationTest.CANDIDATE_NUMBER,
             configuration);
 
         Assert.assertNull(message.getMessage());
-        Assert.assertEquals(CandidateLeadershipInformationTest.JSON.encodePrettily(), message.getDefinition().encodePrettily());
-        Assert.assertEquals(HTTPRequest.POST, message.getMetadata().getRequest());
+        Assert.assertEquals(CandidateInformationTest.JSON.encodePrettily(), message.getDefinition().encodePrettily());
+        Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
 
         JsonObject object = message.toJson();
 
         Assert.assertNull(object.getJsonObject(CoordinationMessage.MESSAGE_KEY));
         Assert.assertNotNull(object.getJsonObject(CoordinationMessage.METADATA_KEY));
-        Assert.assertEquals(CandidateLeadershipInformationTest.JSON.encodePrettily(),
+        Assert.assertEquals(CandidateInformationTest.JSON.encodePrettily(),
             object.getJsonObject(CoordinationMessage.DEFINITION_KEY).encodePrettily());
     }
 
