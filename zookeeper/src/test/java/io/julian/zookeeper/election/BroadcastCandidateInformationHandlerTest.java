@@ -7,6 +7,7 @@ import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.zookeeper.AbstractServerBase;
+import io.julian.zookeeper.TestServerComponents;
 import io.julian.zookeeper.models.CandidateInformationTest;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.TestContext;
@@ -18,7 +19,7 @@ public class BroadcastCandidateInformationHandlerTest extends AbstractServerBase
 
     @Test
     public void TestBroadCastHandlerCanSendMessage(final TestContext context) {
-        setUpApiServer(context);
+        TestServerComponents server = setUpApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
         BroadcastCandidateInformationHandler handler = new BroadcastCandidateInformationHandler();
         RegistryManager manager = createTestRegistryManager();
         ServerClient client = createServerClient();
@@ -29,7 +30,7 @@ public class BroadcastCandidateInformationHandlerTest extends AbstractServerBase
                 context.assertEquals(1, future.size());
                 context.assertTrue(future.succeeded(0));
             }));
-        tearDownServer(context);
+        tearDownServer(context, server);
     }
 
     @Test

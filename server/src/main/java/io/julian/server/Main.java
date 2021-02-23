@@ -2,7 +2,6 @@ package io.julian.server;
 
 import io.julian.server.components.Configuration;
 import io.julian.server.components.Server;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
@@ -17,10 +16,8 @@ public class Main {
         Vertx vertx = Vertx.vertx();
         Server server = new Server();
 
-        CompositeFuture.all(
-            server.deployDistributedAlgorithmVerticle(server.getController(), vertx, Configuration.getDistributedAlgorithmSettings()),
-            server.startServer(vertx, Configuration.getOpenapiSpecLocation()).future()
-        )
+        server.deployDistributedAlgorithmVerticle(server.getController(), vertx, Configuration.getDistributedAlgorithmSettings())
+            .compose(v -> server.startServer(vertx, Configuration.getOpenapiSpecLocation()).future())
             .onSuccess(v -> {
                 HttpServer api = vertx.createHttpServer(new HttpServerOptions()
                     .setPort(Configuration.getServerPort())

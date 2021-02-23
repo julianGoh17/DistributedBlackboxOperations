@@ -15,10 +15,15 @@ public class CoordinationMessageHandler extends AbstractServerHandler  {
     public void handle(final RoutingContext context, final ServerComponents components) {
         log.traceEntry(() -> context, () -> components);
         try {
-            components.controller.addToCoordinationQueue(CoordinationMessage.fromJson(context.getBodyAsJson()));
-            components.vertx.eventBus().send(
-                DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.COORDINATE_MESSAGE_POSTFIX), "");
-            log.info(String.format("%s adding coordinate message for Distributed Algorithm", CoordinationMessageHandler.class.getSimpleName()));
+            CoordinationMessage message = CoordinationMessage.fromJson(context.getBodyAsJson());
+            if (components.verticle != null) {
+                log.info(String.format("%s adding coordinate message for Distributed Algorithm", CoordinationMessageHandler.class.getSimpleName()));
+                components.controller.addToCoordinationQueue(message);
+                components.vertx.eventBus().send(
+                    components.verticle.formatAddress(DistributedAlgorithmVerticle.COORDINATE_MESSAGE_POSTFIX), "");
+            } else {
+                log.info("Skipping adding to client queue as distributed algorithm not loaded");
+            }
             context.response()
                 .setStatusCode(200)
                 .end();

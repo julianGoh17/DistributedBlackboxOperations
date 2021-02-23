@@ -1,10 +1,12 @@
 package io.julian.zookeeper.election;
 
 import io.julian.server.api.client.RegistryManager;
+import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.zookeeper.models.CandidateInformation;
+import io.vertx.core.CompositeFuture;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -17,16 +19,23 @@ public class LeadershipElectionHandler {
 
     private final long candidateNumber;
     private final CandidateInformationRegistry candidateRegistry;
+    private final BroadcastCandidateInformationHandler broadcastHandler;
 
     public LeadershipElectionHandler() {
         candidateNumber = generateRandomNumberWithManyDigits();
         candidateRegistry = initializeCandidateInformationRegistry(Configuration.getServerHost(), Configuration.getServerPort(), candidateNumber);
+        broadcastHandler = new BroadcastCandidateInformationHandler();
     }
 
     public void addCandidateInformation(final CandidateInformation information) {
         log.traceEntry(() -> information);
         candidateRegistry.addCandidateInformation(information);
         log.traceExit();
+    }
+
+    public CompositeFuture broadcast(final RegistryManager manager, final ServerClient client, final Controller controller) {
+        log.traceEntry(() -> manager, () -> client, () -> controller);
+        return log.traceExit(broadcastHandler.broadcast(manager, client, candidateNumber, controller.getServerConfiguration()));
     }
 
     public void updateLeader(final RegistryManager manager, final Controller controller) {

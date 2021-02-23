@@ -37,6 +37,9 @@ public class Server {
         "setServerSettings", "getServerSettings", "setLabel", "getLabel", "sendCoordinationMessage"};
     private final Controller controller = new Controller();
 
+    // Will not be null as startServer should be called after loading deployDistributedAlgorithmVerticle
+    private DistributedAlgorithmVerticle verticle;
+
     public Server() {
         this.messages = new MessageStore();
     }
@@ -125,7 +128,7 @@ public class Server {
         ClassLoader loader = new ClassLoader();
         try {
             T algorithm = loader.loadJar(settings.getJarPath(), settings.getPackageName(), controller, messages, vertx);
-            DistributedAlgorithmVerticle verticle = new DistributedAlgorithmVerticle(algorithm);
+            verticle = new DistributedAlgorithmVerticle(algorithm, vertx);
             log.info("Successfully deployed distributed algorithm into vertx");
             return deployHelper(verticle, vertx);
         } catch (Exception e) {
@@ -151,7 +154,7 @@ public class Server {
     // Exposed For Testing
     public ServerComponents createServerComponents(final Vertx vertx) {
         log.traceEntry();
-        return log.traceExit(new ServerComponents(messages, controller, vertx));
+        return log.traceExit(new ServerComponents(messages, controller, vertx, verticle));
     }
 
     private void registerGates(final List<AbstractServerHandler> handlers,

@@ -28,15 +28,19 @@ public class DeleteMessageHandler extends AbstractServerHandler  {
             components.messageStore.removeMessage(messageID);
             log.info(String.format("%s successfully removed message with uuid '%s' from server", DeleteMessageHandler.class.getSimpleName(), messageID));
             sendResponseBack(context, 200, new MessageIDResponse(messageID).toJson());
-            components.vertx.eventBus().send(
-                DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.CLIENT_MESSAGE_POSTFIX),
-                "");
+            if (components.verticle != null) {
+                components.controller.addToClientMessageQueue(new ClientMessage(HTTPRequest.DELETE, null, messageID));
+                components.vertx.eventBus().send(
+                    components.verticle.formatAddress(DistributedAlgorithmVerticle.CLIENT_MESSAGE_POSTFIX),
+                    "");
+            } else {
+                log.info("Skipping adding to client queue as distributed algorithm not loaded");
+            }
         } else {
             log.error(String.format("%s failed to remove message with uuid '%s' from server", DeleteMessageHandler.class.getSimpleName(), messageID));
             context.fail(404, new Exception(String.format(ERROR_RESPONSE, messageID)));
         }
 
-        components.controller.addToClientMessageQueue(new ClientMessage(HTTPRequest.DELETE, null, messageID));
         log.traceExit();
     }
 }
