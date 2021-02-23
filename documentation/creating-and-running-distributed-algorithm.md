@@ -9,12 +9,12 @@ Both the client and the servers are merely ways of verifying a distributed algor
 This project uses the Maven binary to manage dependencies for each package in the repository. 
 To begin development, create a Java package with a pom.xml that includes the `server` package as a dependency. 
 Including this dependency allows you to easily access the `DistributedAlgorithm` class, which will allow you to control the server effectively. 
-One can see an example of this in [test package pom.xml](https://github.com/julianGoh17/DistributedBlackboxOperations/blob/main/test/pom.xml#L27).
+One can see an example of this in [test package pom.xml](https://github.com/julianGoh17/DistributedBlackboxOperations/blob/Main/test/pom.xml#L27).
 
 ## Creating a Distributed Algorithm
 
-A distributed algorithm that the server can use must extend the [DistributedAlgorithm](https://github.com/julianGoh17/DistributedBlackboxOperations/blob/17-documentation/server/src/main/java/io/julian/server/api/DistributedAlgorithm.java) class to properly control the servers. 
-Please refer to the [example DistributedAlgorithm](https://github.com/julianGoh17/DistributedBlackboxOperations/blob/main/test/src/main/java/io/julian/ExampleDistributedAlgorithm.java) as a reference.
+A distributed algorithm that the server can use must extend the [DistributedAlgorithm](https://github.com/julianGoh17/DistributedBlackboxOperations/blob/17-documentation/server/src/Main/java/io/julian/server/api/DistributedAlgorithm.java) class to properly control the servers. 
+Please refer to the [example DistributedAlgorithm](https://github.com/julianGoh17/DistributedBlackboxOperations/blob/Main/test/src/Main/java/io/julian/ExampleDistributedAlgorithm.java) as a reference.
  
 One must override two methods to create a program that can run on the server. 
 
