@@ -23,8 +23,9 @@ public abstract class AbstractServerBase {
     HttpServer api;
     protected Vertx vertx;
 
-    public static final String CORRECT_TEST_JAR_PATH = String.format("%s/../zookeeper/target/test-1.0-SNAPSHOT-jar-with-dependencies.jar", System.getProperty("user.dir"));
-    public static final String PACKAGE_NAME = "io.julian.io.julian.zookeeper.Main";
+    // TODO: Swap to Zookeeper Algorithm
+    public static final String CORRECT_TEST_JAR_PATH = String.format("%s/../test/target/test-1.0-SNAPSHOT-jar-with-dependencies.jar", System.getProperty("user.dir"));
+    public static final String PACKAGE_NAME = "io.julian.ExampleDistributedAlgorithm";
     private final AtomicReference<String> deploymentID = new AtomicReference<>();
 
     @Before

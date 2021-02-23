@@ -22,9 +22,7 @@ public class BroadcastCandidateInformationHandler {
         logger.traceEntry(() -> manager, () -> client);
         List<Future> sentRequests = manager.getOtherServers()
             .stream()
-            .map(config -> {
-                return client.sendCoordinateMessageToServer(config, createCandidateInformationMessage(candidateNumber, currentConfig));
-            })
+            .map(config -> client.sendCoordinateMessageToServer(config, createCandidateInformationMessage(candidateNumber, currentConfig)))
             .collect(Collectors.toList());
         return logger.traceExit(CompositeFuture.all(sentRequests));
     }

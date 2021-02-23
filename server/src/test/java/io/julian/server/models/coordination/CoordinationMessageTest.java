@@ -66,32 +66,6 @@ public class CoordinationMessageTest {
     }
 
     @Test
-    public void TestCoordinationMessageThrowsDecodeExceptionWhenMissingMessageField() {
-        JsonObject missingMessageField = JSON.copy();
-        missingMessageField.remove(CoordinationMessage.MESSAGE_KEY);
-
-        try {
-            CoordinationMessage.fromJson(missingMessageField);
-            Assert.fail();
-        } catch (DecodeException e) {
-            Assert.assertEquals(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.MESSAGE_KEY), e.getMessage());
-        }
-    }
-
-    @Test
-    public void TestCoordinationMessageThrowsDecodeExceptionWhenMissingDefinitionField() {
-        JsonObject missingMessageField = JSON.copy();
-        missingMessageField.remove(CoordinationMessage.DEFINITION_KEY);
-
-        try {
-            CoordinationMessage.fromJson(missingMessageField);
-            Assert.fail();
-        } catch (DecodeException e) {
-            Assert.assertEquals(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.DEFINITION_KEY), e.getMessage());
-        }
-    }
-
-    @Test
     public void TestCoordinateMessageCanMapToJsonWithoutClientMessage() {
         JsonObject userObject = new JsonObject().put("test", 1234);
         CoordinationMessage message = new CoordinationMessage(HTTPRequest.DELETE, userObject);
