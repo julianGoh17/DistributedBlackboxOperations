@@ -22,9 +22,15 @@ public class CandidateInformationRegistry {
 
     public void addCandidateInformation(final CandidateInformation candidateInformation) {
         log.traceEntry(() -> candidateInformation);
-        log.info(String.format("Adding candidate information for server at '%s:%d'", candidateInformation.getHost(), candidateInformation.getPort()));
-        candidateNumberAndInformationMap.put(candidateInformation.getCandidateNumber(),
-            new ServerConfiguration(candidateInformation.getHost(), candidateInformation.getPort()));
+
+        if (candidateNumberAndInformationMap.getOrDefault(candidateInformation.getCandidateNumber(), null) == null) {
+            log.info(String.format("Adding candidate information for server at '%s:%d' with candidate number '%d'",
+                candidateInformation.getHost(), candidateInformation.getPort(), candidateInformation.getCandidateNumber()));
+            candidateNumberAndInformationMap.put(candidateInformation.getCandidateNumber(),
+                new ServerConfiguration(candidateInformation.getHost(), candidateInformation.getPort()));
+        } else {
+            log.info(String.format("Adding candidate information for candidate number '%d'", candidateInformation.getCandidateNumber()));
+        }
         log.traceExit();
     }
 

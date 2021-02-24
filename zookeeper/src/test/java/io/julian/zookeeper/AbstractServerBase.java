@@ -1,5 +1,7 @@
 package io.julian.zookeeper;
 
+import io.julian.server.api.client.RegistryManager;
+import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Configuration;
 import io.julian.server.models.control.ServerConfiguration;
 import io.vertx.core.Vertx;
@@ -33,5 +35,15 @@ public abstract class AbstractServerBase {
 
     protected void tearDownServer(final TestContext context, final TestServerComponents components) {
         components.tearDownServer(context, vertx);
+    }
+
+    protected RegistryManager createTestRegistryManager() {
+        RegistryManager manager = new RegistryManager();
+        manager.registerServer(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
+        return manager;
+    }
+
+    protected ServerClient createServerClient() {
+        return new ServerClient(this.vertx);
     }
 }

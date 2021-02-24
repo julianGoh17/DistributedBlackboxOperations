@@ -1,6 +1,7 @@
 package io.julian.api;
 
 import io.julian.ExampleDistributedAlgorithm;
+import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
@@ -28,7 +29,7 @@ public class TestAPIMapping {
 
     @Test
     public void TestSuccessfulMappingMessage() throws IllegalArgumentException {
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         ID mapped = algorithm.mapMessageFromCoordinateMessageToClass(
@@ -41,7 +42,7 @@ public class TestAPIMapping {
 
     @Test
     public void TestFailedMappingMessage() {
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         JsonObject jsonThatWillFail = ID.EXAMPLE.toJson().put("random", "key");
@@ -58,7 +59,7 @@ public class TestAPIMapping {
 
     @Test
     public void TestSuccessfulMappingUserDefinition() throws IllegalArgumentException {
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         LoadConfiguration mapped = algorithm.mapUserDefinitionFromCoordinateMessageToClass(
@@ -71,7 +72,7 @@ public class TestAPIMapping {
 
     @Test
     public void TestFailedMappingUserDefinition() {
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         JsonObject jsonThatWillFail = LoadConfiguration.EXAMPLE.toJson().put("random", "key");

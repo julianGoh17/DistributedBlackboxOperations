@@ -15,7 +15,7 @@ public class ClassLoaderTest {
         Vertx vertx = Vertx.vertx();
         ClassLoader loader = new ClassLoader();
         String incorrectFilePath = String.format("%s-random", CORRECT_JAR_PATH);
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         try {
             loader.loadJar(incorrectFilePath, PACKAGE_NAME, controller, messageStore, vertx);
@@ -31,7 +31,7 @@ public class ClassLoaderTest {
     public void TestClassLoaderCanLoadJar() throws Exception {
         Vertx vertx = Vertx.vertx();
         ClassLoader loader = new ClassLoader();
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         Assert.assertNotNull(loader.loadJar(CORRECT_JAR_PATH, PACKAGE_NAME, controller, messageStore, vertx));
         vertx.close();

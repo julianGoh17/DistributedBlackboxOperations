@@ -2,6 +2,7 @@ package io.julian.server.api;
 
 import io.julian.server.api.exceptions.NoIDException;
 import io.julian.server.api.exceptions.SameIDException;
+import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
@@ -148,7 +149,7 @@ public class DistributedAlgorithmTest {
     }
 
     private ExampleAlgorithm createExampleAlgorithm() {
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         return new ExampleAlgorithm(controller, messageStore, vertx);
     }

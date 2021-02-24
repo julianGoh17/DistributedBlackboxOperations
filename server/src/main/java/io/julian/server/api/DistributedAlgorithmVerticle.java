@@ -32,4 +32,8 @@ public class DistributedAlgorithmVerticle extends AbstractVerticle {
         log.traceEntry(() -> postfix);
         return log.traceExit(String.format("%s-%s-%d", ALGORITHM_VERTICLE_ADDRESS, postfix, verticleNumber));
     }
+
+    public DistributedAlgorithm getAlgorithm() {
+        return algorithm;
+    }
 }

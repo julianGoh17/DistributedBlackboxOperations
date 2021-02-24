@@ -21,6 +21,11 @@ public class Controller {
     private final ConcurrentLinkedQueue<CoordinationMessage> coordinationMessages = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<ClientMessage> clientMessages = new ConcurrentLinkedQueue<>();
     private final AtomicReference<Float> failureChance = new AtomicReference<>(DEFAULT_MESSAGE_FAILURE_CHANCE);
+    private final Configuration configuration;
+
+    public Controller(final Configuration configuration) {
+        this.configuration = configuration;
+    }
 
     public void setStatus(final ServerStatus newStatus) {
         log.traceEntry(() -> newStatus);
@@ -95,6 +100,11 @@ public class Controller {
 
     public ServerConfiguration getServerConfiguration() {
         log.traceEntry();
-        return log.traceExit(new ServerConfiguration(Configuration.getServerHost(), Configuration.getServerPort()));
+        return log.traceExit(new ServerConfiguration(configuration.getServerHost(), configuration.getServerPort()));
+    }
+
+    public Configuration getConfiguration() {
+        log.traceEntry();
+        return log.traceExit(configuration);
     }
 }

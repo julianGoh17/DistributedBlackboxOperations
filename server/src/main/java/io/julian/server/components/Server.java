@@ -35,8 +35,8 @@ public class Server {
     private final MessageStore messages;
     private final static String[] OPERATION_IDS = new String[]{"postMessage", "getMessage", "deleteMessage",
         "setServerSettings", "getServerSettings", "setLabel", "getLabel", "sendCoordinationMessage"};
-    private final Controller controller = new Controller();
-
+    private final Configuration configuration = new Configuration();
+    private final Controller controller = new Controller(configuration);
     // Will not be null as startServer should be called after loading deployDistributedAlgorithmVerticle
     private DistributedAlgorithmVerticle verticle;
 

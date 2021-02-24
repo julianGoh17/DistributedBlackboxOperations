@@ -64,14 +64,4 @@ public class BroadcastCandidateInformationHandlerTest extends AbstractServerBase
         Assert.assertEquals(CandidateInformationTest.JSON.encodePrettily(),
             object.getJsonObject(CoordinationMessage.DEFINITION_KEY).encodePrettily());
     }
-
-    private RegistryManager createTestRegistryManager() {
-        RegistryManager manager = new RegistryManager();
-        manager.registerServer(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
-        return manager;
-    }
-
-    private ServerClient createServerClient() {
-        return new ServerClient(this.vertx);
-    }
 }

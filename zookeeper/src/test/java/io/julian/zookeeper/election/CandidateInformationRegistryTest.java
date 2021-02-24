@@ -31,6 +31,21 @@ public class CandidateInformationRegistryTest {
     }
 
     @Test
+    public void TestAddCandidateInformationDoesNotAddIfInformationAlreadyExists() {
+        CandidateInformationRegistry registry = new CandidateInformationRegistry();
+
+        registry.addCandidateInformation(new CandidateInformation(HOST, PORT, CANDIDATE_NUMBER));
+        Assert.assertEquals(1, registry.getCandidateNumberAndInformationMap().size());
+        ServerConfiguration config = registry.getCandidateNumberAndInformationMap().getOrDefault(CANDIDATE_NUMBER, null);
+        Assert.assertNotNull(config);
+        Assert.assertEquals(HOST, config.getHost());
+        Assert.assertEquals(PORT, config.getPort());
+
+        registry.addCandidateInformation(new CandidateInformation(HOST, PORT, CANDIDATE_NUMBER));
+        Assert.assertEquals(1, registry.getCandidateNumberAndInformationMap().size());
+    }
+
+    @Test
     public void TestAddServer() {
         String higherHost = "higher-host";
         int higherPort = 9999;

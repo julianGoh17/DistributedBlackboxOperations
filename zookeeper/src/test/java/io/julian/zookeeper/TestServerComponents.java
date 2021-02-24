@@ -23,9 +23,11 @@ public class TestServerComponents {
     public static final String CORRECT_TEST_JAR_PATH = String.format("%s/../zookeeper/target/zookeeper-1.0-SNAPSHOT-jar-with-dependencies.jar", System.getProperty("user.dir"));
     public static final String PACKAGE_NAME = "io.julian.ZookeeperAlgorithm";
 
-    protected String setUpServer(final TestContext context, final Vertx vertx, final ServerConfiguration configuration) {
+    protected void setUpServer(final TestContext context, final Vertx vertx, final ServerConfiguration configuration) {
         server = new Server();
         Async async = context.async();
+        server.getConfiguration().setServerPort(configuration.getPort());
+        server.getConfiguration().setServerHost(configuration.getHost());
         api = vertx.createHttpServer(new HttpServerOptions()
             .setPort(configuration.getPort())
             .setHost(configuration.getHost()));
@@ -44,7 +46,6 @@ public class TestServerComponents {
             }));
 
         async.awaitSuccess();
-        return deploymentID.get();
     }
 
     protected void tearDownServer(final TestContext context, final Vertx vertx) {

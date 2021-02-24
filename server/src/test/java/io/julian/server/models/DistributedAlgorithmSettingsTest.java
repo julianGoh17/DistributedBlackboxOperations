@@ -8,7 +8,7 @@ public class DistributedAlgorithmSettingsTest {
 
     @Test
     public void TestDefaultConfigurationCanCreateSettings() {
-        DistributedAlgorithmSettings settings = Configuration.getDistributedAlgorithmSettings();
+        DistributedAlgorithmSettings settings = new Configuration().getDistributedAlgorithmSettings();
         Assert.assertFalse(settings.isJarFilePathEnvInstantiated());
         Assert.assertFalse(settings.isPackageNameEnvInstantiated());
 
