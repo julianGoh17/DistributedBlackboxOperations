@@ -16,7 +16,7 @@ Each file should be a `json` file that replicates a message you expect would be 
 An operation chain is a sequence of updates the client will perform in parallel or sequentially. 
 The metrics client will load all operation chains in a specified folder, allow the user to load multiple chains at once.
 A single operation chain is a json file in the folder with a specific format. 
-For an example of a valid operation chain, see the [sequential operation chain](https://github.com/julianGoh17/DistributedBlackboxOperations/blob/Main/client/src/Main/resources/generated/operations/sequential-operations.json).
+For an example of a valid operation chain, see the [sequential operation chain](https://github.com/julianGoh17/DistributedBlackboxOperations/blob/main/client/src/main/resources/generated/operations/sequential-operations.json).
 An operation chain file contains two important high-level fields: Operations and Configuration.
 
 ### Operations
