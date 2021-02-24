@@ -22,11 +22,15 @@ public class LeadershipElectionHandler {
     private final BroadcastCandidateInformationHandler broadcastHandler;
 
     public LeadershipElectionHandler(final Configuration configuration, final int offset) {
-        candidateNumber = generateRandomNumberWithManyDigits(offset);
+        candidateNumber = generateCandidateNumber(offset);
         candidateRegistry = initializeCandidateInformationRegistry(configuration.getServerHost(), configuration.getServerPort(), candidateNumber);
         broadcastHandler = new BroadcastCandidateInformationHandler();
     }
 
+    /**
+     * Adds information about another server's candidate information (port, host and candidate number) to the server's candidate registry
+     * @param information another servers candidate information
+     */
     public void addCandidateInformation(final CandidateInformation information) {
         log.traceEntry(() -> information);
         candidateRegistry.addCandidateInformation(information);
@@ -34,23 +38,38 @@ public class LeadershipElectionHandler {
     }
 
     /**
-     * Assume this is successful because we are currently not testing leadership election
+     * Broadcast the server's candidate number to all other servers
+     * @param manager manager containing the address of all other servers
+     * @param client the API client which knows how to talk to the other servers
+     * @param controller the current server controller
+     * @return A composite future that contains the outcome of all individual broadcasts to all other servers
      */
     public CompositeFuture broadcast(final RegistryManager manager, final ServerClient client, final Controller controller) {
         log.traceEntry(() -> manager, () -> client, () -> controller);
         return log.traceExit(broadcastHandler.broadcast(manager, client, candidateNumber, controller.getServerConfiguration()));
     }
 
+    /**
+     * Checks to see if the registry is filled with the candidate information of the other servers
+     * @param manager manager containing the address of all other servers
+     * @return a boolean whether or not the registry is filled and thus, can update leader
+     */
     public boolean canUpdateLeader(final RegistryManager manager) {
         log.traceEntry(() -> manager);
         return log.traceExit(candidateRegistry.isRegistryFilled(manager));
     }
 
+    /**
+     * Update to the server with the next greater candidate number than the current candidate number. It will then correctly
+     * update the label of each server in the registry manager depending on who has become the leader.
+     * @param manager manager containing the address of all other servers
+     * @param controller server controller
+     */
     public void updateLeader(final RegistryManager manager, final Controller controller) {
         log.traceEntry(() -> manager, () -> controller);
         candidateRegistry.updateNextLeader();
         ServerConfiguration leaderConfig = candidateRegistry.getLeaderServerConfiguration();
-        if (leaderConfig.isEqual(controller.getServerConfiguration())) {
+        if (controller.getServerConfiguration().isHostAndPortEqual(leaderConfig)) {
             log.info(String.format("Server '%s:%d' has been promoted to '%s'",
                 controller.getServerConfiguration().getHost(), controller.getServerConfiguration().getPort(), LEADER_LABEL));
             controller.setLabel(LEADER_LABEL);
@@ -78,16 +97,25 @@ public class LeadershipElectionHandler {
 
     /**
      * Exposed For Testing
-     * Generates a random number with many digits which will be used to determine the leadership of a server
-     * @return many digit number
+     * Generates a random candidate number with many digits which will be used to determine the leadership of a server
+     * @return candidate number
      */
-    public long generateRandomNumberWithManyDigits(final int offset) {
+    public long generateCandidateNumber(final int offset) {
         log.traceEntry();
+        log.info("Generating random candidate number");
         return log.traceExit((long) (Math.random() * Math.pow(10, 10) + offset));
     }
 
+    /**
+     * Initializes the candidate registry with the current server's candidate information stored inside
+     * @param host current server host
+     * @param port current server port
+     * @param candidateNumber current server candidate number
+     * @return An initialized candidate registry
+     */
     public CandidateInformationRegistry initializeCandidateInformationRegistry(final String host, final int port, final long candidateNumber) {
         log.traceEntry(() -> candidateNumber);
+        log.info("Initializing candidate registry");
         CandidateInformationRegistry registry = new CandidateInformationRegistry();
         registry.addCandidateInformation(new CandidateInformation(host, port, candidateNumber));
         return log.traceExit(registry);

@@ -20,6 +20,10 @@ public class CandidateInformationRegistry {
     private final ConcurrentMap<Long, ServerConfiguration> candidateNumberAndInformationMap = new ConcurrentHashMap<>();
     private final AtomicLong leaderCandidateNumber = new AtomicLong(0);
 
+    /**
+     * Adds the information about a candidate into the registry if it doesn't exist
+     * @param candidateInformation candidate's information
+     */
     public void addCandidateInformation(final CandidateInformation candidateInformation) {
         log.traceEntry(() -> candidateInformation);
 
@@ -34,6 +38,9 @@ public class CandidateInformationRegistry {
         log.traceExit();
     }
 
+    /**
+     * Updates the leader candidate number to the next candidate number bigger than the current candidate number
+     */
     public void updateNextLeader() {
         log.traceEntry();
         log.info(String.format("Finding next leader candidate number bigger than '%d'", leaderCandidateNumber.get()));
@@ -54,17 +61,30 @@ public class CandidateInformationRegistry {
         log.traceExit();
     }
 
+    /**
+     * Returns the current leader's candidate number
+     * @return leader's candidate number
+     */
     public long getLeaderCandidateNumber() {
         log.traceEntry();
         return log.traceExit(leaderCandidateNumber.get());
     }
 
+    /**
+     * Returns the current leader's server configuration
+     * @return the current leader's server configuration
+     */
     public ServerConfiguration getLeaderServerConfiguration() {
         log.traceEntry();
         // Return null value in init so we don't have to update the server
         return log.traceExit(candidateNumberAndInformationMap.getOrDefault(leaderCandidateNumber.get(), null));
     }
 
+    /**
+     * Checks that the candidate registry is filled with the candidate information of the current server and all the other servers
+     * @param registryManager the registry containing other server's host and port
+     * @return a boolean determining whether or not the registry is filled
+     */
     public boolean isRegistryFilled(final RegistryManager registryManager) {
         log.traceEntry(() -> registryManager);
         return log.traceExit(registryManager.getOtherServers().size() + 1 == candidateNumberAndInformationMap.size());

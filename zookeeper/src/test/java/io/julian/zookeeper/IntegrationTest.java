@@ -29,7 +29,7 @@ public class IntegrationTest extends AbstractServerBase {
         client.sendCoordinateMessageToServer(AbstractServerBase.DEFAULT_SEVER_CONFIG, new CoordinationMessage(HTTPRequest.POST, new JsonObject()))
             .onComplete(context.asyncAssertSuccess(res ->
                 // Wait 2 seconds to let servers stabilize
-                vertx.setTimer(2000, complete -> async.complete())));
+                vertx.setTimer(1000, complete -> async.complete())));
         async.awaitSuccess();
         List<String> labels = Arrays.asList(server2.server.getController().getLabel(), server1.server.getController().getLabel());
         Assert.assertEquals(1,
@@ -37,5 +37,6 @@ public class IntegrationTest extends AbstractServerBase {
         Assert.assertEquals(1,
             labels.stream().filter(label -> label.equals(LeadershipElectionHandler.FOLLOWER_LABEL)).count());
         tearDownServer(context, server1);
+        tearDownServer(context, server2);
     }
 }

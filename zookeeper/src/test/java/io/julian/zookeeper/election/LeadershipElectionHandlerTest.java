@@ -28,9 +28,9 @@ public class LeadershipElectionHandlerTest extends AbstractServerBase {
     @Test
     public void TestGenerateRandomNumberWithManyDigits() {
         LeadershipElectionHandler handler = new LeadershipElectionHandler(new Configuration(), 0);
-        long manyDigitNumber = handler.generateRandomNumberWithManyDigits(0);
+        long manyDigitNumber = handler.generateCandidateNumber(0);
 
-        Assert.assertNotEquals(manyDigitNumber, handler.generateRandomNumberWithManyDigits(0));
+        Assert.assertNotEquals(manyDigitNumber, handler.generateCandidateNumber(0));
         Assert.assertTrue(manyDigitNumber > 0);
     }
 
@@ -47,8 +47,8 @@ public class LeadershipElectionHandlerTest extends AbstractServerBase {
         RegistryManager manager = new RegistryManager();
 
         LeadershipElectionHandler handler = new LeadershipElectionHandler(controller.getConfiguration(), 0);
-        manager.registerServer(HOST, PORT);
-        handler.addCandidateInformation(new CandidateInformation(HOST, PORT, (long) (9 * Math.pow(10, 13))));
+        manager.registerServer(HOST, PORT + 234);
+        handler.addCandidateInformation(new CandidateInformation(HOST, PORT + 234, (long) (9 * Math.pow(10, 13))));
 
         Assert.assertEquals("", controller.getLabel());
         manager.getOtherServers().forEach(config -> Assert.assertNull(config.getLabel()));

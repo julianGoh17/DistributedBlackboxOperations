@@ -27,15 +27,18 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
         CoordinationMessage message = getCoordinationMessage();
         if (message.getMetadata().getRequest().equals(HTTPRequest.UNKNOWN)) {
             addCandidateInformation(message);
-            updateLeader();
         } else {
             log.info("Ignoring as currently have not implemented write");
             broadcastCandidateNumber();
-            updateLeader();
         }
+        updateLeader();
         log.traceExit();
     }
 
+    /**
+     * Adds candidate information in message received from other server to candidate registry
+     * @param message another server's candidate information
+     */
     private void addCandidateInformation(final CoordinationMessage message) {
         log.traceEntry(() -> message);
         log.info("Candidate information message received");
@@ -44,6 +47,9 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
         log.traceExit();
     }
 
+    /**
+     * Will send the servers candidate number to all other servers if it has not broadcast to other servers already
+     */
     private void broadcastCandidateNumber() {
         log.traceEntry();
         if (hasNotBroadcast) {
@@ -54,10 +60,13 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
         log.traceExit();
     }
 
+    /**
+     * Updates who the server thinks is the leader server if it has received all information from all other servers
+     */
     private void updateLeader() {
         log.traceEntry();
         if (electionHandler.canUpdateLeader(registryManager)) {
-            log.info("Updating leader");
+            log.info("Updating leader of servers");
             electionHandler.updateLeader(registryManager, controller);
         } else {
             log.info("Cannot update leader as not all candidate information have been received");
