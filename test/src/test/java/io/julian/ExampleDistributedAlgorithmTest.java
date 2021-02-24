@@ -1,5 +1,6 @@
 package io.julian;
 
+import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
@@ -17,7 +18,7 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public class ExampleDistributedAlgorithmTest {
     private final static CoordinationMessage MESSAGE = new CoordinationMessage(
-        new CoordinationMetadata("test-id", HTTPRequest.GET),
+        new CoordinationMetadata(HTTPRequest.GET),
         new JsonObject(),
         new JsonObject());
 
@@ -35,7 +36,7 @@ public class ExampleDistributedAlgorithmTest {
 
     @Test
     public void TestCanIncrementAcceptedMessages() {
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         ExampleDistributedAlgorithm example = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         int messages = 5;

@@ -1,8 +1,6 @@
 package io.julian.server;
 
-import io.julian.server.components.Configuration;
 import io.julian.server.components.Server;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
@@ -17,16 +15,14 @@ public class Main {
         Vertx vertx = Vertx.vertx();
         Server server = new Server();
 
-        CompositeFuture.all(
-            server.deployDistributedAlgorithmVerticle(server.getController(), vertx, Configuration.getDistributedAlgorithmSettings()),
-            server.startServer(vertx, Configuration.getOpenapiSpecLocation()).future()
-        )
+        server.deployDistributedAlgorithmVerticle(server.getController(), vertx, server.getConfiguration().getDistributedAlgorithmSettings())
+            .compose(v -> server.startServer(vertx, server.getConfiguration().getOpenapiSpecLocation()).future())
             .onSuccess(v -> {
                 HttpServer api = vertx.createHttpServer(new HttpServerOptions()
-                    .setPort(Configuration.getServerPort())
-                    .setHost(Configuration.getServerHost()));
+                    .setPort(server.getConfiguration().getServerPort())
+                    .setHost(server.getConfiguration().getServerHost()));
                 api.requestHandler(server.getRouterFactory().getRouter()).listen();
-                log.info(String.format("Successfully started server at %s:%d", Configuration.getServerHost(), Configuration.getServerPort()));
+                log.info(String.format("Successfully started server at %s:%d", server.getConfiguration().getServerHost(), server.getConfiguration().getServerPort()));
             })
             .onFailure(throwable -> {
                 log.error(throwable);

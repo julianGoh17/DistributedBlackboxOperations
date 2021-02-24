@@ -2,6 +2,7 @@ package io.julian.server.api;
 
 import io.julian.server.api.exceptions.NoIDException;
 import io.julian.server.api.exceptions.SameIDException;
+import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
@@ -23,7 +24,7 @@ import java.time.LocalDateTime;
 @RunWith(VertxUnitRunner.class)
 public class DistributedAlgorithmTest {
     public static final CoordinationMessage TEST_MESSAGE = new CoordinationMessage(
-        new CoordinationMetadata("random-id", new CoordinationTimestamp(LocalDateTime.now()), HTTPRequest.GET, "test"),
+        new CoordinationMetadata(new CoordinationTimestamp(LocalDateTime.now()), HTTPRequest.GET, "test"),
         new JsonObject().put("some", "random"),
         new JsonObject().put("not", new JsonObject().put("equal", "keys")));
     public static final JsonObject TEST_POST_MESSAGE = new JsonObject().put("test", "message");
@@ -70,7 +71,6 @@ public class DistributedAlgorithmTest {
 
             Assert.assertEquals(TEST_MESSAGE.getDefinition().encodePrettily(), message.getDefinition().encodePrettily());
             Assert.assertEquals(TEST_MESSAGE.getMessage().encodePrettily(), message.getMessage().encodePrettily());
-            Assert.assertEquals(TEST_MESSAGE.getMetadata().getFromServerId(), message.getMetadata().getFromServerId());
             Assert.assertEquals(TEST_MESSAGE.getMetadata().getTimestamp().toValue(), message.getMetadata().getTimestamp().toValue());
         }
     }
@@ -149,7 +149,7 @@ public class DistributedAlgorithmTest {
     }
 
     private ExampleAlgorithm createExampleAlgorithm() {
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         return new ExampleAlgorithm(controller, messageStore, vertx);
     }

@@ -1,5 +1,6 @@
 package io.julian.server.api;
 
+import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
 import io.vertx.core.Promise;
@@ -39,8 +40,8 @@ public class DistributedAlgorithmVerticleTest {
         Assert.assertNotEquals(DistributedAlgorithmVerticle.COORDINATE_MESSAGE_POSTFIX,
             DistributedAlgorithmVerticle.CLIENT_MESSAGE_POSTFIX);
         for (int i = 0; i < messages; i++) {
-            vertx.eventBus().send(DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.COORDINATE_MESSAGE_POSTFIX), "random-message");
-            vertx.eventBus().send(DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.CLIENT_MESSAGE_POSTFIX), "random-message");
+            vertx.eventBus().send(verticle.formatAddress(DistributedAlgorithmVerticle.COORDINATE_MESSAGE_POSTFIX), "random-message");
+            vertx.eventBus().send(verticle.formatAddress(DistributedAlgorithmVerticle.CLIENT_MESSAGE_POSTFIX), "random-message");
         }
 
         Promise<Void> timerComplete = Promise.promise();
@@ -58,10 +59,10 @@ public class DistributedAlgorithmVerticleTest {
     }
 
     private void setUpTest(final TestContext context) {
-        controller = new Controller();
+        controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         DistributedAlgorithmTest.ExampleAlgorithm algorithm = new DistributedAlgorithmTest.ExampleAlgorithm(controller, messageStore, vertx);
-        verticle = new DistributedAlgorithmVerticle(algorithm);
+        verticle = new DistributedAlgorithmVerticle(algorithm, vertx);
 
         Async async = context.async();
         vertx.deployVerticle(verticle, context.asyncAssertSuccess(res -> {

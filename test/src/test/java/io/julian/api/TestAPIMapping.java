@@ -1,6 +1,7 @@
 package io.julian.api;
 
 import io.julian.ExampleDistributedAlgorithm;
+import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
@@ -28,11 +29,11 @@ public class TestAPIMapping {
 
     @Test
     public void TestSuccessfulMappingMessage() throws IllegalArgumentException {
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         ID mapped = algorithm.mapMessageFromCoordinateMessageToClass(
-            new CoordinationMessage(new CoordinationMetadata("blah", HTTPRequest.GET), ID.EXAMPLE.toJson(), LoadConfiguration.EXAMPLE.toJson()),
+            new CoordinationMessage(new CoordinationMetadata(HTTPRequest.GET), ID.EXAMPLE.toJson(), LoadConfiguration.EXAMPLE.toJson()),
             ID.class);
         Assert.assertEquals(ID.EXAMPLE.getFirstName(), mapped.getFirstName());
         Assert.assertEquals(ID.EXAMPLE.getLastName(), mapped.getLastName());
@@ -41,13 +42,13 @@ public class TestAPIMapping {
 
     @Test
     public void TestFailedMappingMessage() {
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         JsonObject jsonThatWillFail = ID.EXAMPLE.toJson().put("random", "key");
         try {
             algorithm.mapMessageFromCoordinateMessageToClass(
-                new CoordinationMessage(new CoordinationMetadata("blah", HTTPRequest.GET), jsonThatWillFail, LoadConfiguration.EXAMPLE.toJson()),
+                new CoordinationMessage(new CoordinationMetadata(HTTPRequest.GET), jsonThatWillFail, LoadConfiguration.EXAMPLE.toJson()),
                 ID.class);
             Assert.fail();
         } catch (IllegalArgumentException e) {
@@ -58,11 +59,11 @@ public class TestAPIMapping {
 
     @Test
     public void TestSuccessfulMappingUserDefinition() throws IllegalArgumentException {
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         LoadConfiguration mapped = algorithm.mapUserDefinitionFromCoordinateMessageToClass(
-            new CoordinationMessage(new CoordinationMetadata("blah", HTTPRequest.GET), ID.EXAMPLE.toJson(), LoadConfiguration.EXAMPLE.toJson()),
+            new CoordinationMessage(new CoordinationMetadata(HTTPRequest.GET), ID.EXAMPLE.toJson(), LoadConfiguration.EXAMPLE.toJson()),
             LoadConfiguration.class);
         Assert.assertEquals(LoadConfiguration.EXAMPLE.getLoad(), mapped.getLoad());
         Assert.assertEquals(LoadConfiguration.EXAMPLE.getModifier(), mapped.getModifier(), 0);
@@ -71,13 +72,13 @@ public class TestAPIMapping {
 
     @Test
     public void TestFailedMappingUserDefinition() {
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         JsonObject jsonThatWillFail = LoadConfiguration.EXAMPLE.toJson().put("random", "key");
         try {
             algorithm.mapUserDefinitionFromCoordinateMessageToClass(
-                new CoordinationMessage(new CoordinationMetadata("blah", HTTPRequest.GET), ID.EXAMPLE.toJson(), jsonThatWillFail),
+                new CoordinationMessage(new CoordinationMetadata(HTTPRequest.GET), ID.EXAMPLE.toJson(), jsonThatWillFail),
                 LoadConfiguration.class);
             Assert.fail();
         } catch (IllegalArgumentException e) {

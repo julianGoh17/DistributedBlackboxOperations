@@ -36,10 +36,14 @@ public class PostMessageHandler extends AbstractServerHandler {
 
         sendResponseBack(context, 200, new MessageIDResponse(uuid.toString()).toJson());
 
-        components.controller.addToClientMessageQueue(new ClientMessage(HTTPRequest.POST, userMessage, uuid.toString()));
-        components.vertx.eventBus().send(
-            DistributedAlgorithmVerticle.formatAddress(DistributedAlgorithmVerticle.CLIENT_MESSAGE_POSTFIX),
-            "");
+        if (components.verticle != null) {
+            components.controller.addToClientMessageQueue(new ClientMessage(HTTPRequest.POST, userMessage, uuid.toString()));
+            components.vertx.eventBus().send(
+                components.verticle.formatAddress(DistributedAlgorithmVerticle.CLIENT_MESSAGE_POSTFIX),
+                "");
+        } else {
+            log.info("Skipping adding to client queue as distributed algorithm not loaded");
+        }
 
         log.traceExit();
     }

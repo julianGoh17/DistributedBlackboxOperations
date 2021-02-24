@@ -211,5 +211,7 @@ components:
               type: string
         message:
           type: object
+          nullable: true
         definition:
           type: object
+          nullable: true

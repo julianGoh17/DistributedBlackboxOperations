@@ -14,16 +14,18 @@ import org.apache.logging.log4j.Logger;
 
 public abstract class DistributedAlgorithm {
     private static final Logger log = LogManager.getLogger(DistributedAlgorithm.class.getName());
-    private final Controller controller;
-    private final ServerClient client;
-    private final MessageStore messageStore;
-    private final RegistryManager registryManager;
+    protected final Controller controller;
+    protected final ServerClient client;
+    protected final MessageStore messageStore;
+    protected final RegistryManager registryManager;
+    protected final Vertx vertx;
 
     public DistributedAlgorithm(final Controller controller, final MessageStore messageStore, final Vertx vertx) {
         this.controller = controller;
         this.messageStore = messageStore;
         this.client = new ServerClient(vertx);
         this.registryManager = new RegistryManager();
+        this.vertx = vertx;
     }
 
     /**

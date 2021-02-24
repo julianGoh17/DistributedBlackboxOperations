@@ -1,6 +1,6 @@
 package io.julian.server.api.client;
 
-import io.julian.server.models.control.OtherServerConfiguration;
+import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.response.ErrorResponse;
 import io.julian.server.models.response.LabelResponse;
@@ -23,7 +23,7 @@ public class ServerClient {
         this.client = WebClient.create(vertx);
     }
 
-    public Future<Void> sendCoordinateMessageToServer(final OtherServerConfiguration configuration, final CoordinationMessage message) {
+    public Future<Void> sendCoordinateMessageToServer(final ServerConfiguration configuration, final CoordinationMessage message) {
         log.traceEntry(() -> configuration, () -> message);
         log.info(String.format("Sending POST Coordinate Message to %s", configuration.toString()));
 
@@ -50,7 +50,7 @@ public class ServerClient {
         return log.traceExit(result.future());
     }
 
-    public Future<Void> sendLabelToServer(final OtherServerConfiguration configuration, final String label) {
+    public Future<Void> sendLabelToServer(final ServerConfiguration configuration, final String label) {
         log.traceEntry(() -> configuration, () -> label);
         Promise<Void> result = Promise.promise();
         log.info(String.format("Sending POST to %s to update with label '%s'", configuration.toString(), label));
@@ -75,7 +75,7 @@ public class ServerClient {
         return log.traceExit(result.future());
     }
 
-    public Future<LabelResponse> getServerLabel(final OtherServerConfiguration configuration) {
+    public Future<LabelResponse> getServerLabel(final ServerConfiguration configuration) {
         log.traceEntry(() -> configuration);
         Promise<LabelResponse> label = Promise.promise();
         log.info(String.format("Sending GET Label request to %s", configuration.toString()));

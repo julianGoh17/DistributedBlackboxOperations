@@ -3,6 +3,7 @@ package io.julian.server.models.coordination;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
+import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.vertx.core.json.DecodeException;
 import io.vertx.core.json.JsonObject;
@@ -36,9 +37,15 @@ public class CoordinationMessage {
         this.definition = definition;
     }
 
-    public CoordinationMessage(final String id, final ClientMessage message, final JsonObject definition) {
-        this.metadata = new CoordinationMetadata(id, message.getRequest());
+    public CoordinationMessage(final ClientMessage message, final JsonObject definition) {
+        this.metadata = new CoordinationMetadata(message.getRequest());
         this.message = message.getMessage();
+        this.definition = definition;
+    }
+
+    public CoordinationMessage(final HTTPRequest request, final JsonObject definition) {
+        this.metadata = new CoordinationMetadata(request);
+        this.message = null;
         this.definition = definition;
     }
 
@@ -51,15 +58,7 @@ public class CoordinationMessage {
             throw new DecodeException(String.format(DECODE_EXCEPTION_FORMAT_STRING, METADATA_KEY));
         }
 
-        Optional<JsonObject> message = Optional.ofNullable(jsonObject.getJsonObject(MESSAGE_KEY));
-        if (message.isEmpty()) {
-            throw new DecodeException(String.format(DECODE_EXCEPTION_FORMAT_STRING, MESSAGE_KEY));
-        }
-        Optional<JsonObject> userDefinition = Optional.ofNullable(jsonObject.getJsonObject(DEFINITION_KEY));
-        if (userDefinition.isEmpty()) {
-            throw new DecodeException(String.format(DECODE_EXCEPTION_FORMAT_STRING, DEFINITION_KEY));
-        }
-        return log.traceExit(new CoordinationMessage(metadata.get(), message.get(), userDefinition.get()));
+        return log.traceExit(new CoordinationMessage(metadata.get(), jsonObject.getJsonObject(MESSAGE_KEY), jsonObject.getJsonObject(DEFINITION_KEY)));
     }
 
     @JsonValue

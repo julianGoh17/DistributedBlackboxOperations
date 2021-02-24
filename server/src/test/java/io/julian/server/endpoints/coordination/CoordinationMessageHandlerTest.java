@@ -44,31 +44,6 @@ public class CoordinationMessageHandlerTest extends AbstractHandlerTest {
     }
 
     @Test
-    public void TestCoordinationMessageFailsWhenMissingMessageField(final TestContext context) {
-        setUpApiServer(context);
-        WebClient client = WebClient.create(this.vertx);
-
-        JsonObject missingMessage = CoordinationMessageTest.JSON.copy();
-        missingMessage.remove(CoordinationMessage.MESSAGE_KEY);
-
-        sendUnsuccessfulCoordinateMessage(context, client, missingMessage, 400,
-            new Exception(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.MESSAGE_KEY))
-        );
-    }
-
-    @Test
-    public void TestCoordinationMessageFailsWhenMissingDefinitionField(final TestContext context) {
-        setUpApiServer(context);
-        WebClient client = WebClient.create(this.vertx);
-
-        JsonObject missingDefinition = CoordinationMessageTest.JSON.copy();
-        missingDefinition.remove(CoordinationMessage.DEFINITION_KEY);
-        sendUnsuccessfulCoordinateMessage(context, client, missingDefinition, 400,
-            new Exception(String.format(CoordinationMessage.DECODE_EXCEPTION_FORMAT_STRING, CoordinationMessage.DEFINITION_KEY))
-        );
-    }
-
-    @Test
     public void TestFailsUnreachableGateMessage(final TestContext context) {
         setUpApiServer(context);
         WebClient client = WebClient.create(this.vertx);
@@ -104,7 +79,6 @@ public class CoordinationMessageHandlerTest extends AbstractHandlerTest {
                 context.assertEquals(serverMessage.getDefinition(), message.getDefinition());
                 context.assertEquals(serverMessage.getMessage(), message.getMessage());
 
-                context.assertEquals(serverMessage.getMetadata().getFromServerId(), message.getMetadata().getFromServerId());
                 context.assertEquals(serverMessage.getMetadata().getTimestamp().toLocalDateTime(), message.getMetadata().getTimestamp().toLocalDateTime());
                 return Future.succeededFuture();
             });

@@ -15,7 +15,7 @@ import org.junit.Test;
 
 public class ServerClientIntegrationTest extends AbstractServerBaseTest {
     private final static CoordinationMessage MESSAGE = new CoordinationMessage(
-        new CoordinationMetadata("test-id", HTTPRequest.GET),
+        new CoordinationMetadata(HTTPRequest.GET),
         new JsonObject(),
         new JsonObject());
 
@@ -90,7 +90,7 @@ public class ServerClientIntegrationTest extends AbstractServerBaseTest {
     }
 
     private ExampleDistributedAlgorithm createExampleAlgorithm() {
-        Controller controller = new Controller();
+        Controller controller = new Controller(new Configuration());
         MessageStore messageStore = new MessageStore();
         ExampleDistributedAlgorithm algorithm = new ExampleDistributedAlgorithm(controller, messageStore, vertx);
         algorithm.getRegistryManager().registerServer(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);

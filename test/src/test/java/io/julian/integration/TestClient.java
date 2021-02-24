@@ -16,7 +16,7 @@ public class TestClient {
     private final WebClient client;
 
     public static final CoordinationMessage MESSAGE = new CoordinationMessage(
-        new CoordinationMetadata("random-id", HTTPRequest.GET),
+        new CoordinationMetadata(HTTPRequest.GET),
         new JsonObject(),
         new JsonObject()
     );
