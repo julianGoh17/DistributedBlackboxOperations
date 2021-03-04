@@ -73,7 +73,7 @@ public class LeaderProposalTracker {
 
     private void addProposalTracker(final Zxid id, final ConcurrentMap<Zxid, Integer> proposals) {
         log.traceEntry(() -> id);
-        log.info(String.format("Attempting to create %s proposal tracker'%s'", mapToName(proposals), id.toString()));
+        log.info(String.format("Attempting to create %s proposal tracker '%s'", mapToName(proposals), id.toString()));
         if (proposals.containsKey(id)) {
             log.info(String.format("Skipping creation of %s proposal tracker for '%s' as it already exists", mapToName(proposals), id.toString()));
         } else {
@@ -120,6 +120,16 @@ public class LeaderProposalTracker {
     public ConcurrentMap<Zxid, Integer> getCommittedProposals() {
         log.traceEntry();
         return log.traceExit(committedProposals);
+    }
+
+    public boolean existsAcknowledgedProposalTracker(final Zxid id) {
+        log.traceEntry(() -> id);
+        return log.traceExit(acknowledgedProposals.containsKey(id));
+    }
+
+    public boolean existsCommittedProposalTracker(final Zxid id) {
+        log.traceEntry(() -> id);
+        return log.traceExit(committedProposals.containsKey(id));
     }
 
     private String mapToName(final ConcurrentMap<Zxid, Integer> proposals) {

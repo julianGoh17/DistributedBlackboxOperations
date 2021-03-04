@@ -25,9 +25,11 @@ public class LeaderProposalTrackerTest {
         Zxid first = createZxid();
         Zxid second = createZxid();
 
+        Assert.assertFalse(tracker.existsAcknowledgedProposalTracker(first));
         tracker.addAcknowledgedProposalTracker(first);
         Assert.assertEquals(1, tracker.getAcknowledgedProposals().size());
         Assert.assertEquals(0, tracker.getAcknowledgedProposals().getOrDefault(first, 0).intValue());
+        Assert.assertTrue(tracker.existsAcknowledgedProposalTracker(first));
         tracker.addAcknowledgedProposalTracker(second);
         Assert.assertEquals(1, tracker.getAcknowledgedProposals().size());
         Assert.assertEquals(0, tracker.getAcknowledgedProposals().getOrDefault(first, 0).intValue());
@@ -117,9 +119,11 @@ public class LeaderProposalTrackerTest {
         Zxid first = createZxid();
         Zxid second = createZxid();
 
+        Assert.assertFalse(tracker.existsCommittedProposalTracker(first));
         tracker.addCommittedProposalTracker(first);
         Assert.assertEquals(1, tracker.getCommittedProposals().size());
         Assert.assertEquals(0, tracker.getCommittedProposals().getOrDefault(first, 0).intValue());
+        Assert.assertTrue(tracker.existsCommittedProposalTracker(first));
 
         tracker.addCommittedProposal(first);
         Assert.assertEquals(1, tracker.getCommittedProposals().size());

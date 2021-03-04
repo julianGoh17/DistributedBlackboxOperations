@@ -18,7 +18,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class LeaderWriteHandlerTest extends AbstractServerBase {
-    private final static int MAJORITY = 1;
+    private final static int MAJORITY = 2;
 
     private final static ClientMessage MESSAGE = new ClientMessage(HTTPRequest.POST,
         new JsonObject().put("random", "key"), "id");
@@ -97,6 +97,40 @@ public class LeaderWriteHandlerTest extends AbstractServerBase {
         Assert.assertEquals(MessagePhase.COMMIT.toValue(), message.getDefinition().getString(ShortenedExchange.PHASE_KEY));
         Assert.assertEquals(ZxidTest.EPOCH, message.getDefinition().getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.EPOCH_KEY).intValue());
         Assert.assertEquals(ZxidTest.COUNTER, message.getDefinition().getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.COUNTER_KEY).intValue());
+    }
+
+    @Test
+    public void TestAddAcknowledgementAndCheckForMajority() {
+        RegistryManager manager = createTestRegistryManager();
+        LeaderWriteHandler handler = createWriteHandler(manager);
+
+        handler.getProposalTracker().addAcknowledgedProposalTracker(ID);
+
+        Assert.assertFalse(handler.addAcknowledgementAndCheckForMajority(ID));
+        Assert.assertTrue(handler.getProposalTracker().existsAcknowledgedProposalTracker(ID));
+
+        Assert.assertTrue(handler.addAcknowledgementAndCheckForMajority(ID));
+        Assert.assertFalse(handler.getProposalTracker().existsAcknowledgedProposalTracker(ID));
+
+        Assert.assertFalse(handler.addAcknowledgementAndCheckForMajority(ID));
+        Assert.assertFalse(handler.getProposalTracker().existsAcknowledgedProposalTracker(ID));
+    }
+
+    @Test
+    public void TestAddCommitAndCheckForMajority() {
+        RegistryManager manager = createTestRegistryManager();
+        LeaderWriteHandler handler = createWriteHandler(manager);
+
+        handler.getProposalTracker().addCommittedProposalTracker(ID);
+
+        Assert.assertFalse(handler.addCommitAcknowledgementAndCheckForMajority(ID));
+        Assert.assertTrue(handler.getProposalTracker().existsCommittedProposalTracker(ID));
+
+        Assert.assertTrue(handler.addCommitAcknowledgementAndCheckForMajority(ID));
+        Assert.assertFalse(handler.getProposalTracker().existsCommittedProposalTracker(ID));
+
+        Assert.assertFalse(handler.addCommitAcknowledgementAndCheckForMajority(ID));
+        Assert.assertFalse(handler.getProposalTracker().existsCommittedProposalTracker(ID));
     }
 
     private LeaderWriteHandler createWriteHandler(final RegistryManager manager) {

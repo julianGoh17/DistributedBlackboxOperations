@@ -56,6 +56,11 @@ public class LeaderWriteHandler {
         CompositeFuture.all(futures)
             .onSuccess(v -> {
                 log.info(String.format("Successfully broadcast state update %s to servers", id));
+                if (MessagePhase.ACK.equals(phase)) {
+                    proposalTracker.addAcknowledgedProposalTracker(id);
+                } else {
+                    proposalTracker.addCommittedProposalTracker(id);
+                }
                 broadcast.complete();
             })
             .onFailure(cause -> {
@@ -73,5 +78,42 @@ public class LeaderWriteHandler {
             new CoordinationMetadata(HTTPRequest.UNKNOWN, TYPE),
             message != null ? message.toJson() : null,
             new ShortenedExchange(phase, id).toJson()));
+    }
+
+    public boolean addAcknowledgementAndCheckForMajority(final Zxid id) {
+        log.traceEntry(() -> id);
+        proposalTracker.addAcknowledgedProposal(id);
+        if (proposalTracker.hasMajorityOfServersAcknowledgedProposal(id)) {
+            log.info(String.format("Majority of servers has acknowledged '%s', deleting entry and moving to next stage", id));
+            proposalTracker.removeAcknowledgedProposalTracker(id);
+            return log.traceExit(true);
+        } else if (proposalTracker.existsAcknowledgedProposalTracker(id)) {
+            log.info(String.format("Waiting for more acknowledgements for '%s'", id));
+        } else {
+            log.info(String.format("Enough acknowledgements have arrived for '%s'", id));
+        }
+
+        return log.traceExit(false);
+    }
+
+    public boolean addCommitAcknowledgementAndCheckForMajority(final Zxid id) {
+        log.traceEntry(() -> id);
+        proposalTracker.addCommittedProposal(id);
+        if (proposalTracker.hasMajorityOfServersCommittedProposal(id)) {
+            log.info(String.format("Majority of servers has committed '%s', deleting entry and moving to next stage", id));
+            proposalTracker.removeCommittedProposalTracker(id);
+            return log.traceExit(true);
+        } else if (proposalTracker.existsCommittedProposalTracker(id)) {
+            log.info(String.format("Waiting for more committed acknowledgements for '%s'", id));
+        } else {
+            log.info(String.format("Enough committed acknowledgements have arrived for '%s'", id));
+        }
+
+        return log.traceExit(false);
+    }
+
+    public LeaderProposalTracker getProposalTracker() {
+        log.traceEntry();
+        return log.traceExit(proposalTracker);
     }
 }
