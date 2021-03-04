@@ -1,6 +1,8 @@
 package io.julian.zookeeper.controller;
 
 import io.julian.zookeeper.models.Proposal;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,12 +20,29 @@ public class State {
         this.vertx = vertx;
     }
 
-    public void addProposal(final Proposal proposal) {
+    public Future<Void> addProposal(final Proposal proposal) {
         log.traceEntry(() -> proposal);
         log.info("Adding proposal to history");
-        vertx.executeBlocking(future -> history.add(proposal),
-            res -> log.info("Completed adding proposal to history"));
-        log.traceExit();
+        Promise<Void> write = Promise.promise();
+        vertx.executeBlocking(future -> {
+            try {
+                history.add(proposal);
+                future.complete();
+            } catch (Exception e) {
+                future.fail(e);
+            }
+        },
+            res -> {
+                if (res.succeeded()) {
+                    log.info("Completed adding proposal to history");
+                    write.complete();
+                } else {
+                    log.info("Could not add proposal to history");
+                    log.error(res.cause());
+                    write.fail(res.cause());
+                }
+            });
+        return log.traceExit(write.future());
     }
 
     public boolean doesExistOutstandingTransaction(final float nextCounter) {

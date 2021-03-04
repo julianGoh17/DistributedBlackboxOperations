@@ -2,8 +2,6 @@ package io.julian.zookeeper.controller;
 
 import io.julian.zookeeper.models.Proposal;
 import io.julian.zookeeper.models.ProposalTest;
-import io.julian.zookeeper.tools.AddVerticle;
-import io.julian.zookeeper.tools.AddVerticleRunner;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -25,17 +23,16 @@ public class StateTest {
 
     @Test
     public void TestAddProposalCompletesSuccessfully(final TestContext context) {
-        AddVerticleRunner runner = new AddVerticleRunner(vertx);
         State state = new State(vertx);
 
-        runner.deployTestVerticles(context, state);
-        runner.runVerticles();
-
+        Assert.assertEquals(0, state.getHistory().size());
         Async async = context.async();
-        vertx.setTimer(2500, done -> {
-            Assert.assertEquals(state.getHistory().size(), AddVerticleRunner.VERTICLES * AddVerticle.REPEATS);
-            async.complete();
-        });
+        state.addProposal(Proposal.mapFrom(ProposalTest.JSON))
+            .onComplete(context.asyncAssertSuccess(res -> {
+                Assert.assertEquals(1, state.getHistory().size());
+                Assert.assertEquals(ProposalTest.JSON.encodePrettily(), state.getHistory().get(0).toJson().encodePrettily());
+                async.complete();
+            }));
         async.awaitSuccess();
     }
 
@@ -54,15 +51,22 @@ public class StateTest {
     }
 
     @Test
-    public void TestDoesExistOutstandingTransaction() {
+    public void TestDoesExistOutstandingTransaction(final TestContext context) {
         State state = new State(vertx);
         Proposal smaller = Proposal.mapFrom(ProposalTest.JSON);
         Proposal bigger = Proposal.mapFrom(ProposalTest.JSON);
 
         int offset = 100;
         bigger.getTransactionId().setCounter(ProposalTest.COUNTER + offset);
-        state.addProposal(smaller);
-        state.addProposal(bigger);
+
+        Async async = context.async();
+        state.addProposal(smaller)
+            .compose(v -> state.addProposal(bigger))
+            .onComplete(context.asyncAssertSuccess(v -> {
+                async.complete();
+            }));
+
+        async.awaitSuccess();
 
         Assert.assertFalse(state.doesExistOutstandingTransaction(ProposalTest.COUNTER));
         Assert.assertTrue(state.doesExistOutstandingTransaction(ProposalTest.COUNTER + offset));

@@ -4,9 +4,11 @@ import io.vertx.core.json.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.HashSet;
+
 public class ZxidTest {
-    public static final float EPOCH = 32;
-    public static final float COUNTER = 1234;
+    public static final int EPOCH = 32;
+    public static final int COUNTER = 1234;
     public static final JsonObject JSON = new JsonObject().put(Zxid.EPOCH_KEY, EPOCH).put(Zxid.COUNTER_KEY, COUNTER);
 
     @Test
@@ -36,5 +38,30 @@ public class ZxidTest {
 
         Assert.assertEquals(EPOCH + offset, id.getEpoch(), 0);
         Assert.assertEquals(COUNTER + offset, id.getCounter(), 0);
+    }
+
+    @Test
+    public void TestEquals() {
+        Zxid first = JSON.mapTo(Zxid.class);
+        Zxid second = JSON.mapTo(Zxid.class);
+
+        Assert.assertEquals(first, second);
+    }
+
+    @Test
+    public void TestHashToSame() {
+        Zxid first = JSON.mapTo(Zxid.class);
+        Zxid second = JSON.mapTo(Zxid.class);
+        HashSet<Zxid> set = new HashSet<>();
+
+        set.add(first);
+        Assert.assertTrue(set.contains(first));
+        Assert.assertTrue(set.contains(second));
+    }
+
+    @Test
+    public void TestToString() {
+        Zxid first = JSON.mapTo(Zxid.class);
+        Assert.assertEquals("(epoch: " + ZxidTest.EPOCH + ", counter: " + ZxidTest.COUNTER + ")", first.toString());
     }
 }

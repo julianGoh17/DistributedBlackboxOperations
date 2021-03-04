@@ -11,8 +11,8 @@ public class ProposalTest {
     public static final JsonObject MESSAGE = new JsonObject().put("message", "key");
     public static final String MESSAGE_ID = "random-id1234";
 
-    public static final float EPOCH = ZxidTest.EPOCH;
-    public static final float COUNTER = ZxidTest.COUNTER;
+    public static final int EPOCH = ZxidTest.EPOCH;
+    public static final int COUNTER = ZxidTest.COUNTER;
     public static final Zxid TRANSACTION_ID = new Zxid(EPOCH, COUNTER);
 
     public static final ClientMessage CLIENT_MESSAGE = new ClientMessage(METHOD, MESSAGE, MESSAGE_ID);
