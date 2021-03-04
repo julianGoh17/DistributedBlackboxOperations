@@ -5,11 +5,17 @@ import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.coordination.CoordinationMessage;
+import io.julian.server.models.coordination.CoordinationMetadata;
+import io.julian.zookeeper.election.BroadcastCandidateInformationHandler;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.models.CandidateInformation;
+import io.julian.zookeeper.models.ShortenedExchange;
+import io.julian.zookeeper.write.LeaderWriteHandler;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.Optional;
 
 public class ZookeeperAlgorithm extends DistributedAlgorithm {
     private final Logger log = LogManager.getLogger(ZookeeperAlgorithm.class);
@@ -26,7 +32,12 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
         log.traceEntry();
         CoordinationMessage message = getCoordinationMessage();
         if (message.getMetadata().getRequest().equals(HTTPRequest.UNKNOWN)) {
-            addCandidateInformation(message);
+            Class messageClass = getMessageClass(message.getMetadata());
+            if (messageClass == ShortenedExchange.class) {
+                log.info("Received state update but not doing anything yet");
+            } else {
+                addCandidateInformation(message);
+            }
         } else {
             log.info("Ignoring as currently have not implemented write");
             broadcastCandidateNumber();
@@ -78,5 +89,21 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
     public void actOnInitialMessage() {
         log.traceEntry();
         log.traceExit();
+    }
+
+    public Class getMessageClass(final CoordinationMetadata metadata) {
+        log.traceEntry(() -> metadata);
+        final String type = Optional.ofNullable(metadata)
+            .map(CoordinationMetadata::getType)
+            .orElse("");
+        switch (type) {
+            case BroadcastCandidateInformationHandler
+                .TYPE:
+                return log.traceExit(CandidateInformation.class);
+            case LeaderWriteHandler
+                .TYPE:
+                return log.traceExit(ShortenedExchange.class);
+        }
+        return log.traceExit(Object.class);
     }
 }

@@ -16,6 +16,7 @@ public abstract class AbstractServerBase {
     protected Vertx vertx;
 
     public static final ServerConfiguration DEFAULT_SEVER_CONFIG = new ServerConfiguration(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
+    public static final ServerConfiguration SECOND_SERVER_CONFIG = new ServerConfiguration(Configuration.DEFAULT_SERVER_HOST, 9998);
 
     @Before
     public void before() {

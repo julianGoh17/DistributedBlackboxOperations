@@ -5,9 +5,10 @@ import io.julian.server.api.client.ServerClient;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
+import io.julian.server.models.coordination.CoordinationMetadata;
+import io.julian.zookeeper.models.CandidateInformation;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.julian.zookeeper.models.CandidateInformation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 
 public class BroadcastCandidateInformationHandler {
     private final Logger logger = LogManager.getLogger(BroadcastCandidateInformationHandler.class);
+    public final static String TYPE = "candidate_information";
 
     /**
      * Broadcast the server's candidate number to all other servers
@@ -48,7 +50,8 @@ public class BroadcastCandidateInformationHandler {
      */
     public CoordinationMessage createCandidateInformationMessage(final long candidateNumber, final ServerConfiguration serverConfig) {
         logger.traceEntry(() -> candidateNumber, () -> serverConfig);
-        return logger.traceExit(new CoordinationMessage(HTTPRequest.UNKNOWN,
+        return logger.traceExit(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, TYPE),
+            null,
             new CandidateInformation(serverConfig.getHost(), serverConfig.getPort(), candidateNumber).toJson()));
     }
 }

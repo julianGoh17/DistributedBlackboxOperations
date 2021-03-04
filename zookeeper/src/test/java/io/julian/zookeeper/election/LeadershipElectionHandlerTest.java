@@ -4,7 +4,6 @@ import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
-import io.julian.server.models.control.ServerConfiguration;
 import io.julian.zookeeper.AbstractServerBase;
 import io.julian.zookeeper.TestServerComponents;
 import io.julian.zookeeper.models.CandidateInformation;
@@ -77,7 +76,7 @@ public class LeadershipElectionHandlerTest extends AbstractServerBase {
     @Test
     public void TestBroadcastIsSuccessful(final TestContext context) {
         TestServerComponents serverComponents = setUpApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
-        TestServerComponents otherServer = setUpApiServer(context, new ServerConfiguration(AbstractServerBase.DEFAULT_SEVER_CONFIG.getHost(), 9898));
+        TestServerComponents otherServer = setUpApiServer(context, AbstractServerBase.SECOND_SERVER_CONFIG);
         RegistryManager registryManager = createTestRegistryManager();
         registryManager.registerServer(otherServer.configuration.getHost(), otherServer.configuration.getPort());
         ServerClient client = createServerClient();

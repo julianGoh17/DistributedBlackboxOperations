@@ -63,7 +63,15 @@ public class LeaderProposalTracker {
         log.traceExit();
     }
 
-    public void addProposalTracker(final Zxid id, final ConcurrentMap<Zxid, Integer> proposals) {
+    public void reset() {
+        log.traceEntry();
+        log.info("Resetting Proposal Tracker");
+        committedProposals.clear();
+        acknowledgedProposals.clear();
+        log.traceExit();
+    }
+
+    private void addProposalTracker(final Zxid id, final ConcurrentMap<Zxid, Integer> proposals) {
         log.traceEntry(() -> id);
         log.info(String.format("Attempting to create %s proposal tracker'%s'", mapToName(proposals), id.toString()));
         if (proposals.containsKey(id)) {
@@ -75,7 +83,7 @@ public class LeaderProposalTracker {
         log.traceExit();
     }
 
-    public void addProposal(final Zxid id, final ConcurrentMap<Zxid, Integer> map) {
+    private void addProposal(final Zxid id, final ConcurrentMap<Zxid, Integer> map) {
         log.traceEntry(() -> id, () -> map);
         log.info(String.format("Received %s proposal '%s'", mapToName(map), id.toString()));
         if (map.containsKey(id)) {
@@ -87,12 +95,12 @@ public class LeaderProposalTracker {
         log.traceExit();
     }
 
-    public boolean hasMajorityOfServersProposal(final Zxid id, final ConcurrentMap<Zxid, Integer> map) {
+    private boolean hasMajorityOfServersProposal(final Zxid id, final ConcurrentMap<Zxid, Integer> map) {
         log.traceEntry(() -> id, () -> map);
         return log.traceExit(map.getOrDefault(id, 0) >= majority);
     }
 
-    public void removeProposalTracker(final Zxid id, final ConcurrentMap<Zxid, Integer> map) {
+    private void removeProposalTracker(final Zxid id, final ConcurrentMap<Zxid, Integer> map) {
         log.traceEntry(() -> id, () -> map);
         log.info(String.format("Attempting to create %s proposal tracker '%s'", mapToName(map), id.toString()));
         if (map.containsKey(id)) {

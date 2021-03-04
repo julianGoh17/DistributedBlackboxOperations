@@ -13,11 +13,13 @@ public class CoordinationMetadataTest {
     public final static String STRING_REQUEST = "GET";
     public final static HTTPRequest REQUEST = HTTPRequest.forValue(STRING_REQUEST);
     public final static String MESSAGE_ID = "message-id";
+    public final static String TYPE = "type";
 
     public final static JsonObject JSON = new JsonObject()
         .put("timestamp", TIME.toString())
         .put("request", STRING_REQUEST)
-        .put("messageId", MESSAGE_ID);
+        .put("messageId", MESSAGE_ID)
+        .put("type", TYPE);
 
     @Test
     public void TestCoordinationMetadataCanMapFromJson() {
@@ -29,11 +31,12 @@ public class CoordinationMetadataTest {
 
     @Test
     public void TestCoordinationMetadataCanMapToJson() {
-        CoordinationMetadata metadata = new CoordinationMetadata(new CoordinationTimestamp(TIME), REQUEST, MESSAGE_ID);
+        CoordinationMetadata metadata = new CoordinationMetadata(new CoordinationTimestamp(TIME), REQUEST, MESSAGE_ID, TYPE);
         JsonObject json = metadata.toJson();
         Assert.assertEquals(TIME.toString(), json.getString(CoordinationMetadata.TIMESTAMP_KEY));
         Assert.assertEquals(STRING_REQUEST, json.getString(CoordinationMetadata.REQUEST_KEY));
         Assert.assertEquals(MESSAGE_ID, json.getString(CoordinationMetadata.MESSAGE_ID_KEY));
+        Assert.assertEquals(TYPE, json.getString(CoordinationMetadata.TYPE_KEY));
     }
 
     @Test
@@ -47,6 +50,17 @@ public class CoordinationMetadataTest {
     }
 
     @Test
+    public void TestCoordinationMetadataWithTypeToJson() {
+        CoordinationMetadata metadata = new CoordinationMetadata(REQUEST, TYPE);
+        JsonObject json = metadata.toJson();
+
+        Assert.assertNotNull(json.getString(CoordinationMetadata.TIMESTAMP_KEY));
+        Assert.assertEquals(STRING_REQUEST, json.getString(CoordinationMetadata.REQUEST_KEY));
+        Assert.assertNull(json.getString(CoordinationMetadata.MESSAGE_ID_KEY));
+        Assert.assertEquals(TYPE, json.getString(CoordinationMetadata.TYPE_KEY));
+    }
+
+    @Test
     public void TestCoordinationMetadataCanMapFromNullFields() {
         JsonObject json = JSON.copy();
         json.remove(CoordinationMetadata.MESSAGE_ID_KEY);
@@ -54,6 +68,7 @@ public class CoordinationMetadataTest {
         CoordinationMetadata metadata = json.mapTo(CoordinationMetadata.class);
         Assert.assertEquals(TIME.toString(), metadata.getTimestamp().toValue());
         Assert.assertEquals(REQUEST, metadata.getRequest());
+        Assert.assertEquals(TYPE, metadata.getType());
         Assert.assertNull(metadata.getMessageID());
     }
 }

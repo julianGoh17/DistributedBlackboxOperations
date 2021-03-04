@@ -6,6 +6,7 @@ import io.julian.server.components.Configuration;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
+import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.AbstractServerBase;
 import io.julian.zookeeper.TestServerComponents;
 import io.julian.zookeeper.models.CandidateInformationTest;
@@ -15,7 +16,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class BroadcastCandidateInformationHandlerTest extends AbstractServerBase {
-    private static final String CONNECTION_REFUSED_EXCEPTION = String.format("Connection refused: %s/127.0.0.1:%d", Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
+    public static final String CONNECTION_REFUSED_EXCEPTION = String.format("Connection refused: %s/127.0.0.1:%d", Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
 
     @Test
     public void TestBroadCastHandlerCanSendMessage(final TestContext context) {
@@ -61,6 +62,7 @@ public class BroadcastCandidateInformationHandlerTest extends AbstractServerBase
 
         Assert.assertNull(object.getJsonObject(CoordinationMessage.MESSAGE_KEY));
         Assert.assertNotNull(object.getJsonObject(CoordinationMessage.METADATA_KEY));
+        Assert.assertEquals(BroadcastCandidateInformationHandler.TYPE, object.getJsonObject(CoordinationMessage.METADATA_KEY).getString(CoordinationMetadata.TYPE_KEY));
         Assert.assertEquals(CandidateInformationTest.JSON.encodePrettily(),
             object.getJsonObject(CoordinationMessage.DEFINITION_KEY).encodePrettily());
     }

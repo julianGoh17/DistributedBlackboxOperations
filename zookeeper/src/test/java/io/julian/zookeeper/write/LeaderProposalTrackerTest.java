@@ -172,6 +172,20 @@ public class LeaderProposalTrackerTest {
         Assert.assertEquals(0, tracker.getCommittedProposals().size());
     }
 
+    @Test
+    public void TestReset() {
+        LeaderProposalTracker tracker = new LeaderProposalTracker(MAJORITY);
+        Zxid id = createZxid();
+        tracker.addCommittedProposalTracker(id);
+        tracker.addAcknowledgedProposalTracker(id);
+        Assert.assertEquals(1, tracker.getAcknowledgedProposals().size());
+        Assert.assertEquals(1, tracker.getCommittedProposals().size());
+
+        tracker.reset();
+        Assert.assertEquals(0, tracker.getAcknowledgedProposals().size());
+        Assert.assertEquals(0, tracker.getCommittedProposals().size());
+    }
+
     private Zxid createZxid() {
         return ID_JSON.mapTo(Zxid.class);
     }

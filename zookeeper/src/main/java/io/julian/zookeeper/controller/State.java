@@ -50,7 +50,7 @@ public class State {
         log.info(String.format("Checking for outstanding transaction with smaller counter than '%f'", nextCounter));
         for (int i = lastAcceptedIndex.get(); i < history.size(); i++) {
             if (history.get(i).getTransactionId().getCounter() < nextCounter) {
-                log.info(String.format("Exists outstanding transaction with counter '%f'", history.get(i).getTransactionId().getCounter()));
+                log.info(String.format("Exists outstanding transaction with counter '%d'", history.get(i).getTransactionId().getCounter()));
                 return log.traceExit(true);
             }
         }
