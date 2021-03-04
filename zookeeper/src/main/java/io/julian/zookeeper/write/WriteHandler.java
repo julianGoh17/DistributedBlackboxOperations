@@ -3,17 +3,22 @@ package io.julian.zookeeper.write;
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Controller;
+import io.julian.server.components.MessageStore;
 import io.julian.server.models.control.ClientMessage;
+import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
+import io.julian.zookeeper.models.MessagePhase;
 import io.julian.zookeeper.models.Proposal;
+import io.julian.zookeeper.models.ShortenedExchange;
 import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class WriteHandler {
@@ -22,15 +27,41 @@ public class WriteHandler {
     private final Controller controller;
     private final State state;
     private final LeaderWriteHandler leaderWrite;
+    private final FollowerWriteHandler followerWrite;
 
     private final AtomicInteger leaderEpoch = new AtomicInteger();
     private final AtomicInteger counter = new AtomicInteger();
 
-    public WriteHandler(final Controller controller, final CandidateInformationRegistry registry, final ServerClient client, final RegistryManager manager, final Vertx vertx) {
+    public WriteHandler(final Controller controller, final MessageStore messageStore, final CandidateInformationRegistry registry, final ServerClient client, final RegistryManager manager, final Vertx vertx) {
         this.controller = controller;
-        this.state = new State(vertx);
+        this.state = new State(vertx, messageStore);
         this.leaderWrite = new LeaderWriteHandler(getMajority(registry), client, manager);
+        this.followerWrite = new FollowerWriteHandler(registry, client);
     }
+
+    /*
+     * Follower Methods
+     */
+    public Future<Void> acknowledgeLeader(final CoordinationMessage message) {
+        log.traceEntry(() -> message);
+        final ClientMessage clientMessage = Optional.ofNullable(message.getMessage())
+            .map(ClientMessage::fromJson)
+            .orElse(null);
+        final ShortenedExchange exchange = message.getDefinition().mapTo(ShortenedExchange.class);
+
+        if (MessagePhase.ACK.equals(exchange.getPhase())) {
+            log.info(String.format("Received State update %s from leader", exchange.getTransactionID()));
+            state.addProposal(new Proposal(clientMessage, exchange.getTransactionID()));
+            return log.traceExit(followerWrite.acknowledgeProposalToLeader(exchange.getTransactionID()));
+        } else {
+            log.info(String.format("Received commit state %s from leader", exchange.getTransactionID()));
+            return log.traceExit(state.processStateUpdate(exchange.getTransactionID()));
+        }
+    }
+
+    /*
+     * Leader Methods
+     */
 
     public Future<Void> initialProposalUpdate(final ClientMessage message) {
         log.traceEntry(() -> message);
@@ -50,6 +81,10 @@ public class WriteHandler {
         log.info(String.format("Will not broadcast commit for %s as conditions have not been met", id));
         return Future.succeededFuture();
     }
+
+    /*
+     * Getters and Setters
+     */
 
     public boolean isLeader() {
         log.traceEntry();

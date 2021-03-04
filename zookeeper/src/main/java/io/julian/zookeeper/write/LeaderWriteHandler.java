@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class LeaderWriteHandler {
@@ -74,8 +75,10 @@ public class LeaderWriteHandler {
 
     public CoordinationMessage createCoordinationMessage(final MessagePhase phase, final ClientMessage message, final Zxid id) {
         log.traceEntry(() -> phase, () -> message, () -> id);
+        final String messageID = Optional.ofNullable(message).map(ClientMessage::getMessageId).orElse(null);
+
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.UNKNOWN, TYPE),
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, messageID, TYPE),
             message != null ? message.toJson() : null,
             new ShortenedExchange(phase, id).toJson()));
     }

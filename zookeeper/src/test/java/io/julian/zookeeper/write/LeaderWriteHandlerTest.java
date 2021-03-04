@@ -19,9 +19,9 @@ import org.junit.Test;
 
 public class LeaderWriteHandlerTest extends AbstractServerBase {
     private final static int MAJORITY = 2;
-
+    private final static String MESSAGE_ID = "id-1234";
     private final static ClientMessage MESSAGE = new ClientMessage(HTTPRequest.POST,
-        new JsonObject().put("random", "key"), "id");
+        new JsonObject().put("random", "key"), MESSAGE_ID);
     private final static Zxid ID = new Zxid(ZxidTest.EPOCH, ZxidTest.COUNTER);
 
     @Test
@@ -88,12 +88,14 @@ public class LeaderWriteHandlerTest extends AbstractServerBase {
 
         CoordinationMessage message = handler.createCoordinationMessage(MessagePhase.ACK, MESSAGE, ID);
         Assert.assertEquals(LeaderWriteHandler.TYPE, message.getMetadata().getType());
+        Assert.assertEquals(MESSAGE_ID, message.getMetadata().getMessageID());
         Assert.assertEquals(MessagePhase.ACK.toValue(), message.getDefinition().getString(ShortenedExchange.PHASE_KEY));
         Assert.assertEquals(ZxidTest.EPOCH, message.getDefinition().getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.EPOCH_KEY).intValue());
         Assert.assertEquals(ZxidTest.COUNTER, message.getDefinition().getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.COUNTER_KEY).intValue());
 
         message = handler.createCoordinationMessage(MessagePhase.COMMIT, MESSAGE, ID);
         Assert.assertEquals(LeaderWriteHandler.TYPE, message.getMetadata().getType());
+        Assert.assertEquals(MESSAGE_ID, message.getMetadata().getMessageID());
         Assert.assertEquals(MessagePhase.COMMIT.toValue(), message.getDefinition().getString(ShortenedExchange.PHASE_KEY));
         Assert.assertEquals(ZxidTest.EPOCH, message.getDefinition().getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.EPOCH_KEY).intValue());
         Assert.assertEquals(ZxidTest.COUNTER, message.getDefinition().getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.COUNTER_KEY).intValue());

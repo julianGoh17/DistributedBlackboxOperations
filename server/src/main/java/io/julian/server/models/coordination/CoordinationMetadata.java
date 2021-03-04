@@ -39,10 +39,10 @@ public class CoordinationMetadata {
         this.type = null;
     }
 
-    public CoordinationMetadata(final HTTPRequest request, final String type) {
+    public CoordinationMetadata(final HTTPRequest request, final String messageID, final String type) {
         this.timestamp = new CoordinationTimestamp();
         this.request = request;
-        this.messageID = null;
+        this.messageID = messageID;
         this.type = type;
     }
 

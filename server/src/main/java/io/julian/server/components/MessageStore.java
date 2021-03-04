@@ -1,5 +1,7 @@
 package io.julian.server.components;
 
+import io.julian.server.api.exceptions.NoIDException;
+import io.julian.server.api.exceptions.SameIDException;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,6 +15,32 @@ public class MessageStore {
 
     public MessageStore() {
         messages = new HashMap<>();
+    }
+
+    public void addMessageToServer(final String messageID, final JsonObject message) throws SameIDException {
+        log.traceEntry(() -> messageID, () -> message);
+        log.info(String.format("Attempting to add message with id '%s' to server", messageID));
+        if (hasUUID(messageID)) {
+            SameIDException exception = new SameIDException(messageID);
+            log.error(String.format("Failed to add message with id '%s' to server because: %s", messageID, exception));
+            throw exception;
+        }
+        log.info(String.format("Adding message with id '%s' to server", messageID));
+        putMessage(messageID, message);
+        log.traceExit();
+    }
+
+    public void deleteMessageFromServer(final String messageID) throws NoIDException {
+        log.traceEntry(() -> messageID);
+        log.info(String.format("Attempting to delete message with id '%s' from server", messageID));
+        if (!hasUUID(messageID)) {
+            NoIDException exception = new NoIDException(messageID);
+            log.error(String.format("Failed to delete message with id '%s' from server because: %s", messageID, exception));
+            throw exception;
+        }
+        log.info(String.format("Deleting message with id '%s' from server", messageID));
+        removeMessage(messageID);
+        log.traceExit();
     }
 
     public JsonObject getMessage(final String uuid) {

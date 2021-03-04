@@ -50,7 +50,7 @@ public class BroadcastCandidateInformationHandler {
      */
     public CoordinationMessage createCandidateInformationMessage(final long candidateNumber, final ServerConfiguration serverConfig) {
         logger.traceEntry(() -> candidateNumber, () -> serverConfig);
-        return logger.traceExit(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, TYPE),
+        return logger.traceExit(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, null, TYPE),
             null,
             new CandidateInformation(serverConfig.getHost(), serverConfig.getPort(), candidateNumber).toJson()));
     }

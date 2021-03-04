@@ -1,6 +1,12 @@
 package io.julian.zookeeper.controller;
 
+import io.julian.server.api.exceptions.NoIDException;
+import io.julian.server.api.exceptions.SameIDException;
+import io.julian.server.components.MessageStore;
+import io.julian.server.models.HTTPRequest;
+import io.julian.server.models.control.ClientMessage;
 import io.julian.zookeeper.models.Proposal;
+import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -12,12 +18,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class State {
     private static final Logger log = LogManager.getLogger(State.class.getName());
+    public static final int MAX_RETRIES = 5;
+
     private final ArrayList<Proposal> history = new ArrayList<>();
     private final AtomicInteger lastAcceptedIndex = new AtomicInteger();
     private final Vertx vertx;
+    private final MessageStore messageStore;
 
-    public State(final Vertx vertx) {
+    public State(final Vertx vertx, final MessageStore messageStore) {
         this.vertx = vertx;
+        this.messageStore = messageStore;
     }
 
     public Future<Void> addProposal(final Proposal proposal) {
@@ -45,16 +55,69 @@ public class State {
         return log.traceExit(write.future());
     }
 
-    public boolean doesExistOutstandingTransaction(final float nextCounter) {
+    public Future<Void> processStateUpdate(final Zxid id) {
+        log.traceEntry(() -> id);
+        Promise<Void> update = Promise.promise();
+        AtomicInteger retries = new AtomicInteger();
+        this.vertx.setPeriodic(1000, timerID -> {
+            if (doesExistOutstandingTransaction(id.getCounter())) {
+                if (retries.get() < MAX_RETRIES) {
+                    log.info(String.format("Loop '%d' retried '%d' time(s) for outstanding transactions to complete", timerID, retries.get() + 1));
+                    retries.incrementAndGet();
+                } else {
+                    Exception exception = new Exception(String.format("State update timeout for '%s'", id.toString()));
+                    log.error(exception);
+                    update.fail(exception);
+                    vertx.cancelTimer(timerID);
+                }
+            } else {
+                try {
+                    ClientMessage message = retrieveStateUpdate(id);
+                    if (message == null) {
+                        update.fail(String.format("State update with %s does not exist", id.toString()));
+                        vertx.cancelTimer(timerID);
+                    }
+                    if (HTTPRequest.POST.equals(message.getRequest())) {
+                        messageStore.addMessageToServer(message.getMessageId(), message.getMessage());
+                    } else {
+                        messageStore.deleteMessageFromServer(message.getMessageId());
+                    }
+                    update.complete();
+                } catch (SameIDException | NoIDException e) {
+                    log.info(String.format("Couldn't process state update %s", id.toString()));
+                    log.error(e);
+                    update.fail(e.getMessage());
+                }
+                vertx.cancelTimer(timerID);
+            }
+        });
+        return log.traceExit(update.future());
+    }
+
+    public ClientMessage retrieveStateUpdate(final Zxid id) {
+        log.traceEntry(() -> id);
+        log.info(String.format("Retrieving state update with %s id", id.toString()));
+        for (int i = lastAcceptedIndex.get(); i < history.size(); i++) {
+            if (history.get(i).getTransactionId().equals(id)) {
+                log.info(String.format("Successfully retrieved state update with %s id", id.toString()));
+                return log.traceExit(history.get(i).getNewState());
+            }
+        }
+        log.info(String.format("Could not find state update with %s id", id.toString()));
+        log.traceExit();
+        return null;
+    }
+
+    public boolean doesExistOutstandingTransaction(final int nextCounter) {
         log.traceEntry(() -> nextCounter);
-        log.info(String.format("Checking for outstanding transaction with smaller counter than '%f'", nextCounter));
+        log.info(String.format("Checking for outstanding transaction with smaller counter than '%d'", nextCounter));
         for (int i = lastAcceptedIndex.get(); i < history.size(); i++) {
             if (history.get(i).getTransactionId().getCounter() < nextCounter) {
                 log.info(String.format("Exists outstanding transaction with counter '%d'", history.get(i).getTransactionId().getCounter()));
                 return log.traceExit(true);
             }
         }
-        log.info(String.format("No outstanding transaction with counter smaller than '%f'", nextCounter));
+        log.info(String.format("No outstanding transaction with counter smaller than '%d'", nextCounter));
         return log.traceExit(false);
     }
 
@@ -73,6 +136,11 @@ public class State {
     public ArrayList<Proposal> getHistory() {
         log.traceEntry();
         return log.traceExit(this.history);
+    }
+
+    public MessageStore getMessageStore() {
+        log.traceEntry();
+        return log.traceExit(this.messageStore);
     }
 
     public int getLastAcceptedIndex() {

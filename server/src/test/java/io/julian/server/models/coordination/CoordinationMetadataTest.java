@@ -51,12 +51,12 @@ public class CoordinationMetadataTest {
 
     @Test
     public void TestCoordinationMetadataWithTypeToJson() {
-        CoordinationMetadata metadata = new CoordinationMetadata(REQUEST, TYPE);
+        CoordinationMetadata metadata = new CoordinationMetadata(REQUEST, MESSAGE_ID, TYPE);
         JsonObject json = metadata.toJson();
 
         Assert.assertNotNull(json.getString(CoordinationMetadata.TIMESTAMP_KEY));
         Assert.assertEquals(STRING_REQUEST, json.getString(CoordinationMetadata.REQUEST_KEY));
-        Assert.assertNull(json.getString(CoordinationMetadata.MESSAGE_ID_KEY));
+        Assert.assertEquals(MESSAGE_ID, json.getString(CoordinationMetadata.MESSAGE_ID_KEY));
         Assert.assertEquals(TYPE, json.getString(CoordinationMetadata.TYPE_KEY));
     }
 

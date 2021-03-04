@@ -29,7 +29,7 @@ public class ZookeeperAlgorithmTest {
     public void TestGetMessageClass() {
         ZookeeperAlgorithm algorithm = new ZookeeperAlgorithm(new Controller(new Configuration()), new MessageStore(), Vertx.vertx());
         for (String key : map.keySet()) {
-            Assert.assertEquals(map.get(key), algorithm.getMessageClass(new CoordinationMetadata(HTTPRequest.UNKNOWN, key)));
+            Assert.assertEquals(map.get(key), algorithm.getMessageClass(new CoordinationMetadata(HTTPRequest.UNKNOWN, null, key)));
         }
     }
 }
