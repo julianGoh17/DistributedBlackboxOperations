@@ -7,7 +7,6 @@ import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.zookeeper.AbstractServerBase;
 import io.julian.zookeeper.TestServerComponents;
-import io.julian.zookeeper.election.BroadcastCandidateInformationHandlerTest;
 import io.julian.zookeeper.models.MessagePhase;
 import io.julian.zookeeper.models.ShortenedExchange;
 import io.julian.zookeeper.models.Zxid;
@@ -32,7 +31,7 @@ public class LeaderWriteHandlerTest extends AbstractServerBase {
         LeaderWriteHandler handler = createWriteHandler(manager);
 
         Async async = context.async();
-        handler.broadcastInitialProposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), "id"))
+        handler.broadcastInitialProposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), "id"), new Zxid(0, 1))
             .onComplete(context.asyncAssertSuccess(res -> async.complete()));
 
         async.awaitSuccess();
@@ -45,9 +44,37 @@ public class LeaderWriteHandlerTest extends AbstractServerBase {
         RegistryManager manager = createTestRegistryManager();
         LeaderWriteHandler handler = createWriteHandler(manager);
         Async async = context.async();
-        handler.broadcastInitialProposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), "id"))
+        handler.broadcastInitialProposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), "id"), new Zxid(0, 1))
             .onComplete(context.asyncAssertFailure(cause -> {
-                context.assertEquals(BroadcastCandidateInformationHandlerTest.CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                context.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                async.complete();
+            }));
+
+        async.awaitSuccess();
+    }
+
+    @Test
+    public void TestBroadcastCommitIsSuccessful(final TestContext context) {
+        TestServerComponents server = setUpApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
+        RegistryManager manager = createTestRegistryManager();
+        LeaderWriteHandler handler = createWriteHandler(manager);
+
+        Async async = context.async();
+        handler.broadcastCommit(new Zxid(0, 0))
+            .onComplete(context.asyncAssertSuccess(res -> async.complete()));
+
+        async.awaitSuccess();
+        tearDownServer(context, server);
+    }
+
+    @Test
+    public void TestBroadcastCommitFails(final TestContext context) {
+        RegistryManager manager = createTestRegistryManager();
+        LeaderWriteHandler handler = createWriteHandler(manager);
+        Async async = context.async();
+        handler.broadcastCommit(new Zxid(0, 0))
+            .onComplete(context.asyncAssertFailure(cause -> {
+                context.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
                 async.complete();
             }));
 

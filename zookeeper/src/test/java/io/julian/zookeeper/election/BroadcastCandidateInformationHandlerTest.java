@@ -2,7 +2,6 @@ package io.julian.zookeeper.election;
 
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
-import io.julian.server.components.Configuration;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
@@ -16,8 +15,6 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class BroadcastCandidateInformationHandlerTest extends AbstractServerBase {
-    public static final String CONNECTION_REFUSED_EXCEPTION = String.format("Connection refused: %s/127.0.0.1:%d", Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
-
     @Test
     public void TestBroadCastHandlerCanSendMessage(final TestContext context) {
         TestServerComponents server = setUpApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);

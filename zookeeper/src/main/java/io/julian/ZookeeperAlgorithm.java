@@ -10,6 +10,7 @@ import io.julian.zookeeper.election.BroadcastCandidateInformationHandler;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.models.CandidateInformation;
 import io.julian.zookeeper.models.ShortenedExchange;
+import io.julian.zookeeper.write.FollowerWriteHandler;
 import io.julian.zookeeper.write.LeaderWriteHandler;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
@@ -97,11 +98,10 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
             .map(CoordinationMetadata::getType)
             .orElse("");
         switch (type) {
-            case BroadcastCandidateInformationHandler
-                .TYPE:
+            case BroadcastCandidateInformationHandler.TYPE:
                 return log.traceExit(CandidateInformation.class);
-            case LeaderWriteHandler
-                .TYPE:
+            case LeaderWriteHandler.TYPE:
+            case FollowerWriteHandler.TYPE:
                 return log.traceExit(ShortenedExchange.class);
         }
         return log.traceExit(Object.class);

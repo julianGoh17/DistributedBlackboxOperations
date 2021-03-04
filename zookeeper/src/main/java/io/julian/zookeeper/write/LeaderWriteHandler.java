@@ -16,7 +16,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class LeaderWriteHandler {
@@ -28,24 +27,30 @@ public class LeaderWriteHandler {
     private final ServerClient client;
     private final RegistryManager manager;
 
-    private final AtomicInteger leaderEpoch = new AtomicInteger();
-    private final AtomicInteger counter = new AtomicInteger();
-
     public LeaderWriteHandler(final int majority, final ServerClient client, final RegistryManager manager) {
         this.proposalTracker = new LeaderProposalTracker(majority);
         this.client = client;
         this.manager = manager;
     }
 
-    public Future<Void> broadcastInitialProposal(final ClientMessage message) {
-        log.traceEntry(() -> message);
-        Promise<Void> broadcast = Promise.promise();
-        final Zxid id = new Zxid(leaderEpoch.get(), counter.getAndIncrement());
+    public Future<Void> broadcastInitialProposal(final ClientMessage message, final Zxid id) {
+        log.traceEntry(() -> message, () -> id);
+        return log.traceExit(broadcastProposal(MessagePhase.ACK, message, id));
+    }
 
-        log.info(String.format("Broadcasting state update %s to servers", id.toString()));
+    public Future<Void> broadcastCommit(final Zxid id) {
+        log.traceEntry(() -> id);
+        return log.traceExit(broadcastProposal(MessagePhase.COMMIT, null, id));
+    }
+
+    public Future<Void> broadcastProposal(final MessagePhase phase, final ClientMessage message, final Zxid id) {
+        log.traceEntry(() -> phase, () -> message, () -> id);
+        Promise<Void> broadcast = Promise.promise();
+
+        log.info(String.format("Broadcasting '%s' update %s to servers", phase.toValue(), id.toString()));
         List<Future> futures = manager.getOtherServers()
             .stream()
-            .map(server -> client.sendCoordinateMessageToServer(server, createCoordinationMessage(MessagePhase.ACK, message, id)))
+            .map(server -> client.sendCoordinateMessageToServer(server, createCoordinationMessage(phase, message, id)))
             .collect(Collectors.toList());
 
         CompositeFuture.all(futures)
@@ -66,7 +71,7 @@ public class LeaderWriteHandler {
         log.traceEntry(() -> phase, () -> message, () -> id);
         return log.traceExit(new CoordinationMessage(
             new CoordinationMetadata(HTTPRequest.UNKNOWN, TYPE),
-            message.toJson(),
+            message != null ? message.toJson() : null,
             new ShortenedExchange(phase, id).toJson()));
     }
 }
