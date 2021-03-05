@@ -5,6 +5,7 @@ import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
+import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.election.BroadcastCandidateInformationHandler;
@@ -41,8 +42,8 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
     public void actOnCoordinateMessage() {
         log.traceEntry();
         CoordinationMessage message = getCoordinationMessage();
+        Class messageClass = getMessageClass(message.getMetadata());
         if (message.getMetadata().getRequest().equals(HTTPRequest.UNKNOWN)) {
-            Class messageClass = getMessageClass(message.getMetadata());
             if (messageClass == ShortenedExchange.class) {
                 log.info("Received state update but not doing anything yet");
                 this.writeHandler.handleCoordinationMessage(message);
@@ -51,7 +52,13 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
             }
         } else {
             log.info("Received state update");
-            broadcastCandidateNumber();
+            if (messageClass == ClientMessage.class) {
+                log.info("Received forwarded request");
+                this.writeHandler.handleCoordinationMessage(message);
+            } else {
+                log.info("Received broadcast candidate number request");
+                broadcastCandidateNumber();
+            }
         }
         updateLeader();
         log.traceExit();
@@ -112,8 +119,10 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
             case BroadcastCandidateInformationHandler.TYPE:
                 return log.traceExit(CandidateInformation.class);
             case LeaderWriteHandler.TYPE:
-            case FollowerWriteHandler.TYPE:
+            case FollowerWriteHandler.ACK_TYPE:
                 return log.traceExit(ShortenedExchange.class);
+            case FollowerWriteHandler.FORWARD_TYPE:
+                return log.traceExit(ClientMessage.class);
         }
         return log.traceExit(Object.class);
     }

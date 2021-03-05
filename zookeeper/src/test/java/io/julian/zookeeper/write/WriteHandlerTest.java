@@ -227,19 +227,19 @@ public class WriteHandlerTest extends AbstractServerBase {
     }
 
     @Test
-    public void TestHandleClientMessageAsFollowerBroadcastsAcknowledgements(final TestContext context) {
+    public void TestHandleClientMessageAsFollowerForwardsToLeader(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
         WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
         handler.getController().setLabel(LeadershipElectionHandler.FOLLOWER_LABEL);
         Async async = context.async();
         handler.handleClientMessage(POST_MESSAGE)
             .onComplete(context.asyncAssertSuccess(res -> {
-                context.assertEquals(1, handler.getState().getHistory().size());
-                context.assertEquals(1, handler.getProposalTracker().getAcknowledgedProposals().size());
+                context.assertEquals(0, handler.getState().getHistory().size());
+                context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
-                context.assertEquals(1, handler.getState().getMessageStore().getNumberOfMessages());
+                context.assertEquals(0, handler.getState().getMessageStore().getNumberOfMessages());
                 context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(1, handler.getCounter());
+                context.assertEquals(0, handler.getCounter());
                 async.complete();
             }));
 

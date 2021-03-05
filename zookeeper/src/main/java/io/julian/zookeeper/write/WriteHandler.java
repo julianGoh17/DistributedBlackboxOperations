@@ -45,7 +45,7 @@ public class WriteHandler {
         if (controller.getLabel().equals(LeadershipElectionHandler.LEADER_LABEL)) {
             log.info("WriteHandler handling coordination message as leader");
             ClientMessage clientMessage = ClientMessage.fromJson(message.getMessage());
-            if (HTTPRequest.POST.equals(message.getMetadata().getRequest())) {
+            if (HTTPRequest.POST.equals(message.getMetadata().getRequest()) || HTTPRequest.DELETE.equals(message.getMetadata().getRequest())) {
                 return log.traceExit(initialProposalUpdate(clientMessage));
             }
             ShortenedExchange exchange = message.getDefinition() != null ? message.getDefinition().mapTo(ShortenedExchange.class) : null;
@@ -57,8 +57,12 @@ public class WriteHandler {
 
     public Future<Void> handleClientMessage(final ClientMessage message) {
         log.traceEntry(() -> message);
-        log.info("Broadcasting update to followers");
-        return log.traceExit(initialProposalUpdate(message));
+        if (controller.getLabel().equals(LeadershipElectionHandler.LEADER_LABEL)) {
+            log.info("Leader broadcasting update to followers");
+            return log.traceExit(initialProposalUpdate(message));
+        }
+        log.info("Follower forwarding to leader");
+        return log.traceExit(followerWrite.forwardRequestToLeader(message));
     }
 
     /*

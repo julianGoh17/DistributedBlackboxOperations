@@ -173,7 +173,7 @@ public class StateTest {
     }
 
     @Test
-    public void processStateUpdateProcessesDELETEUpdate(final TestContext context) {
+    public void TestProcessStateUpdateProcessesDELETEUpdate(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
         messageStore.putMessage(MESSAGE_ID, new JsonObject());

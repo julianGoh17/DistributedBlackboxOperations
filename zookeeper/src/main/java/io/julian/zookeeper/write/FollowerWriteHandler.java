@@ -2,6 +2,7 @@ package io.julian.zookeeper.write;
 
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.models.HTTPRequest;
+import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
@@ -18,11 +19,32 @@ public class FollowerWriteHandler {
     private final CandidateInformationRegistry registry;
     private final ServerClient client;
 
-    public final static String TYPE = "state_acknowledgement";
+    public final static String ACK_TYPE = "state_acknowledgement";
+    public final static String FORWARD_TYPE = "forward";
 
     public FollowerWriteHandler(final CandidateInformationRegistry registry, final ServerClient client) {
         this.registry = registry;
         this.client = client;
+    }
+
+    public Future<Void> forwardRequestToLeader(final ClientMessage message) {
+        log.traceEntry(() -> message);
+        Promise<Void> forward = Promise.promise();
+        log.info(String.format("Attempting to forward %s to leader", message.getRequest()));
+        client
+            .sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(),
+                new CoordinationMessage(new CoordinationMetadata(message.getRequest(), message.getMessageId(), FORWARD_TYPE), message.toJson(), null))
+            .onSuccess(res -> {
+                log.info(String.format("Successfully forwarded %s to leader", message.getRequest()));
+                forward.complete();
+            })
+            .onFailure(cause -> {
+                log.info(String.format("Failed to forwarded %s to leader", message.getRequest()));
+                log.error(cause.getMessage());
+                forward.fail(cause);
+            });
+
+        return log.traceExit(forward.future());
     }
 
     public Future<Void> acknowledgeProposalToLeader(final Zxid id) {
@@ -56,7 +78,7 @@ public class FollowerWriteHandler {
     public CoordinationMessage createCoordinationMessage(final MessagePhase phase, final Zxid id) {
         log.traceEntry(() -> phase, () -> id);
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.UNKNOWN, null, TYPE),
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, null, ACK_TYPE),
             null,
             new ShortenedExchange(phase, id).toJson()
         ));

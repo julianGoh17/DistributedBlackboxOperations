@@ -2,6 +2,7 @@ package io.julian.zookeeper.write;
 
 import io.julian.server.components.Configuration;
 import io.julian.server.models.HTTPRequest;
+import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.zookeeper.AbstractServerBase;
 import io.julian.zookeeper.TestServerComponents;
@@ -11,6 +12,7 @@ import io.julian.zookeeper.models.CandidateInformation;
 import io.julian.zookeeper.models.MessagePhase;
 import io.julian.zookeeper.models.ShortenedExchange;
 import io.julian.zookeeper.models.Zxid;
+import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
@@ -70,11 +72,37 @@ public class FollowerWriterHandlerTest extends AbstractServerBase {
     }
 
     @Test
+    public void TestForwardRequestToLeaderFails(final TestContext context) {
+        FollowerWriteHandler writeHandler = createFollowerWriteHandler();
+
+        Async async = context.async();
+        writeHandler.forwardRequestToLeader(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""))
+            .onComplete(context.asyncAssertFailure(cause -> {
+                context.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                async.complete();
+            }));
+        async.awaitSuccess();
+    }
+
+    @Test
+    public void TestForwardRequestToLeaderSucceeds(final TestContext context) {
+        TestServerComponents server = setUpBasicApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
+        FollowerWriteHandler writeHandler = createFollowerWriteHandler();
+
+        Async async = context.async();
+        writeHandler.forwardRequestToLeader(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""))
+            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
+        async.awaitSuccess();
+
+        tearDownServer(context, server);
+    }
+
+    @Test
     public void TestCreateCoordinationMessage() {
         FollowerWriteHandler writeHandler = createFollowerWriteHandler();
         CoordinationMessage message = writeHandler.createCoordinationMessage(MessagePhase.ACK, ID);
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
-        Assert.assertEquals(FollowerWriteHandler.TYPE, message.getMetadata().getType());
+        Assert.assertEquals(FollowerWriteHandler.ACK_TYPE, message.getMetadata().getType());
         Assert.assertEquals(MessagePhase.ACK.toValue(), message.getDefinition().getString(ShortenedExchange.PHASE_KEY));
         Assert.assertEquals(COUNTER, message.getDefinition()
             .getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.COUNTER_KEY).intValue());
@@ -83,7 +111,7 @@ public class FollowerWriterHandlerTest extends AbstractServerBase {
 
         message = writeHandler.createCoordinationMessage(MessagePhase.COMMIT, ID);
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
-        Assert.assertEquals(FollowerWriteHandler.TYPE, message.getMetadata().getType());
+        Assert.assertEquals(FollowerWriteHandler.ACK_TYPE, message.getMetadata().getType());
         Assert.assertEquals(MessagePhase.COMMIT.toValue(), message.getDefinition().getString(ShortenedExchange.PHASE_KEY));
         Assert.assertEquals(COUNTER, message.getDefinition()
             .getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.COUNTER_KEY).intValue());

@@ -46,7 +46,30 @@ public class IntegrationTest extends AbstractServerBase {
         TestClient client = createTestClient();
         Async async = context.async();
         client.POST_MESSAGE(leader.configuration.getHost(), leader.configuration.getPort(), MESSAGE)
-            .onComplete(v -> vertx.setTimer(3000, v2 -> {
+            .onComplete(v -> vertx.setTimer(1500, v2 -> {
+                Assert.assertEquals(1, server1.server.getMessages().getNumberOfMessages());
+                Assert.assertEquals(1, server2.server.getMessages().getNumberOfMessages());
+                async.complete();
+            }));
+        async.awaitSuccess();
+        tearDownServer(context, server1);
+        tearDownServer(context, server2);
+    }
+
+    @Test
+    public void TestFollowerWriteRequestForwardsToLeader(final TestContext context) {
+        TestServerComponents server1 = setUpZookeeperApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server2 = setUpZookeeperApiServer(context, SECOND_SERVER_CONFIG);
+        registerConfigurationInServer(server1, SECOND_SERVER_CONFIG);
+        registerConfigurationInServer(server2, DEFAULT_SEVER_CONFIG);
+        sendElectionMessage(context);
+
+        TestServerComponents follower = findFollower(server1, server2);
+        context.assertNotNull(follower);
+        TestClient client = createTestClient();
+        Async async = context.async();
+        client.POST_MESSAGE(follower.configuration.getHost(), follower.configuration.getPort(), MESSAGE)
+            .onComplete(v -> vertx.setTimer(1500, v2 -> {
                 Assert.assertEquals(1, server1.server.getMessages().getNumberOfMessages());
                 Assert.assertEquals(1, server2.server.getMessages().getNumberOfMessages());
                 async.complete();
@@ -73,6 +96,15 @@ public class IntegrationTest extends AbstractServerBase {
     private TestServerComponents findLeader(final TestServerComponents... components) {
         for (TestServerComponents component : components) {
             if (component.server.getController().getLabel().equals(LeadershipElectionHandler.LEADER_LABEL)) {
+                return component;
+            }
+        }
+        return null;
+    }
+
+    private TestServerComponents findFollower(final TestServerComponents... components) {
+        for (TestServerComponents component : components) {
+            if (component.server.getController().getLabel().equals(LeadershipElectionHandler.FOLLOWER_LABEL)) {
                 return component;
             }
         }
