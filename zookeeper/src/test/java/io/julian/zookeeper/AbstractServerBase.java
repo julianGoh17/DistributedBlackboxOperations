@@ -29,9 +29,15 @@ public abstract class AbstractServerBase {
         this.vertx.close();
     }
 
-    protected TestServerComponents setUpApiServer(final TestContext context, final ServerConfiguration configuration) {
+    protected TestServerComponents setUpZookeeperApiServer(final TestContext context, final ServerConfiguration configuration) {
         TestServerComponents components = new TestServerComponents();
-        components.setUpServer(context, vertx, configuration);
+        components.setUpZookeeperServer(context, vertx, configuration);
+        return components;
+    }
+
+    protected TestServerComponents setUpBasicApiServer(final TestContext context, final ServerConfiguration configuration) {
+        TestServerComponents components = new TestServerComponents();
+        components.setUpBasicServer(context, vertx, configuration);
         return components;
     }
 
@@ -47,5 +53,9 @@ public abstract class AbstractServerBase {
 
     protected ServerClient createServerClient() {
         return new ServerClient(this.vertx);
+    }
+
+    protected TestClient createTestClient() {
+        return new TestClient(this.vertx);
     }
 }

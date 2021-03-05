@@ -4,6 +4,7 @@ import io.julian.server.components.Configuration;
 import io.julian.server.endpoints.AbstractHandlerTest;
 import io.julian.server.models.ServerStatus;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
 import org.junit.Test;
@@ -15,10 +16,28 @@ public class PostMessageHandlerTest extends AbstractHandlerTest {
         WebClient client = WebClient.create(this.vertx);
 
         JsonObject message = new JsonObject().put("test", "message");
+        Async async = context.async();
         sendSuccessfulPOSTMessage(context, client, message).onComplete(id -> {
             context.assertEquals(1, server.getMessages().getNumberOfMessages());
             context.assertEquals(message, server.getMessages().getMessage(id.result()));
+            async.complete();
         });
+        async.awaitSuccess();
+    }
+
+    @Test
+    public void TestSuccessfulMessageSkipsAddingToDatabase(final TestContext context) {
+        setUpApiServer(context);
+        server.getController().getConfiguration().setDoesProcessRequest(false);
+        WebClient client = WebClient.create(this.vertx);
+
+        JsonObject message = new JsonObject().put("test", "message");
+        Async async = context.async();
+        sendSuccessfulPOSTMessage(context, client, message).onComplete(id -> {
+            context.assertEquals(0, server.getMessages().getNumberOfMessages());
+            async.awaitSuccess();
+        });
+        async.complete();
     }
 
     @Test

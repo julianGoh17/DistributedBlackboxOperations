@@ -20,14 +20,26 @@ public class TestServerComponents {
     public ServerConfiguration configuration;
     public AtomicReference<String> deploymentID = new AtomicReference<>();
 
-    public static final String CORRECT_TEST_JAR_PATH = String.format("%s/../zookeeper/target/zookeeper-1.0-SNAPSHOT-jar-with-dependencies.jar", System.getProperty("user.dir"));
-    public static final String PACKAGE_NAME = "io.julian.ZookeeperAlgorithm";
+    public static final String ZOOKEEPER_TEST_JAR_PATH = String.format("%s/../zookeeper/target/zookeeper-1.0-SNAPSHOT-jar-with-dependencies.jar", System.getProperty("user.dir"));
+    public static final String ZOOKEEPER_PACKAGE_NAME = "io.julian.ZookeeperAlgorithm";
 
-    protected void setUpServer(final TestContext context, final Vertx vertx, final ServerConfiguration configuration) {
+    public static final String BASIC_SERVER_TEST_JAR_PATH = String.format("%s/../test/target/test-1.0-SNAPSHOT-jar-with-dependencies.jar", System.getProperty("user.dir"));
+    public static final String BASIC_SERVER_PACKAGE_NAME = "io.julian.ExampleDistributedAlgorithm";
+
+    protected void setUpZookeeperServer(final TestContext context, final Vertx vertx, final ServerConfiguration configuration) {
+        setUpServer(context, vertx, configuration, ZOOKEEPER_TEST_JAR_PATH, ZOOKEEPER_PACKAGE_NAME);
+    }
+
+    protected void setUpBasicServer(final TestContext context, final Vertx vertx, final ServerConfiguration configuration) {
+        setUpServer(context, vertx, configuration, BASIC_SERVER_TEST_JAR_PATH, BASIC_SERVER_PACKAGE_NAME);
+    }
+
+    protected void setUpServer(final TestContext context, final Vertx vertx, final ServerConfiguration configuration, final String testJar, final String serverPackage) {
         server = new Server();
         Async async = context.async();
         server.getConfiguration().setServerPort(configuration.getPort());
         server.getConfiguration().setServerHost(configuration.getHost());
+        server.getConfiguration().setDoesProcessRequest(false);
         api = vertx.createHttpServer(new HttpServerOptions()
             .setPort(configuration.getPort())
             .setHost(configuration.getHost()));
@@ -35,7 +47,7 @@ public class TestServerComponents {
 
         CompositeFuture.all(
             server.startServer(vertx, System.getProperty("user.dir") + File.separator + ".." + File.separator + "server" + File.separator + Configuration.DEFAULT_OPENAPI_SPEC_LOCATION).future(),
-            server.deployDistributedAlgorithmVerticle(server.getController(), vertx, new DistributedAlgorithmSettings(true, true, CORRECT_TEST_JAR_PATH, PACKAGE_NAME))
+            server.deployDistributedAlgorithmVerticle(server.getController(), vertx, new DistributedAlgorithmSettings(true, true, testJar, serverPackage))
         )
             .onComplete(context.asyncAssertSuccess(compositeFuture -> {
                 deploymentID.set(compositeFuture.resultAt(1));

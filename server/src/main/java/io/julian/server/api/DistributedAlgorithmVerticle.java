@@ -22,7 +22,7 @@ public class DistributedAlgorithmVerticle extends AbstractVerticle {
     @Override
     public void start() {
         log.traceEntry();
-        log.info(String.format("Algorithm Verticle '%s' Has Started", ALGORITHM_VERTICLE_ADDRESS));
+        log.info(String.format("Algorithm Verticle '%s-%d' Has Started", ALGORITHM_VERTICLE_ADDRESS, verticleNumber));
         vertx.eventBus().consumer(formatAddress(COORDINATE_MESSAGE_POSTFIX), v -> algorithm.actOnCoordinateMessage());
         vertx.eventBus().consumer(formatAddress(CLIENT_MESSAGE_POSTFIX), v -> algorithm.actOnInitialMessage());
         log.traceExit();

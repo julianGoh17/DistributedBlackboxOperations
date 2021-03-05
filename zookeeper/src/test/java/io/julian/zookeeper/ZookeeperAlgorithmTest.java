@@ -6,6 +6,7 @@ import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.coordination.CoordinationMetadata;
+import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.models.CandidateInformation;
 import io.julian.zookeeper.models.ShortenedExchange;
 import io.vertx.core.Vertx;
@@ -31,5 +32,23 @@ public class ZookeeperAlgorithmTest {
         for (String key : map.keySet()) {
             Assert.assertEquals(map.get(key), algorithm.getMessageClass(new CoordinationMetadata(HTTPRequest.UNKNOWN, null, key)));
         }
+    }
+
+    @Test
+    public void TestGenerateRandomNumberWithManyDigits() {
+        ZookeeperAlgorithm algorithm = new ZookeeperAlgorithm(new Controller(new Configuration()), new MessageStore(), Vertx.vertx());
+        long manyDigitNumber = algorithm.generateCandidateNumber(0);
+
+        Assert.assertNotEquals(manyDigitNumber, algorithm.generateCandidateNumber(0));
+        Assert.assertTrue(manyDigitNumber > 0);
+    }
+
+    @Test
+    public void TestInitializeCandidateRegistry() {
+        ZookeeperAlgorithm algorithm = new ZookeeperAlgorithm(new Controller(new Configuration()), new MessageStore(), Vertx.vertx());
+        CandidateInformationRegistry registry = algorithm.initializeCandidateInformationRegistry(new Configuration(), 1);
+        Assert.assertEquals(1, registry.getCandidateNumberAndInformationMap().size());
+        Assert.assertEquals(Configuration.DEFAULT_SERVER_HOST, registry.getCandidateNumberAndInformationMap().get(1L).getHost());
+        Assert.assertEquals(Configuration.DEFAULT_SERVER_PORT, registry.getCandidateNumberAndInformationMap().get(1L).getPort());
     }
 }

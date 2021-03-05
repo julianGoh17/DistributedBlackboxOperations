@@ -59,7 +59,7 @@ public class State {
         log.traceEntry(() -> id);
         Promise<Void> update = Promise.promise();
         AtomicInteger retries = new AtomicInteger();
-        this.vertx.setPeriodic(1000, timerID -> {
+        this.vertx.setPeriodic(500, timerID -> {
             if (doesExistOutstandingTransaction(id.getCounter())) {
                 if (retries.get() < MAX_RETRIES) {
                     log.info(String.format("Loop '%d' retried '%d' time(s) for outstanding transactions to complete", timerID, retries.get() + 1));
@@ -79,8 +79,10 @@ public class State {
                         vertx.cancelTimer(timerID);
                     }
                     if (HTTPRequest.POST.equals(message.getRequest())) {
+                        log.info("Processing POST state update");
                         messageStore.addMessageToServer(message.getMessageId(), message.getMessage());
                     } else {
+                        log.info("Processing DELETE state update");
                         messageStore.deleteMessageFromServer(message.getMessageId());
                     }
                     setLastAcceptedIndex(index);

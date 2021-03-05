@@ -1,17 +1,20 @@
 package io.julian;
 
 import io.julian.server.api.DistributedAlgorithm;
+import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.election.BroadcastCandidateInformationHandler;
+import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.models.CandidateInformation;
 import io.julian.zookeeper.models.ShortenedExchange;
 import io.julian.zookeeper.write.FollowerWriteHandler;
 import io.julian.zookeeper.write.LeaderWriteHandler;
+import io.julian.zookeeper.write.WriteHandler;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -20,14 +23,20 @@ import java.util.Optional;
 
 public class ZookeeperAlgorithm extends DistributedAlgorithm {
     private final Logger log = LogManager.getLogger(ZookeeperAlgorithm.class);
+    private final CandidateInformationRegistry registry;
     private final LeadershipElectionHandler electionHandler;
+    private final WriteHandler writeHandler;
     private boolean hasNotBroadcast = true;
 
     public ZookeeperAlgorithm(final Controller controller, final MessageStore messageStore, final Vertx vertx) {
         super(controller, messageStore, vertx);
-        electionHandler = new LeadershipElectionHandler(controller.getConfiguration(), vertx.deploymentIDs().size());
+        long candidateNumber = generateCandidateNumber(vertx.deploymentIDs().size());
+        this.registry = initializeCandidateInformationRegistry(controller.getConfiguration(), candidateNumber);
+        this.electionHandler = new LeadershipElectionHandler(candidateNumber, this.registry);
+        this.writeHandler = new WriteHandler(controller, messageStore, electionHandler.getCandidateRegistry(), getClient(), getRegistryManager(), vertx);
     }
 
+    // To start simulation, will send a coordination message to do candidate broadcast.
     @Override
     public void actOnCoordinateMessage() {
         log.traceEntry();
@@ -36,14 +45,22 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
             Class messageClass = getMessageClass(message.getMetadata());
             if (messageClass == ShortenedExchange.class) {
                 log.info("Received state update but not doing anything yet");
+                this.writeHandler.handleCoordinationMessage(message);
             } else {
                 addCandidateInformation(message);
             }
         } else {
-            log.info("Ignoring as currently have not implemented write");
+            log.info("Received state update");
             broadcastCandidateNumber();
         }
         updateLeader();
+        log.traceExit();
+    }
+
+    @Override
+    public void actOnInitialMessage() {
+        log.traceEntry();
+        writeHandler.handleClientMessage(getClientMessage());
         log.traceExit();
     }
 
@@ -77,18 +94,12 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
      */
     private void updateLeader() {
         log.traceEntry();
-        if (electionHandler.canUpdateLeader(registryManager)) {
+        if (electionHandler.canUpdateLeader(registryManager) && controller.getLabel().equals("")) {
             log.info("Updating leader of servers");
             electionHandler.updateLeader(registryManager, controller);
         } else {
             log.info("Cannot update leader as not all candidate information have been received");
         }
-        log.traceExit();
-    }
-
-    @Override
-    public void actOnInitialMessage() {
-        log.traceEntry();
         log.traceExit();
     }
 
@@ -105,5 +116,30 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
                 return log.traceExit(ShortenedExchange.class);
         }
         return log.traceExit(Object.class);
+    }
+
+    /**
+     * Exposed For Testing
+     * Generates a random candidate number with many digits which will be used to determine the leadership of a server
+     * @return candidate number
+     */
+    public long generateCandidateNumber(final int offset) {
+        log.traceEntry();
+        log.info("Generating random candidate number");
+        return log.traceExit((long) (Math.random() * Math.pow(10, 10) + offset));
+    }
+
+    /**
+     * Initializes the candidate registry with the current server's candidate information stored inside
+     * @param configuration current server configuration
+     * @param candidateNumber current server candidate number
+     * @return An initialized candidate registry
+     */
+    public CandidateInformationRegistry initializeCandidateInformationRegistry(final Configuration configuration, final long candidateNumber) {
+        log.traceEntry(() -> configuration, () -> candidateNumber);
+        log.info("Initializing candidate registry");
+        CandidateInformationRegistry registry = new CandidateInformationRegistry();
+        registry.addCandidateInformation(new CandidateInformation(configuration.getServerHost(), configuration.getServerPort(), candidateNumber));
+        return log.traceExit(registry);
     }
 }

@@ -4,6 +4,7 @@ import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
+import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.zookeeper.controller.State;
@@ -39,6 +40,27 @@ public class WriteHandler {
         this.followerWrite = new FollowerWriteHandler(registry, client);
     }
 
+    public Future<Void> handleCoordinationMessage(final CoordinationMessage message) {
+        log.traceEntry(() -> message);
+        if (controller.getLabel().equals(LeadershipElectionHandler.LEADER_LABEL)) {
+            log.info("WriteHandler handling coordination message as leader");
+            ClientMessage clientMessage = ClientMessage.fromJson(message.getMessage());
+            if (HTTPRequest.POST.equals(message.getMetadata().getRequest())) {
+                return log.traceExit(initialProposalUpdate(clientMessage));
+            }
+            ShortenedExchange exchange = message.getDefinition() != null ? message.getDefinition().mapTo(ShortenedExchange.class) : null;
+            return log.traceExit(addAcknowledgementAndAttemptToBroadcastCommit(exchange.getTransactionID()));
+        }
+        log.info("WriteHandler handling coordination message as follower");
+        return log.traceExit(acknowledgeLeader(message));
+    }
+
+    public Future<Void> handleClientMessage(final ClientMessage message) {
+        log.traceEntry(() -> message);
+        log.info("Broadcasting update to followers");
+        return log.traceExit(initialProposalUpdate(message));
+    }
+
     /*
      * Follower Methods
      */
@@ -62,14 +84,13 @@ public class WriteHandler {
     /*
      * Leader Methods
      */
-
     public Future<Void> initialProposalUpdate(final ClientMessage message) {
         log.traceEntry(() -> message);
         final Zxid id = new Zxid(leaderEpoch.get(), counter.getAndIncrement());
         log.info(String.format("Adding proposal %s to history and broadcasting proposal", id));
-        state.addProposal(new Proposal(message, id));
-        return log.traceExit(state.processStateUpdate(id)
-            .compose(v -> leaderWrite.broadcastInitialProposal(message, id)));
+        return log.traceExit(state.addProposal(new Proposal(message, id))
+            .compose(v -> state.processStateUpdate(id))
+            .compose(v2 -> leaderWrite.broadcastInitialProposal(message, id)));
     }
 
     public Future<Void> addAcknowledgementAndAttemptToBroadcastCommit(final Zxid id) {
@@ -115,5 +136,10 @@ public class WriteHandler {
     public int getMajority(final CandidateInformationRegistry registry) {
         log.traceEntry();
         return log.traceExit(registry.getCandidateNumberAndInformationMap().size() / 2 + 1);
+    }
+
+    public Controller getController() {
+        log.traceEntry();
+        return log.traceExit(controller);
     }
 }

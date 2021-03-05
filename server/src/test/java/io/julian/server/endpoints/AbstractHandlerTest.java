@@ -122,13 +122,13 @@ public abstract class AbstractHandlerTest {
             });
     }
 
-    protected Future<String> sendSuccessfulDELETEMessage(final TestContext context, final WebClient client, final String messageId) {
+    protected Future<String> sendSuccessfulDELETEMessage(final TestContext context, final WebClient client, final String messageId, final boolean expectMessage) {
         Promise<String> completed = Promise.promise();
         sendDELETEMessage(context, client, messageId)
             .compose(res -> {
                 context.assertEquals(200, res.statusCode());
                 context.assertEquals(new MessageIDResponse(messageId).toJson().encodePrettily(), res.bodyAsJsonObject().encodePrettily());
-                context.assertFalse(server.getMessages().hasUUID(messageId));
+                context.assertEquals(expectMessage, server.getMessages().hasUUID(messageId));
                 completed.complete(messageId);
                 return Future.succeededFuture();
             });

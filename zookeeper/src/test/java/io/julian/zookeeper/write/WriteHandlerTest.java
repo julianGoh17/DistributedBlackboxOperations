@@ -10,6 +10,7 @@ import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.AbstractServerBase;
 import io.julian.zookeeper.TestServerComponents;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
+import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.models.CandidateInformation;
 import io.julian.zookeeper.models.MessagePhase;
 import io.julian.zookeeper.models.Proposal;
@@ -38,7 +39,7 @@ public class WriteHandlerTest extends AbstractServerBase {
 
     @Test
     public void TestInitialProposalUpdate(final TestContext context) {
-        TestServerComponents server = setUpApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
         WriteHandler handler = createWriteHandler();
 
         Async async = context.async();
@@ -78,8 +79,8 @@ public class WriteHandlerTest extends AbstractServerBase {
 
     @Test
     public void TestAddAcknowledgementAndAttemptToBroadcastCommitDoesNotBroadcastWhenNotMajority(final TestContext context) {
-        TestServerComponents server = setUpApiServer(context, DEFAULT_SEVER_CONFIG);
-        TestServerComponents server2 = setUpApiServer(context, SECOND_SERVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server2 = setUpBasicApiServer(context, SECOND_SERVER_CONFIG);
 
         CandidateInformationRegistry registry = createTestCandidateInformationRegistry();
         registry.addCandidateInformation(new CandidateInformation(SECOND_SERVER_CONFIG.getHost(), SECOND_SERVER_CONFIG.getPort(), 1234));
@@ -106,7 +107,7 @@ public class WriteHandlerTest extends AbstractServerBase {
 
     @Test
     public void TestAddAcknowledgementAndAttemptToBroadcastCommitDoesNotBroadcastWhenMajority(final TestContext context) {
-        TestServerComponents server = setUpApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
 
         WriteHandler handler = createWriteHandler();
         handler.getProposalTracker().addAcknowledgedProposalTracker(ID);
@@ -129,7 +130,7 @@ public class WriteHandlerTest extends AbstractServerBase {
 
     @Test
     public void TestAcknowledgeLeaderWhenAck(final TestContext context) {
-        TestServerComponents server = setUpApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
         WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
 
         Async async = context.async();
@@ -145,7 +146,7 @@ public class WriteHandlerTest extends AbstractServerBase {
 
     @Test
     public void TestAcknowledgeLeaderWhenCommit(final TestContext context) {
-        TestServerComponents server = setUpApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
         WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
         handler.getState().addProposal(new Proposal(POST_MESSAGE, ID));
         Async async = context.async();
@@ -155,6 +156,93 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(1, handler.getState().getMessageStore().getNumberOfMessages());
                 async.complete();
             }));
+        async.awaitSuccess();
+        tearDownServer(context, server);
+    }
+
+    @Test
+    public void TestHandleCoordinationMessageAsLeaderBroadcastsUpdate(final TestContext context) {
+        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        handler.getController().setLabel(LeadershipElectionHandler.LEADER_LABEL);
+
+        Async async = context.async();
+        handler.handleCoordinationMessage(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.POST), POST_MESSAGE.toJson(), null))
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertEquals(1, handler.getState().getHistory().size());
+                context.assertEquals(1, handler.getProposalTracker().getAcknowledgedProposals().size());
+                context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
+                context.assertEquals(1, handler.getState().getMessageStore().getNumberOfMessages());
+                context.assertEquals(0, handler.getLeaderEpoch());
+                context.assertEquals(1, handler.getCounter());
+                async.complete();
+            }));
+
+        async.awaitSuccess();
+        tearDownServer(context, server);
+    }
+
+    @Test
+    public void TestHandleCoordinationMessageAsLeaderBroadcastsCommit(final TestContext context) {
+        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        handler.getController().setLabel(LeadershipElectionHandler.LEADER_LABEL);
+
+        Async async = context.async();
+        handler.handleCoordinationMessage(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN), POST_MESSAGE.toJson(), new ShortenedExchange(MessagePhase.COMMIT, new Zxid(0, 0)).toJson()))
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertEquals(0, handler.getState().getHistory().size());
+                context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
+                context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
+                context.assertEquals(0, handler.getState().getMessageStore().getNumberOfMessages());
+                context.assertEquals(0, handler.getLeaderEpoch());
+                context.assertEquals(0, handler.getCounter());
+                async.complete();
+            }));
+
+        async.awaitSuccess();
+        tearDownServer(context, server);
+    }
+
+    @Test
+    public void TestHandleCoordinationMessageAsFollowerBroadcastsCommit(final TestContext context) {
+        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        handler.getController().setLabel(LeadershipElectionHandler.FOLLOWER_LABEL);
+
+        Async async = context.async();
+        handler.handleCoordinationMessage(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN), POST_MESSAGE.toJson(), new ShortenedExchange(MessagePhase.ACK, new Zxid(0, 0)).toJson()))
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertEquals(1, handler.getState().getHistory().size());
+                context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
+                context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
+                context.assertEquals(0, handler.getState().getMessageStore().getNumberOfMessages());
+                context.assertEquals(0, handler.getLeaderEpoch());
+                context.assertEquals(0, handler.getCounter());
+                async.complete();
+            }));
+
+        async.awaitSuccess();
+        tearDownServer(context, server);
+    }
+
+    @Test
+    public void TestHandleClientMessageAsFollowerBroadcastsAcknowledgements(final TestContext context) {
+        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        handler.getController().setLabel(LeadershipElectionHandler.FOLLOWER_LABEL);
+        Async async = context.async();
+        handler.handleClientMessage(POST_MESSAGE)
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertEquals(1, handler.getState().getHistory().size());
+                context.assertEquals(1, handler.getProposalTracker().getAcknowledgedProposals().size());
+                context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
+                context.assertEquals(1, handler.getState().getMessageStore().getNumberOfMessages());
+                context.assertEquals(0, handler.getLeaderEpoch());
+                context.assertEquals(1, handler.getCounter());
+                async.complete();
+            }));
+
         async.awaitSuccess();
         tearDownServer(context, server);
     }

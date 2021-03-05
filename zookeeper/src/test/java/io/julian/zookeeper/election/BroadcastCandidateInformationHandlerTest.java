@@ -17,7 +17,7 @@ import org.junit.Test;
 public class BroadcastCandidateInformationHandlerTest extends AbstractServerBase {
     @Test
     public void TestBroadCastHandlerCanSendMessage(final TestContext context) {
-        TestServerComponents server = setUpApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
         BroadcastCandidateInformationHandler handler = new BroadcastCandidateInformationHandler();
         RegistryManager manager = createTestRegistryManager();
         ServerClient client = createServerClient();

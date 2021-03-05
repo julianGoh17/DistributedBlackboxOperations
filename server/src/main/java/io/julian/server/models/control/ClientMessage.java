@@ -51,7 +51,9 @@ public class ClientMessage {
             .map(obj -> obj.getJsonObject(MESSAGE_KEY))
             .orElse(null);
 
-        String originalId = object.getString(MESSAGE_ID_KEY);
+        String originalId = Optional.ofNullable(object)
+            .map(obj -> obj.getString(MESSAGE_ID_KEY))
+            .orElse(null);
 
         return log.traceExit(new ClientMessage(request, message, originalId));
     }

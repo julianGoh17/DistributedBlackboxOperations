@@ -23,7 +23,7 @@ public class FollowerWriterHandlerTest extends AbstractServerBase {
 
     @Test
     public void TestAcknowledgeProposalToLeaderIsSuccessful(final TestContext context) {
-        TestServerComponents server = setUpApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
         server.server.getController().setLabel(LeadershipElectionHandler.LEADER_LABEL);
         FollowerWriteHandler writeHandler = createFollowerWriteHandler();
 
@@ -37,7 +37,7 @@ public class FollowerWriterHandlerTest extends AbstractServerBase {
 
     @Test
     public void TestAcknowledgeCommitToLeaderIsSuccessful(final TestContext context) {
-        TestServerComponents server = setUpApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
         server.server.getController().setLabel(LeadershipElectionHandler.LEADER_LABEL);
         FollowerWriteHandler writeHandler = createFollowerWriteHandler();
 

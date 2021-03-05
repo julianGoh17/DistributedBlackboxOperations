@@ -26,7 +26,7 @@ public class LeaderWriteHandlerTest extends AbstractServerBase {
 
     @Test
     public void TestBroadcastInitialProposalIsSuccessful(final TestContext context) {
-        TestServerComponents server = setUpApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
         RegistryManager manager = createTestRegistryManager();
         LeaderWriteHandler handler = createWriteHandler(manager);
 
@@ -55,7 +55,7 @@ public class LeaderWriteHandlerTest extends AbstractServerBase {
 
     @Test
     public void TestBroadcastCommitIsSuccessful(final TestContext context) {
-        TestServerComponents server = setUpApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
         RegistryManager manager = createTestRegistryManager();
         LeaderWriteHandler handler = createWriteHandler(manager);
 

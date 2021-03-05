@@ -12,6 +12,7 @@ public class ConfigurationTest {
         Assert.assertEquals(Configuration.DEFAULT_OPENAPI_SPEC_LOCATION, configuration.getOpenapiSpecLocation());
         Assert.assertEquals("", configuration.getJarFilePath());
         Assert.assertEquals("", configuration.getPackageName());
+        Assert.assertEquals(Configuration.DEFAULT_DOES_PROCESS_REQUEST, configuration.doesProcessRequest());
     }
 
     @Test
@@ -28,17 +29,20 @@ public class ConfigurationTest {
         String openApiPath = "random/path";
         String jarFilePath = "jar.file";
         String packageName = "io.package";
+        boolean doesProcessRequest = false;
 
         configuration.setServerHost(host);
         configuration.setServerPort(port);
         configuration.setOpenapiSpecLocation(openApiPath);
         configuration.setJarFilePath(jarFilePath);
         configuration.setPackageName(packageName);
+        configuration.setDoesProcessRequest(doesProcessRequest);
 
         Assert.assertEquals(port, configuration.getServerPort());
         Assert.assertEquals(host, configuration.getServerHost());
         Assert.assertEquals(openApiPath, configuration.getOpenapiSpecLocation());
         Assert.assertEquals(jarFilePath, configuration.getJarFilePath());
         Assert.assertEquals(packageName, configuration.getPackageName());
+        Assert.assertEquals(doesProcessRequest, configuration.doesProcessRequest());
     }
 }

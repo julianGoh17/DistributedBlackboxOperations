@@ -54,7 +54,7 @@ public abstract class DistributedAlgorithm {
      * Retrieve and remove the earliest message from the client message queue
      * @return the earliest client message
      */
-    public ClientMessage getClientMessageMessage() {
+    public ClientMessage getClientMessage() {
         log.traceEntry();
         return log.traceExit(controller.getClientMessage());
     }
