@@ -68,7 +68,8 @@ public class WriteHandler {
         final Zxid id = new Zxid(leaderEpoch.get(), counter.getAndIncrement());
         log.info(String.format("Adding proposal %s to history and broadcasting proposal", id));
         state.addProposal(new Proposal(message, id));
-        return log.traceExit(leaderWrite.broadcastInitialProposal(message, id));
+        return log.traceExit(state.processStateUpdate(id)
+            .compose(v -> leaderWrite.broadcastInitialProposal(message, id)));
     }
 
     public Future<Void> addAcknowledgementAndAttemptToBroadcastCommit(final Zxid id) {

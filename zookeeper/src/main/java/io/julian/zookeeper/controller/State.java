@@ -72,7 +72,8 @@ public class State {
                 }
             } else {
                 try {
-                    ClientMessage message = retrieveStateUpdate(id);
+                    int index = retrieveStateUpdateIndex(id);
+                    ClientMessage message = retrieveStateUpdate(index);
                     if (message == null) {
                         update.fail(String.format("State update with %s does not exist", id.toString()));
                         vertx.cancelTimer(timerID);
@@ -82,6 +83,7 @@ public class State {
                     } else {
                         messageStore.deleteMessageFromServer(message.getMessageId());
                     }
+                    setLastAcceptedIndex(index);
                     update.complete();
                 } catch (SameIDException | NoIDException e) {
                     log.info(String.format("Couldn't process state update %s", id.toString()));
@@ -94,18 +96,22 @@ public class State {
         return log.traceExit(update.future());
     }
 
-    public ClientMessage retrieveStateUpdate(final Zxid id) {
+    public int retrieveStateUpdateIndex(final Zxid id) {
         log.traceEntry(() -> id);
         log.info(String.format("Retrieving state update with %s id", id.toString()));
         for (int i = lastAcceptedIndex.get(); i < history.size(); i++) {
             if (history.get(i).getTransactionId().equals(id)) {
                 log.info(String.format("Successfully retrieved state update with %s id", id.toString()));
-                return log.traceExit(history.get(i).getNewState());
+                return log.traceExit(i);
             }
         }
         log.info(String.format("Could not find state update with %s id", id.toString()));
-        log.traceExit();
-        return null;
+        return log.traceExit(-1);
+    }
+
+    public ClientMessage retrieveStateUpdate(final int i) {
+        log.traceEntry(() -> i);
+        return log.traceExit(history.get(i).getNewState());
     }
 
     public boolean doesExistOutstandingTransaction(final int nextCounter) {
@@ -121,14 +127,14 @@ public class State {
         return log.traceExit(false);
     }
 
-    public void setLastAcceptedIndex(final int epoch) {
-        log.traceEntry(() -> epoch);
-        if (lastAcceptedIndex.get() < epoch) {
-            log.info(String.format("Setting last accepted index to '%d'", epoch));
-            lastAcceptedIndex.set(epoch);
+    public void setLastAcceptedIndex(final int index) {
+        log.traceEntry(() -> index);
+        if (lastAcceptedIndex.get() < index) {
+            log.info(String.format("Setting last accepted index to '%d'", index));
+            lastAcceptedIndex.set(index);
         } else {
             log.info(String.format("Skipping setting last accepted index to '%d' as current index '%s' is higher",
-                epoch, lastAcceptedIndex.get()));
+                index, lastAcceptedIndex.get()));
         }
         log.traceExit();
     }

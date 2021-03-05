@@ -44,11 +44,12 @@ public class WriteHandlerTest extends AbstractServerBase {
         Async async = context.async();
         handler.initialProposalUpdate(POST_MESSAGE)
             .onComplete(context.asyncAssertSuccess(res -> {
-                Assert.assertEquals(1, handler.getState().getHistory().size());
-                Assert.assertEquals(1, handler.getProposalTracker().getAcknowledgedProposals().size());
-                Assert.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
-                Assert.assertEquals(0, handler.getLeaderEpoch());
-                Assert.assertEquals(1, handler.getCounter());
+                context.assertEquals(1, handler.getState().getHistory().size());
+                context.assertEquals(1, handler.getProposalTracker().getAcknowledgedProposals().size());
+                context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
+                context.assertEquals(1, handler.getState().getMessageStore().getNumberOfMessages());
+                context.assertEquals(0, handler.getLeaderEpoch());
+                context.assertEquals(1, handler.getCounter());
                 async.complete();
             }));
 
@@ -63,12 +64,12 @@ public class WriteHandlerTest extends AbstractServerBase {
         Async async = context.async();
         handler.initialProposalUpdate(POST_MESSAGE)
             .onComplete(context.asyncAssertFailure(cause -> {
-                Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
-                Assert.assertEquals(1, handler.getState().getHistory().size());
-                Assert.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
-                Assert.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
-                Assert.assertEquals(0, handler.getLeaderEpoch());
-                Assert.assertEquals(1, handler.getCounter());
+                context.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                context.assertEquals(1, handler.getState().getHistory().size());
+                context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
+                context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
+                context.assertEquals(0, handler.getLeaderEpoch());
+                context.assertEquals(1, handler.getCounter());
                 async.complete();
             }));
 
@@ -90,11 +91,11 @@ public class WriteHandlerTest extends AbstractServerBase {
         Async async = context.async();
         handler.addAcknowledgementAndAttemptToBroadcastCommit(ID)
             .onComplete(context.asyncAssertSuccess(res -> {
-                Assert.assertEquals(0, handler.getState().getHistory().size());
-                Assert.assertEquals(1, handler.getProposalTracker().getAcknowledgedProposals().size());
-                Assert.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
-                Assert.assertEquals(0, handler.getLeaderEpoch());
-                Assert.assertEquals(0, handler.getCounter());
+                context.assertEquals(0, handler.getState().getHistory().size());
+                context.assertEquals(1, handler.getProposalTracker().getAcknowledgedProposals().size());
+                context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
+                context.assertEquals(0, handler.getLeaderEpoch());
+                context.assertEquals(0, handler.getCounter());
                 async.complete();
             }));
 
@@ -114,11 +115,11 @@ public class WriteHandlerTest extends AbstractServerBase {
         Async async = context.async();
         handler.addAcknowledgementAndAttemptToBroadcastCommit(ID)
             .onComplete(context.asyncAssertSuccess(res -> {
-                Assert.assertEquals(0, handler.getState().getHistory().size());
-                Assert.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
-                Assert.assertEquals(1, handler.getProposalTracker().getCommittedProposals().size());
-                Assert.assertEquals(0, handler.getLeaderEpoch());
-                Assert.assertEquals(0, handler.getCounter());
+                context.assertEquals(0, handler.getState().getHistory().size());
+                context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
+                context.assertEquals(1, handler.getProposalTracker().getCommittedProposals().size());
+                context.assertEquals(0, handler.getLeaderEpoch());
+                context.assertEquals(0, handler.getCounter());
                 async.complete();
             }));
 

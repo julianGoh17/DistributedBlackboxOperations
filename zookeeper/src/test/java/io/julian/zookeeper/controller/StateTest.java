@@ -89,18 +89,38 @@ public class StateTest {
     }
 
     @Test
-    public void TestRetrieveStateUpdateReturnsNull() {
+    public void TestRetrieveStateUpdateIndexReturnsInvalidWhenNotFound() {
         State state = new State(vertx, new MessageStore());
-        Assert.assertNull(state.retrieveStateUpdate(ID));
+        Assert.assertEquals(-1, state.retrieveStateUpdateIndex(ID));
     }
 
     @Test
-    public void TestRetrieveStateUpdateReturnsClientMessage() {
+    public void TestRetrieveStateUpdateIndexReturnsSuccessfully(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
-        state.addProposal(new Proposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""), ID));
-        Assert.assertNotNull(state.retrieveStateUpdate(ID));
+        Async async = context.async();
+        state.addProposal(new Proposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""), ID))
+            .onComplete(context.asyncAssertSuccess(v -> {
+                Assert.assertEquals(0, state.retrieveStateUpdateIndex(ID));
+                async.complete();
+            }));
+        async.awaitSuccess();
+        Assert.assertEquals(0, state.retrieveStateUpdateIndex(ID));
     }
+
+    @Test
+    public void TestRetrieveStateUpdateReturnsClientMessage(final TestContext context) {
+        MessageStore messageStore = new MessageStore();
+        State state = new State(vertx, messageStore);
+        Async async = context.async();
+        state.addProposal(new Proposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""), ID))
+            .onComplete(context.asyncAssertSuccess(v -> {
+                Assert.assertNotNull(state.retrieveStateUpdate(0));
+                async.complete();
+            }));
+        async.awaitSuccess();
+    }
+
 
     @Test
     public void processStateUpdateTimesOut(final TestContext context) {
@@ -129,7 +149,7 @@ public class StateTest {
         Future<Void> update = state.processStateUpdate(higherID);
         Async async = context.async();
 
-        vertx.setTimer(2000, v -> state.getHistory().remove(0));
+        vertx.setTimer(500, v -> state.getHistory().remove(0));
         update.onComplete(context.asyncAssertSuccess(cause -> {
             context.assertEquals(1, messageStore.getNumberOfMessages());
             async.complete();
