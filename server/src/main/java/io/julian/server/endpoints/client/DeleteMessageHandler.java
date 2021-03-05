@@ -25,8 +25,12 @@ public class DeleteMessageHandler extends AbstractServerHandler  {
         log.info(String.format("%s deleting message with uuid '%s' from server", DeleteMessageHandler.class.getSimpleName(), messageID));
 
         if (components.messageStore.hasUUID(messageID) && messageID != null) {
-            components.messageStore.removeMessage(messageID);
-            log.info(String.format("%s successfully removed message with uuid '%s' from server", DeleteMessageHandler.class.getSimpleName(), messageID));
+            if (components.controller.getConfiguration().doesProcessRequest()) {
+                components.messageStore.removeMessage(messageID);
+                log.info(String.format("%s successfully removed message with uuid '%s' from server", DeleteMessageHandler.class.getSimpleName(), messageID));
+            } else {
+                log.info(String.format("%s skipping removing message with uuid '%s' from server as not processing requests", DeleteMessageHandler.class.getSimpleName(), messageID));
+            }
             sendResponseBack(context, 200, new MessageIDResponse(messageID).toJson());
             if (components.verticle != null) {
                 components.controller.addToClientMessageQueue(new ClientMessage(HTTPRequest.DELETE, null, messageID));

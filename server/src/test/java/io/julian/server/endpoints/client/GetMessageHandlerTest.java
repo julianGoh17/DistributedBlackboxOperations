@@ -5,6 +5,7 @@ import io.julian.server.endpoints.AbstractHandlerTest;
 import io.julian.server.models.ServerStatus;
 import io.julian.server.models.response.ErrorResponse;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
 import org.junit.Test;
@@ -34,6 +35,7 @@ public class GetMessageHandlerTest extends AbstractHandlerTest {
         setUpApiServer(context);
         WebClient client = WebClient.create(this.vertx);
 
+        Async async = context.async();
         client
             .get(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, CLIENT_URI)
             .send(context.asyncAssertSuccess(res -> {
@@ -41,7 +43,9 @@ public class GetMessageHandlerTest extends AbstractHandlerTest {
                 context.assertEquals(new ErrorResponse(400,
                         new Exception("Error during validation of request. Parameter \"messageId\" inside query not found")).toJson().encodePrettily(),
                     res.bodyAsJsonObject().encodePrettily());
+                async.complete();
             }));
+        async.awaitSuccess();
     }
 
     @Test

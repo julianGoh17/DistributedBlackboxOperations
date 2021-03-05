@@ -2,7 +2,6 @@ package io.julian.zookeeper.election;
 
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
-import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.zookeeper.models.CandidateInformation;
@@ -21,9 +20,9 @@ public class LeadershipElectionHandler {
     private final CandidateInformationRegistry candidateRegistry;
     private final BroadcastCandidateInformationHandler broadcastHandler;
 
-    public LeadershipElectionHandler(final Configuration configuration, final int offset) {
-        candidateNumber = generateCandidateNumber(offset);
-        candidateRegistry = initializeCandidateInformationRegistry(configuration.getServerHost(), configuration.getServerPort(), candidateNumber);
+    public LeadershipElectionHandler(final long candidateNumber, final CandidateInformationRegistry candidateRegistry) {
+        this.candidateNumber = candidateNumber;
+        this.candidateRegistry = candidateRegistry;
         broadcastHandler = new BroadcastCandidateInformationHandler();
     }
 
@@ -93,31 +92,5 @@ public class LeadershipElectionHandler {
                 });
         }
         log.traceExit();
-    }
-
-    /**
-     * Exposed For Testing
-     * Generates a random candidate number with many digits which will be used to determine the leadership of a server
-     * @return candidate number
-     */
-    public long generateCandidateNumber(final int offset) {
-        log.traceEntry();
-        log.info("Generating random candidate number");
-        return log.traceExit((long) (Math.random() * Math.pow(10, 10) + offset));
-    }
-
-    /**
-     * Initializes the candidate registry with the current server's candidate information stored inside
-     * @param host current server host
-     * @param port current server port
-     * @param candidateNumber current server candidate number
-     * @return An initialized candidate registry
-     */
-    public CandidateInformationRegistry initializeCandidateInformationRegistry(final String host, final int port, final long candidateNumber) {
-        log.traceEntry(() -> candidateNumber);
-        log.info("Initializing candidate registry");
-        CandidateInformationRegistry registry = new CandidateInformationRegistry();
-        registry.addCandidateInformation(new CandidateInformation(host, port, candidateNumber));
-        return log.traceExit(registry);
     }
 }

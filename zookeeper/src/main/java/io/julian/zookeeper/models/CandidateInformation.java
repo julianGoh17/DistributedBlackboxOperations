@@ -16,7 +16,6 @@ public class CandidateInformation {
     private final long candidateNumber;
 
     @JsonCreator
-
     public CandidateInformation(@JsonProperty(HOST_KEY) final String host,
                                 @JsonProperty(PORT_KEY) final int port,
                                 @JsonProperty(CANDIDATE_NUMBER_KEY) final long candidateNumber) {

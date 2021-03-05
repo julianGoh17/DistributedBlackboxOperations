@@ -49,6 +49,12 @@ public class CoordinationMessage {
         this.definition = definition;
     }
 
+    public CoordinationMessage(final HTTPRequest request, final ClientMessage message, final JsonObject definition) {
+        this.metadata = new CoordinationMetadata(request);
+        this.message = message.getMessage();
+        this.definition = definition;
+    }
+
     @JsonCreator
     public static CoordinationMessage fromJson(final JsonObject jsonObject) throws DecodeException  {
         log.traceEntry(() -> jsonObject);

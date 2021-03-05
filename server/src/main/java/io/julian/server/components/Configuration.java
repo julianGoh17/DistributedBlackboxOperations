@@ -21,6 +21,10 @@ public class Configuration {
     public static final int DEFAULT_SERVER_PORT = 8888;
     private int port;
 
+    public static final String DOES_PROCESS_REQUEST_ENV = "DOES_PROCESS_REQUEST";
+    public static final boolean DEFAULT_DOES_PROCESS_REQUEST = true;
+    private boolean doesProcessRequest;
+
     public static final String JAR_FILE_PATH_ENV = "JAR_FILE_PATH";
     private String jarFilePath;
     public static final String PACKAGE_NAME_ENV = "PACKAGE_NAME";
@@ -32,6 +36,7 @@ public class Configuration {
         this.port = getOrDefault(SERVER_PORT_ENV, DEFAULT_SERVER_PORT);
         this.jarFilePath = getOrDefault(JAR_FILE_PATH_ENV, "");
         this.packageName = getOrDefault(JAR_FILE_PATH_ENV, "");
+        this.doesProcessRequest = getOrDefault(DOES_PROCESS_REQUEST_ENV, DEFAULT_DOES_PROCESS_REQUEST);
     }
 
     public int getServerPort() {
@@ -94,6 +99,17 @@ public class Configuration {
         log.traceExit();
     }
 
+    public boolean doesProcessRequest() {
+        log.traceEntry();
+        return log.traceExit(doesProcessRequest);
+    }
+
+    public void setDoesProcessRequest(final boolean doesProcessRequest) {
+        log.traceEntry(() -> doesProcessRequest);
+        this.doesProcessRequest = doesProcessRequest;
+        log.traceExit();
+    }
+
     public boolean isPackageNameEnvInstantiated() {
         log.traceEntry();
         return log.traceExit(isVariableInstantiated(PACKAGE_NAME_ENV));
@@ -120,6 +136,13 @@ public class Configuration {
         } catch (NumberFormatException e) {
             return log.traceExit(defaultVal);
         }
+    }
+
+    public static boolean getOrDefault(final String key, final boolean defaultVal) {
+        log.traceEntry(() -> key, () -> defaultVal);
+        return log.traceExit(Optional.ofNullable(System.getenv(key))
+            .map(Boolean::parseBoolean)
+            .orElse(DEFAULT_DOES_PROCESS_REQUEST));
     }
 
     public static boolean isVariableInstantiated(final String key) {

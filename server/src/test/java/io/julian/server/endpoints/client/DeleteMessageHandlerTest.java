@@ -6,6 +6,7 @@ import io.julian.server.models.ServerStatus;
 import io.julian.server.models.response.ErrorResponse;
 import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
 import org.junit.Test;
@@ -18,14 +19,37 @@ public class DeleteMessageHandlerTest extends AbstractServerHandlerTest {
         setUpApiServer(context);
         WebClient client = WebClient.create(this.vertx);
 
+        Async async = context.async();
         sendSuccessfulPOSTMessage(context, client, TEST_MESSAGE)
             .compose(id -> sendSuccessfulGETMessage(context, client, id, TEST_MESSAGE))
-            .compose(id -> sendSuccessfulDELETEMessage(context, client, id))
+            .compose(id -> sendSuccessfulDELETEMessage(context, client, id, false))
             .compose(id -> {
                 sendUnsuccessfulGETMessage(context, client, id,
                     new Exception(String.format("Could not find entry for uuid '%s'", id)), 404);
+                async.complete();
                 return Future.succeededFuture();
             });
+        async.awaitSuccess();
+    }
+
+    @Test
+    public void TestSuccessfulSkipsDeleteMessage(final TestContext context) {
+        setUpApiServer(context);
+        WebClient client = WebClient.create(this.vertx);
+
+        Async async = context.async();
+        sendSuccessfulPOSTMessage(context, client, TEST_MESSAGE)
+            .compose(id -> {
+                server.getController().getConfiguration().setDoesProcessRequest(false);
+                return sendSuccessfulGETMessage(context, client, id, TEST_MESSAGE);
+            })
+            .compose(id -> sendSuccessfulDELETEMessage(context, client, id, true))
+            .compose(id -> {
+                sendSuccessfulGETMessage(context, client, id, TEST_MESSAGE);
+                async.complete();
+                return Future.succeededFuture();
+            });
+        async.awaitSuccess();
     }
 
     @Test
@@ -64,7 +88,7 @@ public class DeleteMessageHandlerTest extends AbstractServerHandlerTest {
         server.getController().setFailureChance(0);
 
         sendSuccessfulPOSTMessage(context, client, TEST_MESSAGE)
-            .compose(id -> sendSuccessfulDELETEMessage(context, client, id));
+            .compose(id -> sendSuccessfulDELETEMessage(context, client, id, false));
     }
 
     @Test

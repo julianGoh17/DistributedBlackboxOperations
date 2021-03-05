@@ -30,9 +30,13 @@ public class PostMessageHandler extends AbstractServerHandler {
         final JsonObject userMessage = Optional.ofNullable(postedMessage)
             .map(mes -> mes.getJsonObject(MESSAGE_KEY))
             .orElse(new JsonObject());
-        log.info(String.format("%s adding message to server", PostMessageHandler.class.getSimpleName()));
 
-        components.messageStore.putMessage(uuid.toString(), userMessage);
+        if (components.controller.getConfiguration().doesProcessRequest()) {
+            log.info(String.format("%s adding message to server", PostMessageHandler.class.getSimpleName()));
+            components.messageStore.putMessage(uuid.toString(), userMessage);
+        } else {
+            log.info(String.format("%s skipping adding message to server as not processing requests", PostMessageHandler.class.getSimpleName()));
+        }
 
         sendResponseBack(context, 200, new MessageIDResponse(uuid.toString()).toJson());
 

@@ -54,7 +54,7 @@ public abstract class DistributedAlgorithm {
      * Retrieve and remove the earliest message from the client message queue
      * @return the earliest client message
      */
-    public ClientMessage getClientMessageMessage() {
+    public ClientMessage getClientMessage() {
         log.traceEntry();
         return log.traceExit(controller.getClientMessage());
     }
@@ -68,14 +68,7 @@ public abstract class DistributedAlgorithm {
      */
     public void addMessageToServer(final CoordinationMessage message) throws SameIDException {
         log.traceEntry(() -> message);
-        log.info(String.format("Attempting to add message with id '%s' to server", message.getMetadata().getMessageID()));
-        if (messageStore.hasUUID(message.getMetadata().getMessageID())) {
-            SameIDException exception = new SameIDException(message.getMetadata().getMessageID());
-            log.error(String.format("Failed to add message with id '%s' to server because: %s",  message.getMetadata().getMessageID(), exception));
-            throw exception;
-        }
-        log.info(String.format("Adding message with id '%s' to server", message.getMetadata().getMessageID()));
-        messageStore.putMessage(message.getMetadata().getMessageID(), message.getMessage());
+        messageStore.addMessageToServer(message.getMetadata().getMessageID(), message.getMessage());
         log.traceExit();
     }
 
@@ -86,14 +79,7 @@ public abstract class DistributedAlgorithm {
      */
     public void deleteMessageFromServer(final CoordinationMessage message) throws NoIDException {
         log.traceEntry(() -> message);
-        log.info(String.format("Attempting to delete message with id '%s' from server", message.getMetadata().getMessageID()));
-        if (!messageStore.hasUUID(message.getMetadata().getMessageID())) {
-            NoIDException exception = new NoIDException(message.getMetadata().getMessageID());
-            log.error(String.format("Failed to delete message with id '%s' from server because: %s", message.getMetadata().getMessageID(), exception));
-            throw exception;
-        }
-        log.info(String.format("Deleting message with id '%s' from server", message.getMetadata().getMessageID()));
-        messageStore.removeMessage(message.getMetadata().getMessageID());
+        messageStore.deleteMessageFromServer(message.getMetadata().getMessageID());
         log.traceExit();
     }
 

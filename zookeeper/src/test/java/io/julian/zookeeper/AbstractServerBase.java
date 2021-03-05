@@ -16,6 +16,8 @@ public abstract class AbstractServerBase {
     protected Vertx vertx;
 
     public static final ServerConfiguration DEFAULT_SEVER_CONFIG = new ServerConfiguration(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
+    public static final ServerConfiguration SECOND_SERVER_CONFIG = new ServerConfiguration(Configuration.DEFAULT_SERVER_HOST, 9998);
+    public static final String CONNECTION_REFUSED_EXCEPTION = String.format("Connection refused: %s/127.0.0.1:%d", Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
 
     @Before
     public void before() {
@@ -27,9 +29,15 @@ public abstract class AbstractServerBase {
         this.vertx.close();
     }
 
-    protected TestServerComponents setUpApiServer(final TestContext context, final ServerConfiguration configuration) {
+    protected TestServerComponents setUpZookeeperApiServer(final TestContext context, final ServerConfiguration configuration) {
         TestServerComponents components = new TestServerComponents();
-        components.setUpServer(context, vertx, configuration);
+        components.setUpZookeeperServer(context, vertx, configuration);
+        return components;
+    }
+
+    protected TestServerComponents setUpBasicApiServer(final TestContext context, final ServerConfiguration configuration) {
+        TestServerComponents components = new TestServerComponents();
+        components.setUpBasicServer(context, vertx, configuration);
         return components;
     }
 
@@ -45,5 +53,9 @@ public abstract class AbstractServerBase {
 
     protected ServerClient createServerClient() {
         return new ServerClient(this.vertx);
+    }
+
+    protected TestClient createTestClient() {
+        return new TestClient(this.vertx);
     }
 }

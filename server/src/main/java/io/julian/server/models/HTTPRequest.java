@@ -12,13 +12,12 @@ public enum HTTPRequest {
     DELETE("DELETE"),
     UNKNOWN("UNKNOWN");
 
-
+    private final static Logger log = LogManager.getLogger(HTTPRequest.class.getName());
     private final String str;
+
     HTTPRequest(final String str) {
         this.str = str;
     }
-
-    private final static Logger log = LogManager.getLogger(HTTPRequest.class.getName());
 
     @JsonCreator
     public static HTTPRequest forValue(final String str) {
