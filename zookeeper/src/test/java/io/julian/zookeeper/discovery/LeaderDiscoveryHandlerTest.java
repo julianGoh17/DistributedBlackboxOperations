@@ -26,19 +26,19 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
     }
 
     @Test
-    public void TestProcessFollowerEpoch() {
+    public void TestProcessFollowerZXID() {
         LeaderDiscoveryHandler handler = createHandler();
-        handler.processFollowerEpoch(LOWER_ID);
+        handler.processFollowerZXID(LOWER_ID);
         Assert.assertEquals(LOWER_ID.getEpoch(), handler.getEpoch());
         Assert.assertEquals(LOWER_ID.getCounter(), handler.getCounter());
         Assert.assertEquals(1, handler.getFollowerResponses());
 
-        handler.processFollowerEpoch(HIGHER_ID);
+        handler.processFollowerZXID(HIGHER_ID);
         Assert.assertEquals(HIGHER_ID.getEpoch(), handler.getEpoch());
         Assert.assertEquals(HIGHER_ID.getCounter(), handler.getCounter());
         Assert.assertEquals(2, handler.getFollowerResponses());
 
-        handler.processFollowerEpoch(MIDDLE_ID);
+        handler.processFollowerZXID(MIDDLE_ID);
         Assert.assertEquals(HIGHER_ID.getEpoch(), handler.getEpoch());
         Assert.assertEquals(HIGHER_ID.getCounter(), handler.getCounter());
         Assert.assertEquals(3, handler.getFollowerResponses());
@@ -49,7 +49,7 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
         LeaderDiscoveryHandler handler = createHandler();
         Assert.assertFalse(handler.hasEnoughResponses());
 
-        handler.processFollowerEpoch(LOWER_ID);
+        handler.processFollowerZXID(LOWER_ID);
         Assert.assertTrue(handler.hasEnoughResponses());
     }
 
@@ -58,7 +58,7 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
         LeaderDiscoveryHandler handler = createHandler();
         Assert.assertEquals(0, handler.getState().getCounter());
         Assert.assertEquals(0, handler.getState().getLeaderEpoch());
-        handler.processFollowerEpoch(LOWER_ID);
+        handler.processFollowerZXID(LOWER_ID);
         handler.updateStateEpochAndCounter();
 
         Assert.assertEquals(LOWER_ID.getCounter(), handler.getState().getCounter());
@@ -68,8 +68,8 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
     @Test
     public void TestReset() {
         LeaderDiscoveryHandler handler = createHandler();
-        handler.processFollowerEpoch(LOWER_ID);
-        handler.processFollowerEpoch(HIGHER_ID);
+        handler.processFollowerZXID(LOWER_ID);
+        handler.processFollowerZXID(HIGHER_ID);
         Assert.assertEquals(HIGHER_ID.getEpoch(), handler.getEpoch());
         Assert.assertEquals(HIGHER_ID.getCounter(), handler.getCounter());
         Assert.assertEquals(2, handler.getFollowerResponses());
@@ -116,6 +116,6 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
     }
 
     private LeaderDiscoveryHandler createHandler() {
-        return new LeaderDiscoveryHandler(new State(vertx, new MessageStore()), createServerClient(), createTestRegistryManager());
+        return new LeaderDiscoveryHandler(new State(vertx, new MessageStore()), createTestRegistryManager(), createServerClient());
     }
 }

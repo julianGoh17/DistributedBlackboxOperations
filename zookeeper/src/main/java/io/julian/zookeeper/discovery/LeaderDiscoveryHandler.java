@@ -28,16 +28,16 @@ public class LeaderDiscoveryHandler {
 
     private final AtomicInteger followerResponses = new AtomicInteger();
     private final State state;
-    private final ServerClient client;
     private final RegistryManager manager;
+    private final ServerClient client;
 
-    public LeaderDiscoveryHandler(final State state, final ServerClient client, final RegistryManager manager) {
+    public LeaderDiscoveryHandler(final State state, final RegistryManager manager, final ServerClient client) {
         this.state = state;
-        this.client = client;
         this.manager = manager;
+        this.client = client;
     }
 
-    public void processFollowerEpoch(final Zxid id) {
+    public void processFollowerZXID(final Zxid id) {
         log.traceEntry(() -> id);
         log.info(String.format("Processing follower epoch response '%s'", id));
         followerResponses.incrementAndGet();
