@@ -39,14 +39,9 @@ public class StateTest {
         State state = new State(vertx, new MessageStore());
 
         Assert.assertEquals(0, state.getHistory().size());
-        Async async = context.async();
-        state.addProposal(Proposal.mapFrom(ProposalTest.JSON))
-            .onComplete(context.asyncAssertSuccess(res -> {
-                Assert.assertEquals(1, state.getHistory().size());
-                Assert.assertEquals(ProposalTest.JSON.encodePrettily(), state.getHistory().get(0).toJson().encodePrettily());
-                async.complete();
-            }));
-        async.awaitSuccess();
+        addProposal(context, state, Proposal.mapFrom(ProposalTest.JSON));
+        Assert.assertEquals(1, state.getHistory().size());
+        Assert.assertEquals(ProposalTest.JSON.encodePrettily(), state.getHistory().get(0).toJson().encodePrettily());
     }
 
     @Test
@@ -72,14 +67,8 @@ public class StateTest {
         int offset = 100;
         bigger.getTransactionId().setCounter(ProposalTest.COUNTER + offset);
 
-        Async async = context.async();
-        state.addProposal(smaller)
-            .compose(v -> state.addProposal(bigger))
-            .onComplete(context.asyncAssertSuccess(v -> {
-                async.complete();
-            }));
-
-        async.awaitSuccess();
+        addProposal(context, state, smaller);
+        addProposal(context, state, bigger);
 
         Assert.assertFalse(state.doesExistOutstandingTransaction(ProposalTest.COUNTER));
         Assert.assertTrue(state.doesExistOutstandingTransaction(ProposalTest.COUNTER + offset));
@@ -98,13 +87,8 @@ public class StateTest {
     public void TestRetrieveStateUpdateIndexReturnsSuccessfully(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
-        Async async = context.async();
-        state.addProposal(new Proposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""), ID))
-            .onComplete(context.asyncAssertSuccess(v -> {
-                Assert.assertEquals(0, state.retrieveStateUpdateIndex(ID));
-                async.complete();
-            }));
-        async.awaitSuccess();
+        addProposal(context, state, new Proposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""), ID));
+        Assert.assertEquals(0, state.retrieveStateUpdateIndex(ID));
         Assert.assertEquals(0, state.retrieveStateUpdateIndex(ID));
     }
 
@@ -112,21 +96,15 @@ public class StateTest {
     public void TestRetrieveStateUpdateReturnsClientMessage(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
-        Async async = context.async();
-        state.addProposal(new Proposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""), ID))
-            .onComplete(context.asyncAssertSuccess(v -> {
-                Assert.assertNotNull(state.retrieveStateUpdate(0));
-                async.complete();
-            }));
-        async.awaitSuccess();
+        addProposal(context, state, new Proposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""), ID));
+        Assert.assertNotNull(state.retrieveStateUpdate(0));
     }
-
 
     @Test
     public void processStateUpdateTimesOut(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
-        state.addProposal(new Proposal(POST_MESSAGE, ID));
+        addProposal(context, state, new Proposal(POST_MESSAGE, ID));
 
         Zxid higherID = new Zxid(EPOCH, COUNTER + 1);
         Future<Void> update = state.processStateUpdate(higherID);
@@ -142,10 +120,10 @@ public class StateTest {
     public void processStateUpdateEventuallySucceeds(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
-        state.addProposal(new Proposal(POST_MESSAGE, ID));
-
         Zxid higherID = new Zxid(EPOCH, COUNTER + 1);
-        state.addProposal(new Proposal(POST_MESSAGE, higherID));
+        addProposal(context, state, new Proposal(POST_MESSAGE, ID));
+        addProposal(context, state, new Proposal(POST_MESSAGE, higherID));
+
         Future<Void> update = state.processStateUpdate(higherID);
         Async async = context.async();
 
@@ -222,5 +200,12 @@ public class StateTest {
     @After
     public void after() {
         this.vertx.close();
+    }
+
+    private void addProposal(final TestContext context, final State state, final Proposal proposal) {
+        Async async = context.async();
+        state.addProposal(proposal)
+            .onComplete(v -> async.complete());
+        async.awaitSuccess();
     }
 }
