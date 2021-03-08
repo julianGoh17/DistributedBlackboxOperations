@@ -2,15 +2,25 @@ package io.julian.zookeeper.discovery;
 
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
+import io.julian.server.models.HTTPRequest;
+import io.julian.server.models.coordination.CoordinationMessage;
+import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.models.Zxid;
+import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class LeaderDiscoveryHandler {
+    public static final String GATHER_ZXID_TYPE = "GATHER_ZXID";
+
     private final static Logger log = LogManager.getLogger(LeadershipElectionHandler.class);
 
     private final AtomicInteger epochTracker = new AtomicInteger();
@@ -38,6 +48,24 @@ public class LeaderDiscoveryHandler {
             counterTracker.set(id.getCounter());
         }
         log.traceExit();
+    }
+
+    public Future<Void> broadcastGatherZXID() {
+        log.traceEntry();
+        Promise<Void> broadcast = Promise.promise();
+        List<Future> res = manager.getOtherServers()
+            .stream()
+            .map(configuration -> client.sendCoordinateMessageToServer(configuration, createBroadcastMessage(GATHER_ZXID_TYPE)))
+            .collect(Collectors.toList());
+
+        CompositeFuture.all(res)
+            .onSuccess(v -> broadcast.complete())
+            .onFailure(cause -> {
+                log.info(String.format("Failed to broadcast '%s'", GATHER_ZXID_TYPE));
+                log.error(cause.getMessage());
+                broadcast.fail(cause);
+            });
+        return log.traceExit(broadcast.future());
     }
 
     public void updateStateEpochAndCounter() {
@@ -80,5 +108,10 @@ public class LeaderDiscoveryHandler {
     public State getState() {
         log.traceEntry();
         return log.traceExit(this.state);
+    }
+
+    public CoordinationMessage createBroadcastMessage(final String type) {
+        log.traceEntry(() -> type);
+        return log.traceExit(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, "", type), null, null));
     }
 }

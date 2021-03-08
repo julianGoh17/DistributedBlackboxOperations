@@ -4,6 +4,8 @@ import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Configuration;
 import io.julian.server.models.control.ServerConfiguration;
+import io.julian.zookeeper.election.CandidateInformationRegistry;
+import io.julian.zookeeper.models.CandidateInformation;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -43,6 +45,15 @@ public abstract class AbstractServerBase {
 
     protected void tearDownServer(final TestContext context, final TestServerComponents components) {
         components.tearDownServer(context, vertx);
+    }
+
+    protected CandidateInformationRegistry createTestCandidateInformationRegistry(final boolean doesUpdateLeader) {
+        CandidateInformationRegistry registry = new CandidateInformationRegistry();
+        registry.addCandidateInformation(new CandidateInformation(DEFAULT_SEVER_CONFIG.getHost(), DEFAULT_SEVER_CONFIG.getPort(), 1));
+        if (doesUpdateLeader) {
+            registry.updateNextLeader();
+        }
+        return registry;
     }
 
     protected RegistryManager createTestRegistryManager() {

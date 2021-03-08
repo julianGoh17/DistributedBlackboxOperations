@@ -1,14 +1,11 @@
 package io.julian.zookeeper.write;
 
-import io.julian.server.components.Configuration;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.zookeeper.AbstractServerBase;
 import io.julian.zookeeper.TestServerComponents;
-import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
-import io.julian.zookeeper.models.CandidateInformation;
 import io.julian.zookeeper.models.MessagePhase;
 import io.julian.zookeeper.models.ShortenedExchange;
 import io.julian.zookeeper.models.Zxid;
@@ -119,14 +116,7 @@ public class FollowerWriterHandlerTest extends AbstractServerBase {
             .getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.EPOCH_KEY).intValue());
     }
 
-    private CandidateInformationRegistry createCandidateRegistry() {
-        CandidateInformationRegistry registry = new CandidateInformationRegistry();
-        registry.addCandidateInformation(new CandidateInformation(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT, 1));
-        registry.updateNextLeader();
-        return registry;
-    }
-
     private FollowerWriteHandler createFollowerWriteHandler() {
-        return new FollowerWriteHandler(createCandidateRegistry(), createServerClient());
+        return new FollowerWriteHandler(createTestCandidateInformationRegistry(true), createServerClient());
     }
 }

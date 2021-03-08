@@ -82,7 +82,7 @@ public class WriteHandlerTest extends AbstractServerBase {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
         TestServerComponents server2 = setUpBasicApiServer(context, SECOND_SERVER_CONFIG);
 
-        CandidateInformationRegistry registry = createTestCandidateInformationRegistry();
+        CandidateInformationRegistry registry = createTestCandidateInformationRegistry(false);
         registry.addCandidateInformation(new CandidateInformation(SECOND_SERVER_CONFIG.getHost(), SECOND_SERVER_CONFIG.getPort(), 1234));
 
         WriteHandler handler = createWriteHandler(registry);
@@ -131,7 +131,7 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestAcknowledgeLeaderWhenAck(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
-        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry(true));
 
         Async async = context.async();
         handler.acknowledgeLeader(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN), POST_MESSAGE.toJson(), new ShortenedExchange(MessagePhase.ACK, ID).toJson()))
@@ -147,7 +147,7 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestAcknowledgeLeaderWhenCommit(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
-        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry(false));
         handler.getState().addProposal(new Proposal(POST_MESSAGE, ID));
         Async async = context.async();
         handler.acknowledgeLeader(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN), POST_MESSAGE.toJson(), new ShortenedExchange(MessagePhase.COMMIT, ID).toJson()))
@@ -163,7 +163,7 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestHandleCoordinationMessageAsLeaderBroadcastsUpdate(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
-        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry(false));
         handler.getController().setLabel(LeadershipElectionHandler.LEADER_LABEL);
 
         Async async = context.async();
@@ -185,7 +185,7 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestHandleCoordinationMessageAsLeaderBroadcastsCommit(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
-        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry(false));
         handler.getController().setLabel(LeadershipElectionHandler.LEADER_LABEL);
 
         Async async = context.async();
@@ -207,7 +207,7 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestHandleCoordinationMessageAsFollowerBroadcastsCommit(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
-        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry(true));
         handler.getController().setLabel(LeadershipElectionHandler.FOLLOWER_LABEL);
 
         Async async = context.async();
@@ -229,7 +229,7 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestHandleClientMessageAsFollowerForwardsToLeader(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
-        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry(true));
         handler.getController().setLabel(LeadershipElectionHandler.FOLLOWER_LABEL);
         Async async = context.async();
         handler.handleClientMessage(POST_MESSAGE)
@@ -247,18 +247,11 @@ public class WriteHandlerTest extends AbstractServerBase {
         tearDownServer(context, server);
     }
 
-    private CandidateInformationRegistry createTestCandidateInformationRegistry() {
-        CandidateInformationRegistry registry = new CandidateInformationRegistry();
-        registry.addCandidateInformation(new CandidateInformation(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT, 1));
-        registry.updateNextLeader();
-        return registry;
-    }
-
     private WriteHandler createWriteHandler(final CandidateInformationRegistry candidateInformationRegistry) {
         return new WriteHandler(new Controller(new Configuration()), new MessageStore(), candidateInformationRegistry, createServerClient(), createTestRegistryManager(), vertx);
     }
 
     private WriteHandler createWriteHandler() {
-        return new WriteHandler(new Controller(new Configuration()), new MessageStore(), createTestCandidateInformationRegistry(), createServerClient(), createTestRegistryManager(), vertx);
+        return new WriteHandler(new Controller(new Configuration()), new MessageStore(), createTestCandidateInformationRegistry(false), createServerClient(), createTestRegistryManager(), vertx);
     }
 }
