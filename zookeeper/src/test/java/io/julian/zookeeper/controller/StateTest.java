@@ -35,6 +35,30 @@ public class StateTest {
     }
 
     @Test
+    public void TestInit() {
+        State state = new State(vertx, new MessageStore());
+        Assert.assertEquals(0, state.getHistory().size());
+        Assert.assertEquals(0, state.getCounter());
+        Assert.assertEquals(0, state.getLastAcceptedIndex());
+        Assert.assertEquals(0, state.getLeaderEpoch());
+        Assert.assertEquals(0, state.getMessageStore().getNumberOfMessages());
+    }
+
+    @Test
+    public void TestGetterAndSetter() {
+        State state = new State(vertx, new MessageStore());
+        int leaderEpoch = 15;
+        int counter = 1234;
+        state.setLeaderEpoch(leaderEpoch);
+        state.setCounter(counter);
+
+        Assert.assertEquals(leaderEpoch, state.getLeaderEpoch());
+        Assert.assertEquals(counter, state.getAndIncrementCounter());
+        Assert.assertEquals(counter + 1, state.getCounter());
+        Assert.assertEquals(counter + 1, state.getCounter());
+    }
+
+    @Test
     public void TestAddProposalCompletesSuccessfully(final TestContext context) {
         State state = new State(vertx, new MessageStore());
 
@@ -52,10 +76,10 @@ public class StateTest {
         int higher = 2;
         int lower = 1;
         state.setLastAcceptedIndex(higher);
-        Assert.assertEquals(higher, state.getLastAcceptedIndex());
+        Assert.assertEquals(higher + 1, state.getLastAcceptedIndex());
 
         state.setLastAcceptedIndex(lower);
-        Assert.assertEquals(higher, state.getLastAcceptedIndex());
+        Assert.assertEquals(higher + 1, state.getLastAcceptedIndex());
     }
 
     @Test

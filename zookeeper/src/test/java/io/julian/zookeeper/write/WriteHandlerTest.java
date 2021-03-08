@@ -31,8 +31,8 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestInitialization() {
         WriteHandler write = createWriteHandler();
-        Assert.assertEquals(0, write.getCounter());
-        Assert.assertEquals(0, write.getLeaderEpoch());
+        Assert.assertEquals(0, write.getState().getCounter());
+        Assert.assertEquals(0, write.getState().getLeaderEpoch());
         Assert.assertEquals(0, write.getState().getHistory().size());
         Assert.assertNotNull(write.getProposalTracker());
     }
@@ -49,8 +49,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(1, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
                 context.assertEquals(1, handler.getState().getMessageStore().getNumberOfMessages());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(1, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(1, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -69,8 +69,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(1, handler.getState().getHistory().size());
                 context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(1, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(1, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -95,8 +95,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(0, handler.getState().getHistory().size());
                 context.assertEquals(1, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(0, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(0, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -119,8 +119,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(0, handler.getState().getHistory().size());
                 context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(1, handler.getProposalTracker().getCommittedProposals().size());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(0, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(0, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -173,8 +173,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(1, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
                 context.assertEquals(1, handler.getState().getMessageStore().getNumberOfMessages());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(1, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(1, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -195,8 +195,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
                 context.assertEquals(0, handler.getState().getMessageStore().getNumberOfMessages());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(0, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(0, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -217,8 +217,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
                 context.assertEquals(0, handler.getState().getMessageStore().getNumberOfMessages());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(0, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(0, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -238,8 +238,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
                 context.assertEquals(0, handler.getState().getMessageStore().getNumberOfMessages());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(0, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(0, handler.getState().getCounter());
                 async.complete();
             }));
 

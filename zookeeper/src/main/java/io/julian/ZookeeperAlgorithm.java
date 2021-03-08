@@ -45,7 +45,7 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
         Class messageClass = getMessageClass(message.getMetadata());
         if (message.getMetadata().getRequest().equals(HTTPRequest.UNKNOWN)) {
             if (messageClass == ShortenedExchange.class) {
-                log.info("Received state update but not doing anything yet");
+                log.info("Received state update");
                 this.writeHandler.handleCoordinationMessage(message);
             } else {
                 addCandidateInformation(message);
@@ -150,5 +150,8 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
         CandidateInformationRegistry registry = new CandidateInformationRegistry();
         registry.addCandidateInformation(new CandidateInformation(configuration.getServerHost(), configuration.getServerPort(), candidateNumber));
         return log.traceExit(registry);
+    }
+
+    public static void main(final String[] args) {
     }
 }

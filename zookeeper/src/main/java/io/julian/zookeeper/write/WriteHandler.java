@@ -20,7 +20,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class WriteHandler {
     private static final Logger log = LogManager.getLogger(WriteHandler.class);
@@ -29,9 +28,6 @@ public class WriteHandler {
     private final State state;
     private final LeaderWriteHandler leaderWrite;
     private final FollowerWriteHandler followerWrite;
-
-    private final AtomicInteger leaderEpoch = new AtomicInteger();
-    private final AtomicInteger counter = new AtomicInteger();
 
     public WriteHandler(final Controller controller, final MessageStore messageStore, final CandidateInformationRegistry registry, final ServerClient client, final RegistryManager manager, final Vertx vertx) {
         this.controller = controller;
@@ -90,7 +86,7 @@ public class WriteHandler {
      */
     public Future<Void> initialProposalUpdate(final ClientMessage message) {
         log.traceEntry(() -> message);
-        final Zxid id = new Zxid(leaderEpoch.get(), counter.getAndIncrement());
+        final Zxid id = new Zxid(state.getLeaderEpoch(), state.getAndIncrementCounter());
         log.info(String.format("Adding proposal %s to history and broadcasting proposal", id));
         return log.traceExit(state.addProposal(new Proposal(message, id))
             .compose(v -> state.processStateUpdate(id))
@@ -115,16 +111,6 @@ public class WriteHandler {
     public boolean isLeader() {
         log.traceEntry();
         return log.traceExit(controller.getLabel().equals(LeadershipElectionHandler.LEADER_LABEL));
-    }
-
-    public int getLeaderEpoch() {
-        log.traceEntry();
-        return log.traceExit(leaderEpoch.get());
-    }
-
-    public int getCounter() {
-        log.traceEntry();
-        return log.traceExit(counter.get());
     }
 
     public State getState() {

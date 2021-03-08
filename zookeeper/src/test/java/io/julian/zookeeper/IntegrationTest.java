@@ -46,9 +46,11 @@ public class IntegrationTest extends AbstractServerBase {
         TestClient client = createTestClient();
         Async async = context.async();
         client.POST_MESSAGE(leader.configuration.getHost(), leader.configuration.getPort(), MESSAGE)
-            .onComplete(v -> vertx.setTimer(3000, v2 -> {
-                Assert.assertEquals(1, server1.server.getMessages().getNumberOfMessages());
-                Assert.assertEquals(1, server2.server.getMessages().getNumberOfMessages());
+            .onComplete(v -> client.POST_MESSAGE(leader.configuration.getHost(), leader.configuration.getPort(), MESSAGE))
+            .onComplete(v -> client.POST_MESSAGE(leader.configuration.getHost(), leader.configuration.getPort(), MESSAGE))
+            .onComplete(v -> vertx.setTimer(4000, v2 -> {
+                Assert.assertEquals(3, server1.server.getMessages().getNumberOfMessages());
+                Assert.assertEquals(3, server2.server.getMessages().getNumberOfMessages());
                 async.complete();
             }));
         async.awaitSuccess();
