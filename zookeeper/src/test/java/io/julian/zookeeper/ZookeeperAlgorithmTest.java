@@ -9,6 +9,7 @@ import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.models.CandidateInformation;
 import io.julian.zookeeper.models.ShortenedExchange;
+import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Vertx;
 import org.junit.Assert;
 import org.junit.Before;
@@ -24,6 +25,7 @@ public class ZookeeperAlgorithmTest {
         map.put("test", Object.class);
         map.put("candidate_information", CandidateInformation.class);
         map.put("state_update", ShortenedExchange.class);
+        map.put("discovery", Zxid.class);
     }
 
     @Test

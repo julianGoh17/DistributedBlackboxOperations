@@ -9,6 +9,7 @@ import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.AbstractServerBase;
 import io.julian.zookeeper.TestServerComponents;
+import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.models.CandidateInformation;
@@ -248,10 +249,10 @@ public class WriteHandlerTest extends AbstractServerBase {
     }
 
     private WriteHandler createWriteHandler(final CandidateInformationRegistry candidateInformationRegistry) {
-        return new WriteHandler(new Controller(new Configuration()), new MessageStore(), candidateInformationRegistry, createServerClient(), createTestRegistryManager(), vertx);
+        return new WriteHandler(new Controller(new Configuration()), new State(vertx, new MessageStore()), candidateInformationRegistry, createServerClient(), createTestRegistryManager());
     }
 
     private WriteHandler createWriteHandler() {
-        return new WriteHandler(new Controller(new Configuration()), new MessageStore(), createTestCandidateInformationRegistry(false), createServerClient(), createTestRegistryManager(), vertx);
+        return createWriteHandler(createTestCandidateInformationRegistry(false));
     }
 }

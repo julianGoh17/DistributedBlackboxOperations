@@ -104,6 +104,29 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
     }
 
     @Test
+    public void TestBroadcastStateUpdateSucceeds(final TestContext context) {
+        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        LeaderDiscoveryHandler handler = createHandler();
+        Async async = context.async();
+        handler.broadcastLeaderState()
+            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
+        async.awaitSuccess();
+        tearDownServer(context, server);
+    }
+
+    @Test
+    public void TestBroadcastStateUpdateFails(final TestContext context) {
+        LeaderDiscoveryHandler handler = createHandler();
+        Async async = context.async();
+        handler.broadcastLeaderState()
+            .onComplete(context.asyncAssertFailure(cause -> {
+                Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                async.complete();
+            }));
+        async.awaitSuccess();
+    }
+
+    @Test
     public void TestCreateBroadcastMessage() {
         LeaderDiscoveryHandler handler = createHandler();
         String type = "random-type";
@@ -112,6 +135,17 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
         Assert.assertNull(message.getMessage());
         Assert.assertNull(message.getDefinition());
+        Assert.assertNotNull(message.toJson().encodePrettily());
+    }
+
+    @Test
+    public void TestCreateStateUpdate() {
+        LeaderDiscoveryHandler handler = createHandler();
+        CoordinationMessage message = handler.createStateUpdate();
+        Assert.assertEquals(LeaderDiscoveryHandler.LEADER_STATE_UPDATE_TYPE, message.getMetadata().getType());
+        Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
+        Assert.assertEquals(new Zxid(0, 0).toJson().encodePrettily(), message.getDefinition().encodePrettily());
+        Assert.assertNull(message.getMessage());
         Assert.assertNotNull(message.toJson().encodePrettily());
     }
 

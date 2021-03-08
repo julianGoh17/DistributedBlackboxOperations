@@ -8,11 +8,15 @@ import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
+import io.julian.zookeeper.controller.State;
+import io.julian.zookeeper.discovery.DiscoveryHandler;
+import io.julian.zookeeper.discovery.LeaderDiscoveryHandler;
 import io.julian.zookeeper.election.BroadcastCandidateInformationHandler;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.models.CandidateInformation;
 import io.julian.zookeeper.models.ShortenedExchange;
+import io.julian.zookeeper.models.Zxid;
 import io.julian.zookeeper.write.FollowerWriteHandler;
 import io.julian.zookeeper.write.LeaderWriteHandler;
 import io.julian.zookeeper.write.WriteHandler;
@@ -24,17 +28,21 @@ import java.util.Optional;
 
 public class ZookeeperAlgorithm extends DistributedAlgorithm {
     private final Logger log = LogManager.getLogger(ZookeeperAlgorithm.class);
+    private final State state;
     private final CandidateInformationRegistry registry;
     private final LeadershipElectionHandler electionHandler;
+    private final DiscoveryHandler discoveryHandler;
     private final WriteHandler writeHandler;
     private boolean hasNotBroadcast = true;
 
     public ZookeeperAlgorithm(final Controller controller, final MessageStore messageStore, final Vertx vertx) {
         super(controller, messageStore, vertx);
         long candidateNumber = generateCandidateNumber(vertx.deploymentIDs().size());
+        this.state = new State(vertx, messageStore);
         this.registry = initializeCandidateInformationRegistry(controller.getConfiguration(), candidateNumber);
         this.electionHandler = new LeadershipElectionHandler(candidateNumber, this.registry);
-        this.writeHandler = new WriteHandler(controller, messageStore, electionHandler.getCandidateRegistry(), getClient(), getRegistryManager(), vertx);
+        this.discoveryHandler = new DiscoveryHandler(controller, state, registry, getRegistryManager(), getClient());
+        this.writeHandler = new WriteHandler(controller, state, electionHandler.getCandidateRegistry(), getClient(), getRegistryManager());
     }
 
     // To start simulation, will send a coordination message to do candidate broadcast.
@@ -47,7 +55,11 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
             if (messageClass == ShortenedExchange.class) {
                 log.info("Received state update");
                 this.writeHandler.handleCoordinationMessage(message);
+            } else if (messageClass == Zxid.class) {
+                log.info("Received Discovery update");
+                this.discoveryHandler.handleCoordinationMessage(message);
             } else {
+                log.info("Received Election update");
                 addCandidateInformation(message);
             }
         } else {
@@ -104,6 +116,11 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
         if (electionHandler.canUpdateLeader(registryManager) && controller.getLabel().equals("")) {
             log.info("Updating leader of servers");
             electionHandler.updateLeader(registryManager, controller);
+            if (controller.getLabel().equals(LeadershipElectionHandler.LEADER_LABEL) && !this.discoveryHandler.hasBroadcastFollowerZXID()) {
+                log.info("Starting Discovery phase");
+                this.discoveryHandler.reset();
+                this.discoveryHandler.broadcastToFollowers();
+            }
         } else {
             log.info("Cannot update leader as not all candidate information have been received");
         }
@@ -123,6 +140,9 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
                 return log.traceExit(ShortenedExchange.class);
             case FollowerWriteHandler.FORWARD_TYPE:
                 return log.traceExit(ClientMessage.class);
+            case DiscoveryHandler.DISCOVERY_TYPE:
+            case LeaderDiscoveryHandler.LEADER_STATE_UPDATE_TYPE:
+                return log.traceExit(Zxid.class);
         }
         return log.traceExit(Object.class);
     }
@@ -152,6 +172,8 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
         return log.traceExit(registry);
     }
 
-    public static void main(final String[] args) {
+    public State getState() {
+        log.traceEntry();
+        return log.traceExit(state);
     }
 }

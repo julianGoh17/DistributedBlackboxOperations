@@ -60,10 +60,27 @@ public class DiscoveryHandlerTest extends AbstractServerBase {
         DiscoveryHandler handler = createDiscoveryHandler(true);
 
         Async async = context.async();
-        handler.handleCoordinationMessage(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN), null, null))
+        handler.handleCoordinationMessage(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, "", ""), null, null))
             .onComplete(context.asyncAssertSuccess(res -> async.complete()));
         async.awaitSuccess();
         tearDownServer(context, server);
+    }
+
+
+    @Test
+    public void TestHandleCoordinationMessageAsFollowerHandlesStateUpdate(final TestContext context) {
+        DiscoveryHandler handler = createDiscoveryHandler(true);
+        Zxid id = new Zxid(-1, 23);
+        Async async = context.async();
+        handler.handleCoordinationMessage(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, "", LeaderDiscoveryHandler.LEADER_STATE_UPDATE_TYPE),
+            null,
+            id.toJson()))
+            .onComplete(context.asyncAssertSuccess(res -> {
+                Assert.assertEquals(id.getCounter(), handler.getState().getCounter());
+                Assert.assertEquals(id.getEpoch(), handler.getState().getLeaderEpoch());
+                async.complete();
+            }));
+        async.awaitSuccess();
     }
 
     @Test
@@ -88,9 +105,22 @@ public class DiscoveryHandlerTest extends AbstractServerBase {
 
         Async async = context.async();
         handler.handleCoordinationMessage(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN), null, ID.toJson()))
-            .onComplete(context.asyncAssertSuccess(cause -> async.complete()));
+            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
         async.awaitSuccess();
         tearDownServer(context, server);
+    }
+
+    @Test
+    public void TestHandleCoordinationMessageFailsBroadcastingUpdate(final TestContext context) {
+        DiscoveryHandler handler = createDiscoveryHandler(false);
+
+        Async async = context.async();
+        handler.handleCoordinationMessage(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN), null, ID.toJson()))
+            .onComplete(context.asyncAssertFailure(cause -> {
+                Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                async.complete();
+            }));
+        async.awaitSuccess();
     }
 
     @Test

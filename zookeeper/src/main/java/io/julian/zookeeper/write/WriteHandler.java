@@ -3,7 +3,6 @@ package io.julian.zookeeper.write;
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Controller;
-import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
@@ -15,7 +14,6 @@ import io.julian.zookeeper.models.Proposal;
 import io.julian.zookeeper.models.ShortenedExchange;
 import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -29,9 +27,9 @@ public class WriteHandler {
     private final LeaderWriteHandler leaderWrite;
     private final FollowerWriteHandler followerWrite;
 
-    public WriteHandler(final Controller controller, final MessageStore messageStore, final CandidateInformationRegistry registry, final ServerClient client, final RegistryManager manager, final Vertx vertx) {
+    public WriteHandler(final Controller controller, final State state, final CandidateInformationRegistry registry, final ServerClient client, final RegistryManager manager) {
         this.controller = controller;
-        this.state = new State(vertx, messageStore);
+        this.state = state;
         this.leaderWrite = new LeaderWriteHandler(getMajority(registry), client, manager);
         this.followerWrite = new FollowerWriteHandler(registry, client);
     }

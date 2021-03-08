@@ -9,12 +9,12 @@ import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+@Getter
 public class FollowerDiscoveryHandler {
-    public final static String ZXID_FOLLOWER_TYPE = "ZXID_FOLLOWER";
-
     private final static Logger log = LogManager.getLogger(FollowerDiscoveryHandler.class);
     private final State state;
     private final CandidateInformationRegistry registry;
@@ -44,10 +44,18 @@ public class FollowerDiscoveryHandler {
         return log.traceExit(post.future());
     }
 
+    public void updateToLeaderState(final Zxid id) {
+        log.traceEntry(() -> id);
+        log.info(String.format("Updating follower ZXID to leader's %s", id));
+        state.setCounter(id.getCounter());
+        state.setLeaderEpoch(id.getEpoch());
+        log.traceExit();
+    }
+
     public CoordinationMessage createCoordinationMessage(final Zxid id) {
         log.traceEntry(() -> id);
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.UNKNOWN, "", ZXID_FOLLOWER_TYPE),
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, "", DiscoveryHandler.DISCOVERY_TYPE),
             null,
             id.toJson()));
     }

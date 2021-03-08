@@ -24,7 +24,7 @@ public class FollowerDiscoveryHandlerTest extends AbstractServerBase {
         FollowerDiscoveryHandler handler = getTestHandler(registry);
         CoordinationMessage message = handler.createCoordinationMessage(ID);
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
-        Assert.assertEquals(FollowerDiscoveryHandler.ZXID_FOLLOWER_TYPE, message.getMetadata().getType());
+        Assert.assertEquals(DiscoveryHandler.DISCOVERY_TYPE, message.getMetadata().getType());
         Assert.assertNull(message.getMessage());
         Assert.assertEquals(ID.toJson().encodePrettily(), message.getDefinition().encodePrettily());
     }
@@ -54,6 +54,20 @@ public class FollowerDiscoveryHandlerTest extends AbstractServerBase {
                 async.complete();
             }));
         async.awaitSuccess();
+    }
+
+    @Test
+    public void TestUpdateToLeaderState() {
+        CandidateInformationRegistry registry = createTestCandidateInformationRegistry(true);
+        FollowerDiscoveryHandler handler = getTestHandler(registry);
+        Assert.assertEquals(0, handler.getState().getLeaderEpoch());
+        Assert.assertEquals(0, handler.getState().getCounter());
+
+        int leaderEpoch = -1;
+        int counter = 3;
+        handler.updateToLeaderState(new Zxid(leaderEpoch, counter));
+        Assert.assertEquals(leaderEpoch, handler.getState().getLeaderEpoch());
+        Assert.assertEquals(counter, handler.getState().getCounter());
     }
 
     private FollowerDiscoveryHandler getTestHandler(final CandidateInformationRegistry registry) {

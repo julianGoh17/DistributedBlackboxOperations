@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 
 public class DiscoveryHandler {
     public static final String NOT_ENOUGH_RESPONSES_ERROR = "Leader has not received enough follower ZXID responses";
+    public static final String DISCOVERY_TYPE = "discovery";
 
     private final static Logger log = LogManager.getLogger(DiscoveryHandler.class);
     private final Controller controller;
@@ -51,12 +52,18 @@ public class DiscoveryHandler {
             if (leaderHandler.hasEnoughResponses()) {
                 log.info("Leader has received ZXID broadcast from all followers");
                 leaderHandler.updateStateEpochAndCounter();
-                return log.traceExit(Future.succeededFuture());
+                return log.traceExit(leaderHandler.broadcastLeaderState());
             }
             return log.traceExit(Future.failedFuture(NOT_ENOUGH_RESPONSES_ERROR));
         } else {
-            log.info("Follower sending latest ZXID to leader");
-            return log.traceExit(followerHandler.replyToLeader());
+            if (coordinationMessage.getMetadata().getType().equals(LeaderDiscoveryHandler.LEADER_STATE_UPDATE_TYPE)) {
+                log.info("Received leader update state request");
+                followerHandler.updateToLeaderState(coordinationMessage.getDefinition().mapTo(Zxid.class));
+                return log.traceExit(Future.succeededFuture());
+            } else {
+                log.info("Follower sending latest ZXID to leader");
+                return log.traceExit(followerHandler.replyToLeader());
+            }
         }
     }
 

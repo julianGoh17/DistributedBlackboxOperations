@@ -19,8 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class LeaderDiscoveryHandler {
-    public static final String GATHER_ZXID_TYPE = "GATHER_ZXID";
-
+    public final static String LEADER_STATE_UPDATE_TYPE = "leader_state_update";
     private final static Logger log = LogManager.getLogger(LeadershipElectionHandler.class);
 
     private final AtomicInteger epochTracker = new AtomicInteger();
@@ -52,16 +51,28 @@ public class LeaderDiscoveryHandler {
 
     public Future<Void> broadcastGatherZXID() {
         log.traceEntry();
+        log.info("Broadcasting Discover ZXID to followers");
+        return log.traceExit(broadcastCoordinateMessageToFollowers(createBroadcastMessage(DiscoveryHandler.DISCOVERY_TYPE)));
+    }
+
+    public Future<Void> broadcastLeaderState() {
+        log.traceEntry();
+        log.info("Broadcasting leader ZXID to followers");
+        return log.traceExit(broadcastCoordinateMessageToFollowers(createStateUpdate()));
+    }
+
+    private Future<Void> broadcastCoordinateMessageToFollowers(final CoordinationMessage message) {
+        log.traceEntry(() -> message);
         Promise<Void> broadcast = Promise.promise();
         List<Future> res = manager.getOtherServers()
             .stream()
-            .map(configuration -> client.sendCoordinateMessageToServer(configuration, createBroadcastMessage(GATHER_ZXID_TYPE)))
+            .map(configuration -> client.sendCoordinateMessageToServer(configuration, message))
             .collect(Collectors.toList());
 
         CompositeFuture.all(res)
             .onSuccess(v -> broadcast.complete())
             .onFailure(cause -> {
-                log.info(String.format("Failed to broadcast '%s'", GATHER_ZXID_TYPE));
+                log.info("Failed to broadcast to followers");
                 log.error(cause.getMessage());
                 broadcast.fail(cause);
             });
@@ -113,5 +124,13 @@ public class LeaderDiscoveryHandler {
     public CoordinationMessage createBroadcastMessage(final String type) {
         log.traceEntry(() -> type);
         return log.traceExit(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, "", type), null, null));
+    }
+
+    public CoordinationMessage createStateUpdate() {
+        log.traceEntry();
+        return log.traceExit(new CoordinationMessage(
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, "", LEADER_STATE_UPDATE_TYPE),
+            null,
+            new Zxid(state.getLeaderEpoch(), state.getCounter()).toJson()));
     }
 }
