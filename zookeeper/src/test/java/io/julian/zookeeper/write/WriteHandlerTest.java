@@ -9,6 +9,7 @@ import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.AbstractServerBase;
 import io.julian.zookeeper.TestServerComponents;
+import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.models.CandidateInformation;
@@ -31,8 +32,8 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestInitialization() {
         WriteHandler write = createWriteHandler();
-        Assert.assertEquals(0, write.getCounter());
-        Assert.assertEquals(0, write.getLeaderEpoch());
+        Assert.assertEquals(0, write.getState().getCounter());
+        Assert.assertEquals(0, write.getState().getLeaderEpoch());
         Assert.assertEquals(0, write.getState().getHistory().size());
         Assert.assertNotNull(write.getProposalTracker());
     }
@@ -49,8 +50,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(1, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
                 context.assertEquals(1, handler.getState().getMessageStore().getNumberOfMessages());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(1, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(1, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -69,8 +70,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(1, handler.getState().getHistory().size());
                 context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(1, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(1, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -82,7 +83,7 @@ public class WriteHandlerTest extends AbstractServerBase {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
         TestServerComponents server2 = setUpBasicApiServer(context, SECOND_SERVER_CONFIG);
 
-        CandidateInformationRegistry registry = createTestCandidateInformationRegistry();
+        CandidateInformationRegistry registry = createTestCandidateInformationRegistry(false);
         registry.addCandidateInformation(new CandidateInformation(SECOND_SERVER_CONFIG.getHost(), SECOND_SERVER_CONFIG.getPort(), 1234));
 
         WriteHandler handler = createWriteHandler(registry);
@@ -95,8 +96,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(0, handler.getState().getHistory().size());
                 context.assertEquals(1, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(0, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(0, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -119,8 +120,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(0, handler.getState().getHistory().size());
                 context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(1, handler.getProposalTracker().getCommittedProposals().size());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(0, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(0, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -131,7 +132,7 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestAcknowledgeLeaderWhenAck(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
-        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry(true));
 
         Async async = context.async();
         handler.acknowledgeLeader(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN), POST_MESSAGE.toJson(), new ShortenedExchange(MessagePhase.ACK, ID).toJson()))
@@ -147,7 +148,7 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestAcknowledgeLeaderWhenCommit(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
-        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry(false));
         handler.getState().addProposal(new Proposal(POST_MESSAGE, ID));
         Async async = context.async();
         handler.acknowledgeLeader(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN), POST_MESSAGE.toJson(), new ShortenedExchange(MessagePhase.COMMIT, ID).toJson()))
@@ -163,7 +164,7 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestHandleCoordinationMessageAsLeaderBroadcastsUpdate(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
-        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry(false));
         handler.getController().setLabel(LeadershipElectionHandler.LEADER_LABEL);
 
         Async async = context.async();
@@ -173,8 +174,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(1, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
                 context.assertEquals(1, handler.getState().getMessageStore().getNumberOfMessages());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(1, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(1, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -185,7 +186,7 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestHandleCoordinationMessageAsLeaderBroadcastsCommit(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
-        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry(false));
         handler.getController().setLabel(LeadershipElectionHandler.LEADER_LABEL);
 
         Async async = context.async();
@@ -195,8 +196,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
                 context.assertEquals(0, handler.getState().getMessageStore().getNumberOfMessages());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(0, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(0, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -207,7 +208,7 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestHandleCoordinationMessageAsFollowerBroadcastsCommit(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
-        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry(true));
         handler.getController().setLabel(LeadershipElectionHandler.FOLLOWER_LABEL);
 
         Async async = context.async();
@@ -217,8 +218,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
                 context.assertEquals(0, handler.getState().getMessageStore().getNumberOfMessages());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(0, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(0, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -229,7 +230,7 @@ public class WriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestHandleClientMessageAsFollowerForwardsToLeader(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
-        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry());
+        WriteHandler handler = createWriteHandler(createTestCandidateInformationRegistry(true));
         handler.getController().setLabel(LeadershipElectionHandler.FOLLOWER_LABEL);
         Async async = context.async();
         handler.handleClientMessage(POST_MESSAGE)
@@ -238,8 +239,8 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(0, handler.getProposalTracker().getAcknowledgedProposals().size());
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
                 context.assertEquals(0, handler.getState().getMessageStore().getNumberOfMessages());
-                context.assertEquals(0, handler.getLeaderEpoch());
-                context.assertEquals(0, handler.getCounter());
+                context.assertEquals(0, handler.getState().getLeaderEpoch());
+                context.assertEquals(0, handler.getState().getCounter());
                 async.complete();
             }));
 
@@ -247,18 +248,11 @@ public class WriteHandlerTest extends AbstractServerBase {
         tearDownServer(context, server);
     }
 
-    private CandidateInformationRegistry createTestCandidateInformationRegistry() {
-        CandidateInformationRegistry registry = new CandidateInformationRegistry();
-        registry.addCandidateInformation(new CandidateInformation(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT, 1));
-        registry.updateNextLeader();
-        return registry;
-    }
-
     private WriteHandler createWriteHandler(final CandidateInformationRegistry candidateInformationRegistry) {
-        return new WriteHandler(new Controller(new Configuration()), new MessageStore(), candidateInformationRegistry, createServerClient(), createTestRegistryManager(), vertx);
+        return new WriteHandler(new Controller(new Configuration()), new State(vertx, new MessageStore()), candidateInformationRegistry, createServerClient(), createTestRegistryManager());
     }
 
     private WriteHandler createWriteHandler() {
-        return new WriteHandler(new Controller(new Configuration()), new MessageStore(), createTestCandidateInformationRegistry(), createServerClient(), createTestRegistryManager(), vertx);
+        return createWriteHandler(createTestCandidateInformationRegistry(false));
     }
 }

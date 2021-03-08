@@ -24,6 +24,8 @@ public class State {
     private final AtomicInteger lastAcceptedIndex = new AtomicInteger();
     private final Vertx vertx;
     private final MessageStore messageStore;
+    private final AtomicInteger leaderEpoch = new AtomicInteger();
+    private final AtomicInteger counter = new AtomicInteger();
 
     public State(final Vertx vertx, final MessageStore messageStore) {
         this.vertx = vertx;
@@ -131,12 +133,13 @@ public class State {
 
     public void setLastAcceptedIndex(final int index) {
         log.traceEntry(() -> index);
-        if (lastAcceptedIndex.get() < index) {
-            log.info(String.format("Setting last accepted index to '%d'", index));
-            lastAcceptedIndex.set(index);
+        final int nextIndex = index + 1;
+        if (lastAcceptedIndex.get() < nextIndex) {
+            log.info(String.format("Setting last accepted index to '%d'", nextIndex));
+            lastAcceptedIndex.set(nextIndex);
         } else {
             log.info(String.format("Skipping setting last accepted index to '%d' as current index '%s' is higher",
-                index, lastAcceptedIndex.get()));
+                nextIndex, lastAcceptedIndex.get()));
         }
         log.traceExit();
     }
@@ -154,5 +157,32 @@ public class State {
     public int getLastAcceptedIndex() {
         log.traceEntry();
         return log.traceExit(lastAcceptedIndex.get());
+    }
+
+    public int getLeaderEpoch() {
+        log.traceEntry();
+        return log.traceExit(leaderEpoch.get());
+    }
+
+    public int getCounter() {
+        log.traceEntry();
+        return log.traceExit(counter.get());
+    }
+
+    public int getAndIncrementCounter() {
+        log.traceEntry();
+        return log.traceExit(counter.getAndIncrement());
+    }
+
+    public void setLeaderEpoch(final int epoch) {
+        log.traceEntry(() -> epoch);
+        leaderEpoch.set(epoch);
+        log.traceExit();
+    }
+
+    public void setCounter(final int counter) {
+        log.traceEntry(() -> counter);
+        this.counter.set(counter);
+        log.traceExit();
     }
 }

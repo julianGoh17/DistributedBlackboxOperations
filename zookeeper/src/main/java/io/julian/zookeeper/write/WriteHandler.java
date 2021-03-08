@@ -3,7 +3,6 @@ package io.julian.zookeeper.write;
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Controller;
-import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
@@ -15,12 +14,10 @@ import io.julian.zookeeper.models.Proposal;
 import io.julian.zookeeper.models.ShortenedExchange;
 import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class WriteHandler {
     private static final Logger log = LogManager.getLogger(WriteHandler.class);
@@ -30,12 +27,9 @@ public class WriteHandler {
     private final LeaderWriteHandler leaderWrite;
     private final FollowerWriteHandler followerWrite;
 
-    private final AtomicInteger leaderEpoch = new AtomicInteger();
-    private final AtomicInteger counter = new AtomicInteger();
-
-    public WriteHandler(final Controller controller, final MessageStore messageStore, final CandidateInformationRegistry registry, final ServerClient client, final RegistryManager manager, final Vertx vertx) {
+    public WriteHandler(final Controller controller, final State state, final CandidateInformationRegistry registry, final ServerClient client, final RegistryManager manager) {
         this.controller = controller;
-        this.state = new State(vertx, messageStore);
+        this.state = state;
         this.leaderWrite = new LeaderWriteHandler(getMajority(registry), client, manager);
         this.followerWrite = new FollowerWriteHandler(registry, client);
     }
@@ -90,7 +84,7 @@ public class WriteHandler {
      */
     public Future<Void> initialProposalUpdate(final ClientMessage message) {
         log.traceEntry(() -> message);
-        final Zxid id = new Zxid(leaderEpoch.get(), counter.getAndIncrement());
+        final Zxid id = new Zxid(state.getLeaderEpoch(), state.getAndIncrementCounter());
         log.info(String.format("Adding proposal %s to history and broadcasting proposal", id));
         return log.traceExit(state.addProposal(new Proposal(message, id))
             .compose(v -> state.processStateUpdate(id))
@@ -115,16 +109,6 @@ public class WriteHandler {
     public boolean isLeader() {
         log.traceEntry();
         return log.traceExit(controller.getLabel().equals(LeadershipElectionHandler.LEADER_LABEL));
-    }
-
-    public int getLeaderEpoch() {
-        log.traceEntry();
-        return log.traceExit(leaderEpoch.get());
-    }
-
-    public int getCounter() {
-        log.traceEntry();
-        return log.traceExit(counter.get());
     }
 
     public State getState() {

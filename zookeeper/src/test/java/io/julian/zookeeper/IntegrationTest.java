@@ -1,5 +1,6 @@
 package io.julian.zookeeper;
 
+import io.julian.ZookeeperAlgorithm;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ServerConfiguration;
@@ -23,12 +24,26 @@ public class IntegrationTest extends AbstractServerBase {
         TestServerComponents server2 = setUpZookeeperApiServer(context, SECOND_SERVER_CONFIG);
         registerConfigurationInServer(server1, SECOND_SERVER_CONFIG);
         registerConfigurationInServer(server2, DEFAULT_SEVER_CONFIG);
+        int epoch = 3;
+        int counter = 6;
+        ZookeeperAlgorithm algorithm1 = (ZookeeperAlgorithm) server2.server.getVerticle().getAlgorithm();
+        algorithm1.getState().setLeaderEpoch(epoch);
+        algorithm1.getState().setCounter(counter);
+
         sendElectionMessage(context);
         List<String> labels = Arrays.asList(server2.server.getController().getLabel(), server1.server.getController().getLabel());
         Assert.assertEquals(1,
             labels.stream().filter(label -> label.equals(LeadershipElectionHandler.LEADER_LABEL)).count());
         Assert.assertEquals(1,
             labels.stream().filter(label -> label.equals(LeadershipElectionHandler.FOLLOWER_LABEL)).count());
+
+        Arrays.asList(server2, server1)
+            .forEach(server -> {
+                ZookeeperAlgorithm algorithm = (ZookeeperAlgorithm) server.server.getVerticle().getAlgorithm();
+                Assert.assertEquals(epoch, algorithm.getState().getLeaderEpoch());
+                Assert.assertEquals(epoch, algorithm.getState().getLeaderEpoch());
+            });
+
         tearDownServer(context, server1);
         tearDownServer(context, server2);
     }
@@ -46,7 +61,7 @@ public class IntegrationTest extends AbstractServerBase {
         TestClient client = createTestClient();
         Async async = context.async();
         client.POST_MESSAGE(leader.configuration.getHost(), leader.configuration.getPort(), MESSAGE)
-            .onComplete(v -> vertx.setTimer(1500, v2 -> {
+            .onComplete(v -> vertx.setTimer(4000, v2 -> {
                 Assert.assertEquals(1, server1.server.getMessages().getNumberOfMessages());
                 Assert.assertEquals(1, server2.server.getMessages().getNumberOfMessages());
                 async.complete();

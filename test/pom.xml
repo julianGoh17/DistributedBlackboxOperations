@@ -70,7 +70,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>io.julian.server.Main</mainClass>
+                            <mainClass>io.julian.ExampleDistributedAlgorithm</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

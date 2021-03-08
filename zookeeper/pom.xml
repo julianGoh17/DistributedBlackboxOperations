@@ -69,7 +69,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>io.julian.zookeeper.Main</mainClass>
+                            <mainClass>io.julian.ZookeeperAlgorithm</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>
