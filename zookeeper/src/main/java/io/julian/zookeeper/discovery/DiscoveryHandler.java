@@ -46,12 +46,12 @@ public class DiscoveryHandler {
     public Future<Void> handleCoordinationMessage(final CoordinationMessage coordinationMessage) {
         log.traceEntry(() -> coordinationMessage);
         if (controller.getLabel().equals(LeadershipElectionHandler.LEADER_LABEL)) {
-            final Zxid id = coordinationMessage.getDefinition().mapTo(Zxid.class);
-            log.info("Leader processing follower ZXID broadcast");
-            leaderHandler.processFollowerZXID(id);
+            final State followerState = State.fromJson(coordinationMessage.getDefinition());
+            log.info("Leader processing follower state broadcast");
+            leaderHandler.processFollowerState(followerState);
             if (leaderHandler.hasEnoughResponses()) {
-                log.info("Leader has received ZXID broadcast from all followers");
-                leaderHandler.updateStateEpochAndCounter();
+                log.info("Leader has received state broadcast from all followers");
+                leaderHandler.updateToLatestState();
                 return log.traceExit(leaderHandler.broadcastLeaderState());
             }
             return log.traceExit(Future.failedFuture(NOT_ENOUGH_RESPONSES_ERROR));
@@ -61,7 +61,7 @@ public class DiscoveryHandler {
                 followerHandler.updateToLeaderState(coordinationMessage.getDefinition().mapTo(Zxid.class));
                 return log.traceExit(Future.succeededFuture());
             } else {
-                log.info("Follower sending latest ZXID to leader");
+                log.info("Follower sending latest state to leader");
                 return log.traceExit(followerHandler.replyToLeader());
             }
         }
@@ -80,11 +80,5 @@ public class DiscoveryHandler {
     public LeaderDiscoveryHandler getLeaderHandler() {
         log.traceEntry();
         return log.traceExit(leaderHandler);
-    }
-
-
-    public FollowerDiscoveryHandler getFollowerHandler() {
-        log.traceEntry();
-        return log.traceExit(followerHandler);
     }
 }

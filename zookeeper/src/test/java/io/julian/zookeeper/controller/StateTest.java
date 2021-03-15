@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
+import java.util.Collections;
 
 @RunWith(VertxUnitRunner.class)
 public class StateTest {
@@ -265,6 +266,21 @@ public class StateTest {
         Assert.assertEquals(ID.toJson().encodePrettily(), state.getHistory().get(0).getTransactionId().toJson().encodePrettily());
         Assert.assertEquals(counter, state.getCounter());
         Assert.assertEquals(lastAcceptedIndex, state.getLastAcceptedIndex());
+    }
+
+    @Test
+    public void TestIsLaterThan() {
+        State lowest = new State(Collections.emptyList(), 0, 0, 0);
+        State middle = new State(Collections.emptyList(), 0, 1, 10);
+        State highest = new State(Collections.emptyList(), 0, 2, 0);
+
+        Assert.assertTrue(highest.isLaterThanState(middle));
+        Assert.assertTrue(highest.isLaterThanState(lowest));
+        Assert.assertTrue(middle.isLaterThanState(lowest));
+
+        Assert.assertFalse(middle.isLaterThanState(highest));
+        Assert.assertFalse(lowest.isLaterThanState(middle));
+        Assert.assertFalse(lowest.isLaterThanState(highest));
     }
 
     @After

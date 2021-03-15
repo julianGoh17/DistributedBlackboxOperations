@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class State {
@@ -27,7 +28,7 @@ public class State {
     public static final String COUNTER_KEY = "counter";
     public static final String LAST_ACCEPTED_INDEX_KEY = "last_accepted_index";
 
-    private final ArrayList<Proposal> history;
+    private List<Proposal> history;
     private final AtomicInteger lastAcceptedIndex;
     private final Vertx vertx;
     private final MessageStore messageStore;
@@ -44,7 +45,7 @@ public class State {
     }
 
     // Only used for JSON conversion
-    public State(final ArrayList<Proposal> history, final int lastAcceptedIndex, final int leaderEpoch, final int counter) {
+    public State(final List<Proposal> history, final int lastAcceptedIndex, final int leaderEpoch, final int counter) {
         this.history = history;
         this.lastAcceptedIndex = new AtomicInteger(lastAcceptedIndex);
         this.vertx = null;
@@ -165,7 +166,7 @@ public class State {
         log.traceExit();
     }
 
-    public ArrayList<Proposal> getHistory() {
+    public List<Proposal> getHistory() {
         log.traceEntry();
         return log.traceExit(this.history);
     }
@@ -204,6 +205,24 @@ public class State {
     public void setCounter(final int counter) {
         log.traceEntry(() -> counter);
         this.counter.set(counter);
+        log.traceExit();
+    }
+
+    public boolean isLaterThanState(final State other) {
+        log.traceEntry(() -> other);
+        if (leaderEpoch.get() == other.getLeaderEpoch()) {
+            return log.traceExit(counter.get() >= other.getCounter());
+        }
+        return log.traceExit(leaderEpoch.get() > other.getLeaderEpoch());
+    }
+
+    public void setState(final State other) {
+        log.traceEntry(() -> other);
+        setCounter(other.getCounter());
+        setLeaderEpoch(other.getLeaderEpoch());
+        this.history = other.getHistory();
+        this.lastAcceptedIndex.set(other.getLastAcceptedIndex());
+        log.info(String.format("Leader new state with latest epoch at (%d,%d)", getLeaderEpoch(), getCounter()));
         log.traceExit();
     }
 

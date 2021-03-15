@@ -113,7 +113,7 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
      */
     private void updateLeader() {
         log.traceEntry();
-        if (electionHandler.canUpdateLeader(registryManager) && controller.getLabel().equals("")) {
+        if (controller.getLabel().equals("") && electionHandler.canUpdateLeader(registryManager)) {
             log.info("Updating leader of servers");
             electionHandler.updateLeader(registryManager, controller);
             if (controller.getLabel().equals(LeadershipElectionHandler.LEADER_LABEL) && !this.discoveryHandler.hasBroadcastFollowerZXID()) {
@@ -121,8 +121,6 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
                 this.discoveryHandler.reset();
                 this.discoveryHandler.broadcastToFollowers();
             }
-        } else {
-            log.info("Cannot update leader as not all candidate information have been received");
         }
         log.traceExit();
     }

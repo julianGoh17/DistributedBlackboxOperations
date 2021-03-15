@@ -41,7 +41,7 @@ public class IntegrationTest extends AbstractServerBase {
             .forEach(server -> {
                 ZookeeperAlgorithm algorithm = (ZookeeperAlgorithm) server.server.getVerticle().getAlgorithm();
                 Assert.assertEquals(epoch, algorithm.getState().getLeaderEpoch());
-                Assert.assertEquals(epoch, algorithm.getState().getLeaderEpoch());
+                Assert.assertEquals(counter, algorithm.getState().getCounter());
             });
 
         tearDownServer(context, server1);

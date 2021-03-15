@@ -28,16 +28,15 @@ public class FollowerDiscoveryHandler {
 
     public Future<Void> replyToLeader() {
         log.traceEntry();
-        final Zxid id = new Zxid(state.getLeaderEpoch(), state.getCounter());
-        log.info(String.format("Sending leader latest ZXID %s", id));
+        log.info("Sending leader latest state");
         Promise<Void> post = Promise.promise();
-        client.sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), createCoordinationMessage(id))
+        client.sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), createCoordinationMessage())
             .onSuccess(v -> {
-                log.info(String.format("Successfully sent leader latest ZXID %s", id));
+                log.info("Successfully sent leader latest state");
                 post.complete();
             })
             .onFailure(cause -> {
-                log.info(String.format("Unsuccessfully sent leader latest ZXID %s", id));
+                log.info("Unsuccessfully sent leader latest state ZXID");
                 log.error(cause);
                 post.fail(cause);
             });
@@ -52,11 +51,11 @@ public class FollowerDiscoveryHandler {
         log.traceExit();
     }
 
-    public CoordinationMessage createCoordinationMessage(final Zxid id) {
-        log.traceEntry(() -> id);
+    public CoordinationMessage createCoordinationMessage() {
+        log.traceEntry();
         return log.traceExit(new CoordinationMessage(
             new CoordinationMetadata(HTTPRequest.UNKNOWN, "", DiscoveryHandler.DISCOVERY_TYPE),
             null,
-            id.toJson()));
+            state.toJson()));
     }
 }

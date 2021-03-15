@@ -16,17 +16,17 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class LeaderDiscoveryHandler {
     public final static String LEADER_STATE_UPDATE_TYPE = "leader_state_update";
     private final static Logger log = LogManager.getLogger(LeadershipElectionHandler.class);
 
-    private final AtomicInteger epochTracker = new AtomicInteger();
-    private final AtomicInteger counterTracker = new AtomicInteger();
+    private final AtomicReference<State> latestState;
 
     private final AtomicInteger followerResponses = new AtomicInteger();
-    private final State state;
+    private State state;
     private final RegistryManager manager;
     private final ServerClient client;
 
@@ -34,17 +34,15 @@ public class LeaderDiscoveryHandler {
         this.state = state;
         this.manager = manager;
         this.client = client;
+        this.latestState = new AtomicReference<>(state);
     }
 
-    public void processFollowerZXID(final Zxid id) {
-        log.traceEntry(() -> id);
-        log.info(String.format("Processing follower epoch response '%s'", id));
+    public void processFollowerState(final State other) {
+        log.traceEntry(() -> other);
+        log.info("Processing follower state");
         followerResponses.incrementAndGet();
-        if (epochTracker.get() < id.getEpoch()) {
-            epochTracker.set(id.getEpoch());
-            counterTracker.set(id.getCounter());
-        } else if (epochTracker.get() == id.getEpoch() && counterTracker.get() < id.getCounter()) {
-            counterTracker.set(id.getCounter());
+        if (!latestState.get().isLaterThanState(other)) {
+            latestState.set(other);
         }
         log.traceExit();
     }
@@ -79,11 +77,10 @@ public class LeaderDiscoveryHandler {
         return log.traceExit(broadcast.future());
     }
 
-    public void updateStateEpochAndCounter() {
+    public void updateToLatestState() {
         log.traceEntry();
-        log.info(String.format("Updating leader epoch to '%d' and counter to '%d'", epochTracker.get(), counterTracker.get()));
-        state.setLeaderEpoch(epochTracker.get());
-        state.setCounter(counterTracker.get());
+        log.info("Updating leader epoch to latest follower state");
+        state.setState(latestState.get());
         log.traceExit();
     }
 
@@ -96,24 +93,25 @@ public class LeaderDiscoveryHandler {
         log.traceEntry();
         log.info("Resetting epoch and follower tracker");
         followerResponses.set(0);
-        epochTracker.set(state.getLeaderEpoch());
-        counterTracker.set(state.getCounter());
+        state = latestState.get();
         log.traceExit();
     }
 
-    public int getEpoch() {
-        log.traceEntry();
-        return log.traceExit(epochTracker.get());
-    }
 
     public int getFollowerResponses() {
         log.traceEntry();
         return log.traceExit(followerResponses.get());
     }
 
-    public int getCounter() {
+    public State getLatestState() {
         log.traceEntry();
-        return log.traceExit(counterTracker.get());
+        return log.traceExit(latestState.get());
+    }
+
+    public void setLatestState(final State latestState) {
+        log.traceEntry(() -> latestState);
+        this.latestState.set(latestState);
+        log.traceExit();
     }
 
     public State getState() {
