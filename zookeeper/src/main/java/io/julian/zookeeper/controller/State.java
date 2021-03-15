@@ -10,6 +10,8 @@ import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -20,16 +22,35 @@ public class State {
     private static final Logger log = LogManager.getLogger(State.class.getName());
     public static final int MAX_RETRIES = 5;
 
-    private final ArrayList<Proposal> history = new ArrayList<>();
-    private final AtomicInteger lastAcceptedIndex = new AtomicInteger();
+    public static final String HISTORY_KEY = "history";
+    public static final String LEADER_EPOCH_KEY = "leader_epoch";
+    public static final String COUNTER_KEY = "counter";
+    public static final String LAST_ACCEPTED_INDEX_KEY = "last_accepted_index";
+
+    private final ArrayList<Proposal> history;
+    private final AtomicInteger lastAcceptedIndex;
     private final Vertx vertx;
     private final MessageStore messageStore;
-    private final AtomicInteger leaderEpoch = new AtomicInteger();
-    private final AtomicInteger counter = new AtomicInteger();
+    private final AtomicInteger leaderEpoch;
+    private final AtomicInteger counter;
 
     public State(final Vertx vertx, final MessageStore messageStore) {
+        this.history = new ArrayList<>();
+        this.lastAcceptedIndex = new AtomicInteger();
         this.vertx = vertx;
         this.messageStore = messageStore;
+        this.leaderEpoch = new AtomicInteger();
+        this.counter = new AtomicInteger();
+    }
+
+    // Only used for JSON conversion
+    public State(final ArrayList<Proposal> history, final int lastAcceptedIndex, final int leaderEpoch, final int counter) {
+        this.history = history;
+        this.lastAcceptedIndex = new AtomicInteger(lastAcceptedIndex);
+        this.vertx = null;
+        this.messageStore = null;
+        this.leaderEpoch = new AtomicInteger(leaderEpoch);
+        this.counter = new AtomicInteger(counter);
     }
 
     public Future<Void> addProposal(final Proposal proposal) {
@@ -184,5 +205,33 @@ public class State {
         log.traceEntry(() -> counter);
         this.counter.set(counter);
         log.traceExit();
+    }
+
+    public JsonObject toJson() {
+        log.traceEntry();
+        final JsonArray historyJson = new JsonArray();
+        this.history
+            .forEach(proposal -> historyJson.add(proposal.toJson()));
+
+        return log.traceExit(new JsonObject()
+            .put(HISTORY_KEY, historyJson)
+            .put(LEADER_EPOCH_KEY, leaderEpoch.get())
+            .put(COUNTER_KEY, counter.get())
+            .put(LAST_ACCEPTED_INDEX_KEY, lastAcceptedIndex.get()));
+    }
+
+    public static State fromJson(final JsonObject json) {
+        log.traceEntry(() -> json);
+        final ArrayList<Proposal> history = new ArrayList<>();
+        json.getJsonArray(HISTORY_KEY)
+            .stream()
+            .forEach(proposal -> history.add(Proposal.mapFrom((JsonObject) proposal)));
+
+        return log.traceExit(new State(
+            history,
+            json.getInteger(LAST_ACCEPTED_INDEX_KEY),
+            json.getInteger(LEADER_EPOCH_KEY),
+            json.getInteger(COUNTER_KEY)
+            ));
     }
 }

@@ -8,6 +8,7 @@ import io.julian.zookeeper.models.ProposalTest;
 import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -17,6 +18,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.ArrayList;
 
 @RunWith(VertxUnitRunner.class)
 public class StateTest {
@@ -42,6 +45,13 @@ public class StateTest {
         Assert.assertEquals(0, state.getLastAcceptedIndex());
         Assert.assertEquals(0, state.getLeaderEpoch());
         Assert.assertEquals(0, state.getMessageStore().getNumberOfMessages());
+
+        state = new State(new ArrayList<>(), 0, 0, 0);
+        Assert.assertEquals(0, state.getHistory().size());
+        Assert.assertEquals(0, state.getCounter());
+        Assert.assertEquals(0, state.getLastAcceptedIndex());
+        Assert.assertEquals(0, state.getLeaderEpoch());
+        Assert.assertNull(state.getMessageStore());
     }
 
     @Test
@@ -219,6 +229,42 @@ public class StateTest {
             async.complete();
         }));
         async.awaitSuccess();
+    }
+
+    @Test
+    public void TestToJson() {
+        MessageStore messageStore = new MessageStore();
+        State state = new State(vertx, messageStore);
+        state.addProposal(new Proposal(POST_MESSAGE, ID));
+        JsonArray expectedArray = new JsonArray();
+        expectedArray.add(new Proposal(POST_MESSAGE, ID).toJson());
+        JsonObject json = state.toJson();
+        Assert.assertEquals(0, json.getInteger(State.LEADER_EPOCH_KEY).intValue());
+        Assert.assertEquals(expectedArray.encodePrettily(), json.getJsonArray(State.HISTORY_KEY).encodePrettily());
+        Assert.assertEquals(0, json.getInteger(State.COUNTER_KEY).intValue());
+        Assert.assertEquals(0, json.getInteger(State.LAST_ACCEPTED_INDEX_KEY).intValue());
+    }
+
+    @Test
+    public void TestMapFromJson() {
+        JsonArray history = new JsonArray();
+        int leaderEpoch = 3;
+        int counter = -1;
+        int lastAcceptedIndex = 5;
+        history.add(new Proposal(POST_MESSAGE, ID).toJson());
+        JsonObject json = new JsonObject()
+            .put(State.LEADER_EPOCH_KEY, leaderEpoch)
+            .put(State.COUNTER_KEY, counter)
+            .put(State.HISTORY_KEY, history)
+            .put(State.LAST_ACCEPTED_INDEX_KEY, lastAcceptedIndex);
+
+        State state = State.fromJson(json);
+        Assert.assertEquals(leaderEpoch, state.getLeaderEpoch());
+        Assert.assertEquals(1, state.getHistory().size());
+        Assert.assertEquals(POST_MESSAGE.toJson().encodePrettily(), state.getHistory().get(0).getNewState().toJson().encodePrettily());
+        Assert.assertEquals(ID.toJson().encodePrettily(), state.getHistory().get(0).getTransactionId().toJson().encodePrettily());
+        Assert.assertEquals(counter, state.getCounter());
+        Assert.assertEquals(lastAcceptedIndex, state.getLastAcceptedIndex());
     }
 
     @After
