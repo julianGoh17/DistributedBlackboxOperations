@@ -4,6 +4,8 @@ import io.julian.server.api.client.ServerClient;
 import io.julian.server.api.exceptions.NoIDException;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
+import io.julian.server.models.coordination.CoordinationMessage;
+import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.models.Proposal;
@@ -29,6 +31,25 @@ public class FollowerSynchronizeHandler {
         this.state = state;
         this.registry = registry;
         this.client = client;
+    }
+
+    public Future<Void> replyToLeader(final State leader) {
+        log.traceEntry(() -> leader);
+
+        Promise<Void> reply = Promise.promise();
+        synchronizeWithLeaderState(leader)
+            .onComplete(res -> {
+                if (res.succeeded()) {
+                    log.info("Succeeded leader synchronize");
+                } else {
+                    log.info("Failed to synchronize with leader");
+                    log.error(res.cause());
+                }
+                client.sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), getCoordinationMessage())
+                    .onSuccess(v -> reply.complete())
+                    .onFailure(reply::fail);
+            });
+        return log.traceExit(reply.future());
     }
 
     public Future<Void> synchronizeWithLeaderState(final State leader) {
@@ -70,6 +91,14 @@ public class FollowerSynchronizeHandler {
         }
         proposals.sort((a, b) -> Zxid.comparator(a.getTransactionId(), b.getTransactionId()));
         return log.traceExit(proposals);
+    }
+
+    public CoordinationMessage getCoordinationMessage() {
+        log.traceEntry();
+        return log.traceExit(new CoordinationMessage(
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, null, SynchronizeHandler.SYNCHRONIZE_TYPE),
+            null,
+            null));
     }
 
     public State getState() {

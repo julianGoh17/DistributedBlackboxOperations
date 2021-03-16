@@ -4,6 +4,7 @@ import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.zookeeper.AbstractServerBase;
+import io.julian.zookeeper.TestServerComponents;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.models.Proposal;
 import io.julian.zookeeper.models.Zxid;
@@ -21,9 +22,38 @@ import java.util.List;
 public class FollowerSynchronizeHandlerTest extends AbstractServerBase {
     private static final int INITIALIZED_MESSAGES = 5;
     private static final Zxid EARLIEST_ID = new Zxid(0, 1);
-    private static final Zxid LATEST_ID = new Zxid(12, 1);
-
     private static final JsonObject POST = new JsonObject().put("random", "key");
+
+    @Test
+    public void TestReplyToLeaderIsSuccessful(final TestContext context) {
+        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        FollowerSynchronizeHandler handler = createTestHandler();
+        State leader = createInitializedState(context);
+        Async async = context.async();
+        handler.replyToLeader(leader)
+            .onComplete(context.asyncAssertSuccess(v -> {
+                checkHandlerHasSameState(context, handler.getState(), leader);
+                async.complete();
+            }));
+        async.awaitSuccess();
+        checkMessageStoreIsTheSame(leader.getMessageStore(), handler.getState().getMessageStore());
+        tearDownServer(context, server);
+    }
+
+    @Test
+    public void TestReplyToLeaderFails(final TestContext context) {
+        FollowerSynchronizeHandler handler = createTestHandler();
+        State leader = createInitializedState(context);
+        Async async = context.async();
+        handler.replyToLeader(leader)
+            .onComplete(context.asyncAssertFailure(cause -> {
+                context.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                checkHandlerHasSameState(context, handler.getState(), leader);
+                async.complete();
+            }));
+        async.awaitSuccess();
+        checkMessageStoreIsTheSame(leader.getMessageStore(), handler.getState().getMessageStore());
+    }
 
     @Test
     public void TestSynchronizeWithLeaderState(final TestContext context) {
@@ -33,27 +63,11 @@ public class FollowerSynchronizeHandlerTest extends AbstractServerBase {
         Async async = context.async();
         handler.synchronizeWithLeaderState(leader)
             .onComplete(context.asyncAssertSuccess(v -> {
-                context.assertEquals(INITIALIZED_MESSAGES, handler.getState().getHistory().size());
-                boolean isSorted = true;
-                for (int i = 0; i < INITIALIZED_MESSAGES; i++) {
-                    if (i > 0 && !handler.getState().getHistory().get(i).getTransactionId().isLaterThan(handler.getState().getHistory().get(i - 1).getTransactionId())) {
-                        isSorted = false;
-                    }
-                    Assert.assertEquals(leader.getHistory().get(i).getTransactionId(), handler.getState().getHistory().get(i).getTransactionId());
-                }
-                Assert.assertEquals(leader.getLeaderEpoch(), handler.getState().getLeaderEpoch());
-                Assert.assertEquals(leader.getCounter(), handler.getState().getCounter());
-                Assert.assertEquals(leader.getLastAcceptedIndex(), handler.getState().getLastAcceptedIndex());
-                Assert.assertTrue(isSorted);
+                checkHandlerHasSameState(context, handler.getState(), leader);
                 async.complete();
             }));
         async.awaitSuccess();
-        Assert.assertEquals(leader.getMessageStore().getNumberOfMessages(), handler.getState().getMessageStore().getNumberOfMessages());
-        for (int i = 0; i < INITIALIZED_MESSAGES; i++) {
-            Assert.assertEquals(
-                leader.getMessageStore().getMessage(Integer.toString(i)).encodePrettily(),
-                handler.getState().getMessageStore().getMessage(Integer.toString(i)).encodePrettily());
-        }
+        checkMessageStoreIsTheSame(leader.getMessageStore(), handler.getState().getMessageStore());
     }
 
     @Test
@@ -86,6 +100,30 @@ public class FollowerSynchronizeHandlerTest extends AbstractServerBase {
 
     private FollowerSynchronizeHandler createTestHandler() {
         return new FollowerSynchronizeHandler(vertx, new State(vertx, new MessageStore()), createTestCandidateInformationRegistry(true), createServerClient());
+    }
+
+    private void checkHandlerHasSameState(final TestContext context, final State handler, final State leader) {
+        context.assertEquals(INITIALIZED_MESSAGES, handler.getHistory().size());
+        boolean isSorted = true;
+        for (int i = 0; i < INITIALIZED_MESSAGES; i++) {
+            if (i > 0 && !handler.getHistory().get(i).getTransactionId().isLaterThan(handler.getHistory().get(i - 1).getTransactionId())) {
+                isSorted = false;
+            }
+            Assert.assertEquals(leader.getHistory().get(i).getTransactionId(), handler.getHistory().get(i).getTransactionId());
+        }
+        Assert.assertEquals(leader.getLeaderEpoch(), handler.getLeaderEpoch());
+        Assert.assertEquals(leader.getCounter(), handler.getCounter());
+        Assert.assertEquals(leader.getLastAcceptedIndex(), handler.getLastAcceptedIndex());
+        Assert.assertTrue(isSorted);
+    }
+
+    private void checkMessageStoreIsTheSame(final MessageStore leader, final MessageStore handler) {
+        Assert.assertEquals(leader.getNumberOfMessages(), handler.getNumberOfMessages());
+        for (int i = 0; i < INITIALIZED_MESSAGES; i++) {
+            Assert.assertEquals(
+                leader.getMessage(Integer.toString(i)).encodePrettily(),
+                handler.getMessage(Integer.toString(i)).encodePrettily());
+        }
     }
 
     private State createInitializedState(final TestContext context) {
