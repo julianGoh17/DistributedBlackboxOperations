@@ -64,8 +64,7 @@ public class StateTest {
         state.setCounter(counter);
 
         Assert.assertEquals(leaderEpoch, state.getLeaderEpoch());
-        Assert.assertEquals(counter, state.getAndIncrementCounter());
-        Assert.assertEquals(counter + 1, state.getCounter());
+        Assert.assertEquals(counter + 1, state.incrementAndGetCounter());
         Assert.assertEquals(counter + 1, state.getCounter());
     }
 
@@ -80,16 +79,16 @@ public class StateTest {
     }
 
     @Test
-    public void TestSetLastAcceptedIndex() {
+    public void TestSetLastAcceptedIfGreaterIndex() {
         State state = new State(vertx, new MessageStore());
         Assert.assertEquals(0, state.getLastAcceptedIndex());
 
         int higher = 2;
         int lower = 1;
-        state.setLastAcceptedIndex(higher);
+        state.setLastAcceptedIndexIfGreater(higher);
         Assert.assertEquals(higher + 1, state.getLastAcceptedIndex());
 
-        state.setLastAcceptedIndex(lower);
+        state.setLastAcceptedIndexIfGreater(lower);
         Assert.assertEquals(higher + 1, state.getLastAcceptedIndex());
     }
 
@@ -108,7 +107,7 @@ public class StateTest {
         Assert.assertFalse(state.doesExistOutstandingTransaction(ProposalTest.COUNTER));
         Assert.assertTrue(state.doesExistOutstandingTransaction(ProposalTest.COUNTER + offset));
 
-        state.setLastAcceptedIndex(2);
+        state.setLastAcceptedIndexIfGreater(2);
         Assert.assertFalse(state.doesExistOutstandingTransaction(ProposalTest.COUNTER + offset));
     }
 
@@ -281,6 +280,22 @@ public class StateTest {
         Assert.assertFalse(middle.isLaterThanState(highest));
         Assert.assertFalse(lowest.isLaterThanState(middle));
         Assert.assertFalse(lowest.isLaterThanState(highest));
+    }
+
+    @Test
+    public void TestSetState() {
+        State state = new State(Collections.emptyList(), 0, 0, 0);
+        State other = new State(Collections.singletonList(new Proposal(null, null)), 4, 1, 10);
+
+        Assert.assertNotEquals(state, other);
+        state.setState(other);
+        Assert.assertEquals(1, state.getHistory().size());
+        Assert.assertNull(state.getHistory().get(0).getNewState());
+        Assert.assertNull(state.getHistory().get(0).getTransactionId());
+        Assert.assertEquals(other.getLeaderEpoch(), state.getLeaderEpoch());
+        Assert.assertEquals(other.getCounter(), state.getCounter());
+        Assert.assertEquals(other.getLastAcceptedIndex(), state.getLastAcceptedIndex());
+        Assert.assertNotEquals(state, other);
     }
 
     @After

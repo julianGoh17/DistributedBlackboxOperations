@@ -109,7 +109,8 @@ public class State {
                         log.info("Processing DELETE state update");
                         messageStore.deleteMessageFromServer(message.getMessageId());
                     }
-                    setLastAcceptedIndex(index);
+                    setCounterToLatest(id.getCounter());
+                    setLastAcceptedIndexIfGreater(index);
                     update.complete();
                 } catch (SameIDException | NoIDException e) {
                     log.info(String.format("Couldn't process state update %s", id.toString()));
@@ -153,7 +154,16 @@ public class State {
         return log.traceExit(false);
     }
 
-    public void setLastAcceptedIndex(final int index) {
+    public void setCounterToLatest(final int counter) {
+        log.traceEntry(() -> counter);
+        if (this.counter.get() < counter) {
+            log.info(String.format("Updating counter to %d", counter));
+            this.counter.set(counter);
+        }
+        log.traceExit();
+    }
+
+    public void setLastAcceptedIndexIfGreater(final int index) {
         log.traceEntry(() -> index);
         final int nextIndex = index + 1;
         if (lastAcceptedIndex.get() < nextIndex) {
@@ -163,6 +173,12 @@ public class State {
             log.info(String.format("Skipping setting last accepted index to '%d' as current index '%s' is higher",
                 nextIndex, lastAcceptedIndex.get()));
         }
+        log.traceExit();
+    }
+
+    public void setLastAcceptedIndex(final int index) {
+        log.traceEntry(() -> index);
+        lastAcceptedIndex.set(index);
         log.traceExit();
     }
 
@@ -191,9 +207,9 @@ public class State {
         return log.traceExit(counter.get());
     }
 
-    public int getAndIncrementCounter() {
+    public int incrementAndGetCounter() {
         log.traceEntry();
-        return log.traceExit(counter.getAndIncrement());
+        return log.traceExit(counter.incrementAndGet());
     }
 
     public void setLeaderEpoch(final int epoch) {
@@ -211,6 +227,7 @@ public class State {
     public boolean isLaterThanState(final State other) {
         log.traceEntry(() -> other);
         if (leaderEpoch.get() == other.getLeaderEpoch()) {
+            log.info(String.format("State updated to latest epoch at (%d,%d)", other.getLeaderEpoch(), other.getCounter()));
             return log.traceExit(counter.get() >= other.getCounter());
         }
         return log.traceExit(leaderEpoch.get() > other.getLeaderEpoch());
@@ -222,7 +239,7 @@ public class State {
         setLeaderEpoch(other.getLeaderEpoch());
         this.history = other.getHistory();
         this.lastAcceptedIndex.set(other.getLastAcceptedIndex());
-        log.info(String.format("Leader new state with latest epoch at (%d,%d)", getLeaderEpoch(), getCounter()));
+        log.info(String.format("State updated to latest epoch at (%d,%d)", getLeaderEpoch(), getCounter()));
         log.traceExit();
     }
 
