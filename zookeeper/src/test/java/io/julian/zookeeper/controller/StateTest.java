@@ -232,10 +232,10 @@ public class StateTest {
     }
 
     @Test
-    public void TestToJson() {
+    public void TestToJson(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
-        state.addProposal(new Proposal(POST_MESSAGE, ID));
+        addProposal(context, state, new Proposal(POST_MESSAGE, ID));
         JsonArray expectedArray = new JsonArray();
         expectedArray.add(new Proposal(POST_MESSAGE, ID).toJson());
         JsonObject json = state.toJson();
