@@ -8,15 +8,12 @@ import io.julian.zookeeper.TestServerComponents;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.models.Proposal;
 import io.julian.zookeeper.models.Zxid;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class FollowerSynchronizeHandlerTest extends AbstractServerBase {
@@ -128,19 +125,22 @@ public class FollowerSynchronizeHandlerTest extends AbstractServerBase {
 
     private State createInitializedState(final TestContext context) {
         State state = new State(vertx, new MessageStore());
-        List<Future> stateUpdate = new ArrayList<>();
         for (int i = 0; i < INITIALIZED_MESSAGES; i++) {
             ClientMessage message = new ClientMessage(HTTPRequest.POST, POST, Integer.toString(i));
-            stateUpdate.add(state.addProposal(new Proposal(message, new Zxid(EARLIEST_ID.getEpoch(), i + 1))));
+            addProposal(context, state, new Proposal(message, new Zxid(EARLIEST_ID.getEpoch(), i + 1)));
             state.getMessageStore().putMessage(message.getMessageId(), message.getMessage());
         }
-        Async async = context.async();
-        CompositeFuture.all(stateUpdate)
-            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
-        async.awaitSuccess();
+
         state.setCounter(INITIALIZED_MESSAGES - 1);
         state.setLeaderEpoch(1);
-        state.setLastAcceptedIndex(INITIALIZED_MESSAGES - 1);
+        state.setLastAcceptedIndex(INITIALIZED_MESSAGES);
         return state;
+    }
+
+    private void addProposal(final TestContext context, final State state, final Proposal proposal) {
+        Async async = context.async();
+        state.addProposal(proposal)
+            .onComplete(v -> async.complete());
+        async.awaitSuccess();
     }
 }
