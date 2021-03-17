@@ -64,7 +64,7 @@ public class TestServerComponents {
         server = null;
         api = null;
         Async async = context.async();
-        vertx.undeploy(deploymentID.get(), context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> async.complete())));
+        vertx.undeploy(deploymentID.get(), context.asyncAssertSuccess(v -> async.complete()));
         async.awaitSuccess();
     }
 }
