@@ -81,4 +81,9 @@ public class DiscoveryHandler {
         log.traceEntry();
         return log.traceExit(leaderHandler);
     }
+
+    public boolean hasEnoughResponses() {
+        log.traceEntry();
+        return log.traceExit(leaderHandler.hasEnoughResponses());
+    }
 }

@@ -17,6 +17,7 @@ import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.models.CandidateInformation;
 import io.julian.zookeeper.models.ShortenedExchange;
 import io.julian.zookeeper.models.Zxid;
+import io.julian.zookeeper.synchronize.SynchronizeHandler;
 import io.julian.zookeeper.write.FollowerWriteHandler;
 import io.julian.zookeeper.write.LeaderWriteHandler;
 import io.julian.zookeeper.write.WriteHandler;
@@ -32,6 +33,7 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
     private final CandidateInformationRegistry registry;
     private final LeadershipElectionHandler electionHandler;
     private final DiscoveryHandler discoveryHandler;
+    private final SynchronizeHandler synchronizeHandler;
     private final WriteHandler writeHandler;
     private boolean hasNotBroadcast = true;
 
@@ -43,6 +45,7 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
         this.electionHandler = new LeadershipElectionHandler(candidateNumber, this.registry);
         this.discoveryHandler = new DiscoveryHandler(controller, state, registry, getRegistryManager(), getClient());
         this.writeHandler = new WriteHandler(controller, state, electionHandler.getCandidateRegistry(), getClient(), getRegistryManager());
+        this.synchronizeHandler = new SynchronizeHandler(vertx, state, getRegistryManager(), getClient(), registry, controller);
     }
 
     // To start simulation, will send a coordination message to do candidate broadcast.
@@ -56,8 +59,10 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
                 log.info("Received state update");
                 this.writeHandler.handleCoordinationMessage(message);
             } else if (messageClass == Zxid.class) {
-                log.info("Received Discovery update");
-                this.discoveryHandler.handleCoordinationMessage(message);
+                handleDiscoveryUpdate(message);
+            } else if (messageClass == State.class) {
+                log.info("Received Synchronize update");
+                this.synchronizeHandler.handleCoordinationMessage(message);
             } else {
                 log.info("Received Election update");
                 addCandidateInformation(message);
@@ -141,8 +146,23 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
             case DiscoveryHandler.DISCOVERY_TYPE:
             case LeaderDiscoveryHandler.LEADER_STATE_UPDATE_TYPE:
                 return log.traceExit(Zxid.class);
+            case SynchronizeHandler.SYNCHRONIZE_TYPE:
+                return log.traceExit(State.class);
         }
         return log.traceExit(Object.class);
+    }
+
+    private void handleDiscoveryUpdate(final CoordinationMessage message) {
+        log.traceEntry(() -> message);
+        log.info("Received Discovery update");
+        this.discoveryHandler.handleCoordinationMessage(message)
+            .onSuccess(v -> {
+                if (controller.getLabel().equals(LeadershipElectionHandler.LEADER_LABEL) && this.discoveryHandler.hasEnoughResponses()) {
+                    log.info("Starting Synchronize Phase");
+                    this.synchronizeHandler.broadcastState();
+                }
+            });
+        log.traceExit();
     }
 
     /**
