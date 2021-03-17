@@ -84,7 +84,7 @@ public class WriteHandler {
      */
     public Future<Void> initialProposalUpdate(final ClientMessage message) {
         log.traceEntry(() -> message);
-        final Zxid id = new Zxid(state.getLeaderEpoch(), state.getAndIncrementCounter());
+        final Zxid id = new Zxid(state.getLeaderEpoch(), state.incrementAndGetCounter());
         log.info(String.format("Adding proposal %s to history and broadcasting proposal", id));
         return log.traceExit(state.addProposal(new Proposal(message, id))
             .compose(v -> state.processStateUpdate(id))
@@ -105,7 +105,6 @@ public class WriteHandler {
     /*
      * Getters and Setters
      */
-
     public boolean isLeader() {
         log.traceEntry();
         return log.traceExit(controller.getLabel().equals(LeadershipElectionHandler.LEADER_LABEL));

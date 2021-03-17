@@ -10,26 +10,48 @@ import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class State {
     private static final Logger log = LogManager.getLogger(State.class.getName());
     public static final int MAX_RETRIES = 5;
 
-    private final ArrayList<Proposal> history = new ArrayList<>();
-    private final AtomicInteger lastAcceptedIndex = new AtomicInteger();
+    public static final String HISTORY_KEY = "history";
+    public static final String LEADER_EPOCH_KEY = "leader_epoch";
+    public static final String COUNTER_KEY = "counter";
+    public static final String LAST_ACCEPTED_INDEX_KEY = "last_accepted_index";
+
+    private List<Proposal> history;
+    private final AtomicInteger lastAcceptedIndex;
     private final Vertx vertx;
     private final MessageStore messageStore;
-    private final AtomicInteger leaderEpoch = new AtomicInteger();
-    private final AtomicInteger counter = new AtomicInteger();
+    private final AtomicInteger leaderEpoch;
+    private final AtomicInteger counter;
 
     public State(final Vertx vertx, final MessageStore messageStore) {
+        this.history = new ArrayList<>();
+        this.lastAcceptedIndex = new AtomicInteger();
         this.vertx = vertx;
         this.messageStore = messageStore;
+        this.leaderEpoch = new AtomicInteger();
+        this.counter = new AtomicInteger();
+    }
+
+    // Only used for JSON conversion
+    public State(final List<Proposal> history, final int lastAcceptedIndex, final int leaderEpoch, final int counter) {
+        this.history = history;
+        this.lastAcceptedIndex = new AtomicInteger(lastAcceptedIndex);
+        this.vertx = null;
+        this.messageStore = null;
+        this.leaderEpoch = new AtomicInteger(leaderEpoch);
+        this.counter = new AtomicInteger(counter);
     }
 
     public Future<Void> addProposal(final Proposal proposal) {
@@ -87,7 +109,8 @@ public class State {
                         log.info("Processing DELETE state update");
                         messageStore.deleteMessageFromServer(message.getMessageId());
                     }
-                    setLastAcceptedIndex(index);
+                    setCounterToLatest(id.getCounter());
+                    setLastAcceptedIndexIfGreater(index);
                     update.complete();
                 } catch (SameIDException | NoIDException e) {
                     log.info(String.format("Couldn't process state update %s", id.toString()));
@@ -131,7 +154,16 @@ public class State {
         return log.traceExit(false);
     }
 
-    public void setLastAcceptedIndex(final int index) {
+    public void setCounterToLatest(final int counter) {
+        log.traceEntry(() -> counter);
+        if (this.counter.get() < counter) {
+            log.info(String.format("Updating counter to %d", counter));
+            this.counter.set(counter);
+        }
+        log.traceExit();
+    }
+
+    public void setLastAcceptedIndexIfGreater(final int index) {
         log.traceEntry(() -> index);
         final int nextIndex = index + 1;
         if (lastAcceptedIndex.get() < nextIndex) {
@@ -144,7 +176,13 @@ public class State {
         log.traceExit();
     }
 
-    public ArrayList<Proposal> getHistory() {
+    public void setLastAcceptedIndex(final int index) {
+        log.traceEntry(() -> index);
+        lastAcceptedIndex.set(index);
+        log.traceExit();
+    }
+
+    public List<Proposal> getHistory() {
         log.traceEntry();
         return log.traceExit(this.history);
     }
@@ -169,9 +207,9 @@ public class State {
         return log.traceExit(counter.get());
     }
 
-    public int getAndIncrementCounter() {
+    public int incrementAndGetCounter() {
         log.traceEntry();
-        return log.traceExit(counter.getAndIncrement());
+        return log.traceExit(counter.incrementAndGet());
     }
 
     public void setLeaderEpoch(final int epoch) {
@@ -184,5 +222,52 @@ public class State {
         log.traceEntry(() -> counter);
         this.counter.set(counter);
         log.traceExit();
+    }
+
+    public boolean isLaterThanState(final State other) {
+        log.traceEntry(() -> other);
+        if (leaderEpoch.get() == other.getLeaderEpoch()) {
+            log.info(String.format("State updated to latest epoch at (%d,%d)", other.getLeaderEpoch(), other.getCounter()));
+            return log.traceExit(counter.get() >= other.getCounter());
+        }
+        return log.traceExit(leaderEpoch.get() > other.getLeaderEpoch());
+    }
+
+    public void setState(final State other) {
+        log.traceEntry(() -> other);
+        setCounter(other.getCounter());
+        setLeaderEpoch(other.getLeaderEpoch());
+        this.history = other.getHistory();
+        this.lastAcceptedIndex.set(other.getLastAcceptedIndex());
+        log.info(String.format("State updated to latest epoch at (%d,%d)", getLeaderEpoch(), getCounter()));
+        log.traceExit();
+    }
+
+    public JsonObject toJson() {
+        log.traceEntry();
+        final JsonArray historyJson = new JsonArray();
+        this.history
+            .forEach(proposal -> historyJson.add(proposal.toJson()));
+
+        return log.traceExit(new JsonObject()
+            .put(HISTORY_KEY, historyJson)
+            .put(LEADER_EPOCH_KEY, leaderEpoch.get())
+            .put(COUNTER_KEY, counter.get())
+            .put(LAST_ACCEPTED_INDEX_KEY, lastAcceptedIndex.get()));
+    }
+
+    public static State fromJson(final JsonObject json) {
+        log.traceEntry(() -> json);
+        final ArrayList<Proposal> history = new ArrayList<>();
+        json.getJsonArray(HISTORY_KEY)
+            .stream()
+            .forEach(proposal -> history.add(Proposal.mapFrom((JsonObject) proposal)));
+
+        return log.traceExit(new State(
+            history,
+            json.getInteger(LAST_ACCEPTED_INDEX_KEY),
+            json.getInteger(LEADER_EPOCH_KEY),
+            json.getInteger(COUNTER_KEY)
+            ));
     }
 }

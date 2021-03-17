@@ -12,15 +12,17 @@ import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
+
 public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
-    private final static Zxid LOWER_ID = new Zxid(1, 1);
-    private final static Zxid MIDDLE_ID = new Zxid(1, 5);
-    private final static Zxid HIGHER_ID = new Zxid(2, 3);
+    private final static State LOWER_STATE = new State(new ArrayList<>(), 0, 0, 0);
+    private final static State MIDDLE_STATE = new State(new ArrayList<>(), 0, 1, 5);
+    private final static State HIGHER_ID = new State(new ArrayList<>(), 0, 2, 3);
 
     @Test
     public void TestInit() {
         LeaderDiscoveryHandler handler = createHandler();
-        Assert.assertEquals(0, handler.getEpoch());
+        Assert.assertEquals(handler.getState(), handler.getLatestState());
         Assert.assertEquals(0, handler.getFollowerResponses());
         Assert.assertFalse(handler.hasEnoughResponses());
     }
@@ -28,19 +30,19 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
     @Test
     public void TestProcessFollowerZXID() {
         LeaderDiscoveryHandler handler = createHandler();
-        handler.processFollowerZXID(LOWER_ID);
-        Assert.assertEquals(LOWER_ID.getEpoch(), handler.getEpoch());
-        Assert.assertEquals(LOWER_ID.getCounter(), handler.getCounter());
+        handler.processFollowerState(LOWER_STATE);
+        Assert.assertEquals(LOWER_STATE.getLeaderEpoch(), handler.getLatestState().getLeaderEpoch());
+        Assert.assertEquals(LOWER_STATE.getCounter(), handler.getLatestState().getCounter());
         Assert.assertEquals(1, handler.getFollowerResponses());
 
-        handler.processFollowerZXID(HIGHER_ID);
-        Assert.assertEquals(HIGHER_ID.getEpoch(), handler.getEpoch());
-        Assert.assertEquals(HIGHER_ID.getCounter(), handler.getCounter());
+        handler.processFollowerState(HIGHER_ID);
+        Assert.assertEquals(HIGHER_ID.getLeaderEpoch(), handler.getLatestState().getLeaderEpoch());
+        Assert.assertEquals(HIGHER_ID.getCounter(), handler.getLatestState().getCounter());
         Assert.assertEquals(2, handler.getFollowerResponses());
 
-        handler.processFollowerZXID(MIDDLE_ID);
-        Assert.assertEquals(HIGHER_ID.getEpoch(), handler.getEpoch());
-        Assert.assertEquals(HIGHER_ID.getCounter(), handler.getCounter());
+        handler.processFollowerState(MIDDLE_STATE);
+        Assert.assertEquals(HIGHER_ID.getLeaderEpoch(), handler.getLatestState().getLeaderEpoch());
+        Assert.assertEquals(HIGHER_ID.getCounter(), handler.getLatestState().getCounter());
         Assert.assertEquals(3, handler.getFollowerResponses());
     }
 
@@ -49,34 +51,34 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
         LeaderDiscoveryHandler handler = createHandler();
         Assert.assertFalse(handler.hasEnoughResponses());
 
-        handler.processFollowerZXID(LOWER_ID);
+        handler.processFollowerState(LOWER_STATE);
         Assert.assertTrue(handler.hasEnoughResponses());
     }
 
     @Test
-    public void TestUpdateStateEpochAndCounter() {
+    public void TestUpdateToLatestState() {
         LeaderDiscoveryHandler handler = createHandler();
         Assert.assertEquals(0, handler.getState().getCounter());
         Assert.assertEquals(0, handler.getState().getLeaderEpoch());
-        handler.processFollowerZXID(LOWER_ID);
-        handler.updateStateEpochAndCounter();
+        handler.processFollowerState(LOWER_STATE);
+        handler.updateToLatestState();
 
-        Assert.assertEquals(LOWER_ID.getCounter(), handler.getState().getCounter());
-        Assert.assertEquals(LOWER_ID.getEpoch(), handler.getState().getLeaderEpoch());
+        Assert.assertEquals(LOWER_STATE.getCounter(), handler.getState().getCounter());
+        Assert.assertEquals(LOWER_STATE.getLeaderEpoch(), handler.getState().getLeaderEpoch());
     }
 
     @Test
     public void TestReset() {
         LeaderDiscoveryHandler handler = createHandler();
-        handler.processFollowerZXID(LOWER_ID);
-        handler.processFollowerZXID(HIGHER_ID);
-        Assert.assertEquals(HIGHER_ID.getEpoch(), handler.getEpoch());
-        Assert.assertEquals(HIGHER_ID.getCounter(), handler.getCounter());
+        handler.processFollowerState(LOWER_STATE);
+        handler.processFollowerState(HIGHER_ID);
+        Assert.assertEquals(HIGHER_ID.getLeaderEpoch(), handler.getLatestState().getLeaderEpoch());
+        Assert.assertEquals(HIGHER_ID.getCounter(), handler.getLatestState().getCounter());
         Assert.assertEquals(2, handler.getFollowerResponses());
 
         handler.reset();
-        Assert.assertEquals(handler.getState().getLeaderEpoch(), handler.getEpoch());
-        Assert.assertEquals(handler.getState().getCounter(), handler.getCounter());
+        Assert.assertEquals(handler.getState().getLeaderEpoch(), handler.getLatestState().getLeaderEpoch());
+        Assert.assertEquals(handler.getState().getCounter(), handler.getLatestState().getCounter());
         Assert.assertEquals(0, handler.getFollowerResponses());
     }
 

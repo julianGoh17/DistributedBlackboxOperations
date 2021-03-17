@@ -14,19 +14,15 @@ import org.junit.Assert;
 import org.junit.Test;
 
 public class FollowerDiscoveryHandlerTest extends AbstractServerBase {
-    private final static int EPOCH = 12;
-    private final static int COUNTER = 4321;
-    private final static Zxid ID = new Zxid(EPOCH, COUNTER);
-
     @Test
     public void TestCreateCoordinationMessage() {
         CandidateInformationRegistry registry = createTestCandidateInformationRegistry(false);
         FollowerDiscoveryHandler handler = getTestHandler(registry);
-        CoordinationMessage message = handler.createCoordinationMessage(ID);
+        CoordinationMessage message = handler.createCoordinationMessage();
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
         Assert.assertEquals(DiscoveryHandler.DISCOVERY_TYPE, message.getMetadata().getType());
         Assert.assertNull(message.getMessage());
-        Assert.assertEquals(ID.toJson().encodePrettily(), message.getDefinition().encodePrettily());
+        Assert.assertEquals(new State(vertx, new MessageStore()).toJson().encodePrettily(), message.getDefinition().encodePrettily());
     }
 
     @Test

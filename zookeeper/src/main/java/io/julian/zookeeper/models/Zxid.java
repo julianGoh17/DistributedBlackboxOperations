@@ -4,14 +4,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Objects;
 
 @Getter
 @Setter
 public class Zxid {
-    public final static String EPOCH_KEY = "epoch";
-    public final static String COUNTER_KEY = "counter";
+    private static final Logger log = LogManager.getLogger(Zxid.class);
+    public static final String EPOCH_KEY = "epoch";
+    public static final String COUNTER_KEY = "counter";
 
     private int epoch;
     private int counter;
@@ -26,6 +29,19 @@ public class Zxid {
         return new JsonObject()
             .put(EPOCH_KEY, epoch)
             .put(COUNTER_KEY, counter);
+    }
+
+    public boolean isLaterThan(final Zxid other) {
+        log.traceEntry(() -> other);
+        if (epoch != other.epoch) {
+            return log.traceExit(epoch > other.epoch);
+        }
+        return log.traceExit(counter > other.counter);
+    }
+
+    public static int comparator(final Zxid a, final Zxid b) {
+        log.traceEntry(() -> a, () -> b);
+        return log.traceExit(b.isLaterThan(a) ? -1 : a.equals(b) ? 0 : 1);
     }
 
     @Override

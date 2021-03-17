@@ -8,6 +8,7 @@ import io.julian.zookeeper.models.ProposalTest;
 import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -17,6 +18,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.ArrayList;
+import java.util.Collections;
 
 @RunWith(VertxUnitRunner.class)
 public class StateTest {
@@ -42,6 +46,13 @@ public class StateTest {
         Assert.assertEquals(0, state.getLastAcceptedIndex());
         Assert.assertEquals(0, state.getLeaderEpoch());
         Assert.assertEquals(0, state.getMessageStore().getNumberOfMessages());
+
+        state = new State(new ArrayList<>(), 0, 0, 0);
+        Assert.assertEquals(0, state.getHistory().size());
+        Assert.assertEquals(0, state.getCounter());
+        Assert.assertEquals(0, state.getLastAcceptedIndex());
+        Assert.assertEquals(0, state.getLeaderEpoch());
+        Assert.assertNull(state.getMessageStore());
     }
 
     @Test
@@ -53,8 +64,7 @@ public class StateTest {
         state.setCounter(counter);
 
         Assert.assertEquals(leaderEpoch, state.getLeaderEpoch());
-        Assert.assertEquals(counter, state.getAndIncrementCounter());
-        Assert.assertEquals(counter + 1, state.getCounter());
+        Assert.assertEquals(counter + 1, state.incrementAndGetCounter());
         Assert.assertEquals(counter + 1, state.getCounter());
     }
 
@@ -69,16 +79,16 @@ public class StateTest {
     }
 
     @Test
-    public void TestSetLastAcceptedIndex() {
+    public void TestSetLastAcceptedIfGreaterIndex() {
         State state = new State(vertx, new MessageStore());
         Assert.assertEquals(0, state.getLastAcceptedIndex());
 
         int higher = 2;
         int lower = 1;
-        state.setLastAcceptedIndex(higher);
+        state.setLastAcceptedIndexIfGreater(higher);
         Assert.assertEquals(higher + 1, state.getLastAcceptedIndex());
 
-        state.setLastAcceptedIndex(lower);
+        state.setLastAcceptedIndexIfGreater(lower);
         Assert.assertEquals(higher + 1, state.getLastAcceptedIndex());
     }
 
@@ -97,7 +107,7 @@ public class StateTest {
         Assert.assertFalse(state.doesExistOutstandingTransaction(ProposalTest.COUNTER));
         Assert.assertTrue(state.doesExistOutstandingTransaction(ProposalTest.COUNTER + offset));
 
-        state.setLastAcceptedIndex(2);
+        state.setLastAcceptedIndexIfGreater(2);
         Assert.assertFalse(state.doesExistOutstandingTransaction(ProposalTest.COUNTER + offset));
     }
 
@@ -163,7 +173,7 @@ public class StateTest {
     public void processStateUpdateProcessesPOSTUpdate(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
-        state.addProposal(new Proposal(POST_MESSAGE, ID));
+        addProposal(context, state, new Proposal(POST_MESSAGE, ID));
 
         Future<Void> update = state.processStateUpdate(ID);
         Async async = context.async();
@@ -179,7 +189,7 @@ public class StateTest {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
         messageStore.putMessage(MESSAGE_ID, new JsonObject());
-        state.addProposal(new Proposal(DELETE_MESSAGE, ID));
+        addProposal(context, state, new Proposal(DELETE_MESSAGE, ID));
 
         Future<Void> update = state.processStateUpdate(ID);
         Async async = context.async();
@@ -194,7 +204,8 @@ public class StateTest {
     public void processStateUpdateFailsDELETEUpdate(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
-        state.addProposal(new Proposal(DELETE_MESSAGE, ID));
+        addProposal(context, state, new Proposal(DELETE_MESSAGE, ID));
+
 
         Future<Void> update = state.processStateUpdate(ID);
         Async async = context.async();
@@ -209,7 +220,8 @@ public class StateTest {
     public void processStateUpdateFailsPOSTUpdate(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
-        state.addProposal(new Proposal(POST_MESSAGE, ID));
+        addProposal(context, state, new Proposal(POST_MESSAGE, ID));
+
         messageStore.putMessage(MESSAGE_ID, new JsonObject());
 
         Future<Void> update = state.processStateUpdate(ID);
@@ -219,6 +231,73 @@ public class StateTest {
             async.complete();
         }));
         async.awaitSuccess();
+    }
+
+    @Test
+    public void TestToJson(final TestContext context) {
+        MessageStore messageStore = new MessageStore();
+        State state = new State(vertx, messageStore);
+        addProposal(context, state, new Proposal(POST_MESSAGE, ID));
+        JsonArray expectedArray = new JsonArray();
+        expectedArray.add(new Proposal(POST_MESSAGE, ID).toJson());
+        JsonObject json = state.toJson();
+        Assert.assertEquals(0, json.getInteger(State.LEADER_EPOCH_KEY).intValue());
+        Assert.assertEquals(expectedArray.encodePrettily(), json.getJsonArray(State.HISTORY_KEY).encodePrettily());
+        Assert.assertEquals(0, json.getInteger(State.COUNTER_KEY).intValue());
+        Assert.assertEquals(0, json.getInteger(State.LAST_ACCEPTED_INDEX_KEY).intValue());
+    }
+
+    @Test
+    public void TestMapFromJson() {
+        JsonArray history = new JsonArray();
+        int leaderEpoch = 3;
+        int counter = -1;
+        int lastAcceptedIndex = 5;
+        history.add(new Proposal(POST_MESSAGE, ID).toJson());
+        JsonObject json = new JsonObject()
+            .put(State.LEADER_EPOCH_KEY, leaderEpoch)
+            .put(State.COUNTER_KEY, counter)
+            .put(State.HISTORY_KEY, history)
+            .put(State.LAST_ACCEPTED_INDEX_KEY, lastAcceptedIndex);
+
+        State state = State.fromJson(json);
+        Assert.assertEquals(leaderEpoch, state.getLeaderEpoch());
+        Assert.assertEquals(1, state.getHistory().size());
+        Assert.assertEquals(POST_MESSAGE.toJson().encodePrettily(), state.getHistory().get(0).getNewState().toJson().encodePrettily());
+        Assert.assertEquals(ID.toJson().encodePrettily(), state.getHistory().get(0).getTransactionId().toJson().encodePrettily());
+        Assert.assertEquals(counter, state.getCounter());
+        Assert.assertEquals(lastAcceptedIndex, state.getLastAcceptedIndex());
+    }
+
+    @Test
+    public void TestIsLaterThan() {
+        State lowest = new State(Collections.emptyList(), 0, 0, 0);
+        State middle = new State(Collections.emptyList(), 0, 1, 10);
+        State highest = new State(Collections.emptyList(), 0, 2, 0);
+
+        Assert.assertTrue(highest.isLaterThanState(middle));
+        Assert.assertTrue(highest.isLaterThanState(lowest));
+        Assert.assertTrue(middle.isLaterThanState(lowest));
+
+        Assert.assertFalse(middle.isLaterThanState(highest));
+        Assert.assertFalse(lowest.isLaterThanState(middle));
+        Assert.assertFalse(lowest.isLaterThanState(highest));
+    }
+
+    @Test
+    public void TestSetState() {
+        State state = new State(Collections.emptyList(), 0, 0, 0);
+        State other = new State(Collections.singletonList(new Proposal(null, null)), 4, 1, 10);
+
+        Assert.assertNotEquals(state, other);
+        state.setState(other);
+        Assert.assertEquals(1, state.getHistory().size());
+        Assert.assertNull(state.getHistory().get(0).getNewState());
+        Assert.assertNull(state.getHistory().get(0).getTransactionId());
+        Assert.assertEquals(other.getLeaderEpoch(), state.getLeaderEpoch());
+        Assert.assertEquals(other.getCounter(), state.getCounter());
+        Assert.assertEquals(other.getLastAcceptedIndex(), state.getLastAcceptedIndex());
+        Assert.assertNotEquals(state, other);
     }
 
     @After

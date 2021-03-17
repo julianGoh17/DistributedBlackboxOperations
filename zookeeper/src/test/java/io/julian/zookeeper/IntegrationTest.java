@@ -41,7 +41,7 @@ public class IntegrationTest extends AbstractServerBase {
             .forEach(server -> {
                 ZookeeperAlgorithm algorithm = (ZookeeperAlgorithm) server.server.getVerticle().getAlgorithm();
                 Assert.assertEquals(epoch, algorithm.getState().getLeaderEpoch());
-                Assert.assertEquals(epoch, algorithm.getState().getLeaderEpoch());
+                Assert.assertEquals(counter, algorithm.getState().getCounter());
             });
 
         tearDownServer(context, server1);
@@ -71,7 +71,7 @@ public class IntegrationTest extends AbstractServerBase {
         tearDownServer(context, server2);
     }
 
-    @Test
+    @Test(timeout = 300000)
     public void TestFollowerWriteRequestForwardsToLeader(final TestContext context) {
         TestServerComponents server1 = setUpZookeeperApiServer(context, DEFAULT_SEVER_CONFIG);
         TestServerComponents server2 = setUpZookeeperApiServer(context, SECOND_SERVER_CONFIG);
@@ -84,7 +84,7 @@ public class IntegrationTest extends AbstractServerBase {
         TestClient client = createTestClient();
         Async async = context.async();
         client.POST_MESSAGE(follower.configuration.getHost(), follower.configuration.getPort(), MESSAGE)
-            .onComplete(v -> vertx.setTimer(1500, v2 -> {
+            .onComplete(v -> vertx.setTimer(2500, v2 -> {
                 Assert.assertEquals(1, server1.server.getMessages().getNumberOfMessages());
                 Assert.assertEquals(1, server2.server.getMessages().getNumberOfMessages());
                 async.complete();
@@ -100,7 +100,7 @@ public class IntegrationTest extends AbstractServerBase {
         client.sendCoordinateMessageToServer(AbstractServerBase.DEFAULT_SEVER_CONFIG, new CoordinationMessage(HTTPRequest.POST, new JsonObject()))
             .onComplete(context.asyncAssertSuccess(res ->
                 // Wait 2 seconds to let servers stabilize
-                vertx.setTimer(1000, complete -> async.complete())));
+                vertx.setTimer(2000, complete -> async.complete())));
         async.awaitSuccess();
     }
 
