@@ -71,7 +71,7 @@ public class IntegrationTest extends AbstractServerBase {
         tearDownServer(context, server2);
     }
 
-    @Test
+    @Test(timeout = 300000)
     public void TestFollowerWriteRequestForwardsToLeader(final TestContext context) {
         TestServerComponents server1 = setUpZookeeperApiServer(context, DEFAULT_SEVER_CONFIG);
         TestServerComponents server2 = setUpZookeeperApiServer(context, SECOND_SERVER_CONFIG);
