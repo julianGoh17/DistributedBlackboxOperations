@@ -100,7 +100,7 @@ public class IntegrationTest extends AbstractServerBase {
         client.sendCoordinateMessageToServer(AbstractServerBase.DEFAULT_SEVER_CONFIG, new CoordinationMessage(HTTPRequest.POST, new JsonObject()))
             .onComplete(context.asyncAssertSuccess(res ->
                 // Wait 2 seconds to let servers stabilize
-                vertx.setTimer(1000, complete -> async.complete())));
+                vertx.setTimer(2000, complete -> async.complete())));
         async.awaitSuccess();
     }
 

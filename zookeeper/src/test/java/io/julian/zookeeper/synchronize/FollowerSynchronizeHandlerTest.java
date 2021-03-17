@@ -114,7 +114,7 @@ public class FollowerSynchronizeHandlerTest extends AbstractServerBase {
         Assert.assertEquals(leader.getLeaderEpoch(), handler.getLeaderEpoch());
         Assert.assertEquals(leader.getCounter(), handler.getCounter());
         Assert.assertEquals(leader.getLastAcceptedIndex(), handler.getLastAcceptedIndex());
-        Assert.assertTrue(isSorted);
+        Assert.assertTrue("handler history is not in sorted order", isSorted);
     }
 
     private void checkMessageStoreIsTheSame(final MessageStore leader, final MessageStore handler) {
@@ -140,7 +140,7 @@ public class FollowerSynchronizeHandlerTest extends AbstractServerBase {
         async.awaitSuccess();
         state.setCounter(INITIALIZED_MESSAGES - 1);
         state.setLeaderEpoch(1);
-        state.setLastAcceptedIndexIfGreater(INITIALIZED_MESSAGES - 1);
+        state.setLastAcceptedIndex(INITIALIZED_MESSAGES - 1);
         return state;
     }
 }
