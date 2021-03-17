@@ -35,7 +35,6 @@ public class LeaderWriteHandlerTest extends AbstractServerBase {
             .onComplete(context.asyncAssertSuccess(res -> async.complete()));
 
         async.awaitSuccess();
-
         tearDownServer(context, server);
     }
 
@@ -49,7 +48,6 @@ public class LeaderWriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
                 async.complete();
             }));
-
         async.awaitSuccess();
     }
 
