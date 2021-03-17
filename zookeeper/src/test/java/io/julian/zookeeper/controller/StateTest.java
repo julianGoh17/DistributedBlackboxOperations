@@ -173,7 +173,7 @@ public class StateTest {
     public void processStateUpdateProcessesPOSTUpdate(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
-        state.addProposal(new Proposal(POST_MESSAGE, ID));
+        addProposal(context, state, new Proposal(POST_MESSAGE, ID));
 
         Future<Void> update = state.processStateUpdate(ID);
         Async async = context.async();
@@ -189,7 +189,7 @@ public class StateTest {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
         messageStore.putMessage(MESSAGE_ID, new JsonObject());
-        state.addProposal(new Proposal(DELETE_MESSAGE, ID));
+        addProposal(context, state, new Proposal(DELETE_MESSAGE, ID));
 
         Future<Void> update = state.processStateUpdate(ID);
         Async async = context.async();
@@ -204,7 +204,8 @@ public class StateTest {
     public void processStateUpdateFailsDELETEUpdate(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
-        state.addProposal(new Proposal(DELETE_MESSAGE, ID));
+        addProposal(context, state, new Proposal(DELETE_MESSAGE, ID));
+
 
         Future<Void> update = state.processStateUpdate(ID);
         Async async = context.async();
@@ -219,7 +220,8 @@ public class StateTest {
     public void processStateUpdateFailsPOSTUpdate(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
-        state.addProposal(new Proposal(POST_MESSAGE, ID));
+        addProposal(context, state, new Proposal(POST_MESSAGE, ID));
+
         messageStore.putMessage(MESSAGE_ID, new JsonObject());
 
         Future<Void> update = state.processStateUpdate(ID);
