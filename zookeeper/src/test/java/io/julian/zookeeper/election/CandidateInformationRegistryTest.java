@@ -1,6 +1,7 @@
 package io.julian.zookeeper.election;
 
 import io.julian.server.api.client.RegistryManager;
+import io.julian.server.components.Configuration;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.zookeeper.models.CandidateInformation;
 import org.junit.Assert;
@@ -81,7 +82,7 @@ public class CandidateInformationRegistryTest {
     @Test
     public void TestIsRegistryFilled() {
         CandidateInformationRegistry registry = new CandidateInformationRegistry();
-        RegistryManager manager = new RegistryManager();
+        RegistryManager manager = new RegistryManager(new Configuration());
 
         Assert.assertFalse(registry.isRegistryFilled(manager));
 

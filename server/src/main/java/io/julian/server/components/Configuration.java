@@ -13,6 +13,10 @@ public class Configuration {
     public static final String DEFAULT_OPENAPI_SPEC_LOCATION = "src/main/resources/ServerEndpoints.yaml";
     private String openApiSpecLocation;
 
+    public static final String SERVER_CONFIGURATION_LOCATION = "SERVER_CONFIGURATION_LOCATION";
+    public static final String DEFAULT_SERVER_CONFIGURATION_LOCATION = "";
+    private String serverConfigurationLocation;
+
     public static final String SERVER_HOST_ENV = "SERVER_HOST";
     public static final String DEFAULT_SERVER_HOST = "localhost";
     private String host;
@@ -32,6 +36,7 @@ public class Configuration {
 
     public Configuration() {
         this.openApiSpecLocation = getOrDefault(OPENAPI_SPEC_LOCATION_ENV, DEFAULT_OPENAPI_SPEC_LOCATION);
+        this.serverConfigurationLocation = getOrDefault(SERVER_CONFIGURATION_LOCATION, DEFAULT_SERVER_CONFIGURATION_LOCATION);
         this.host = getOrDefault(SERVER_HOST_ENV, DEFAULT_SERVER_HOST);
         this.port = getOrDefault(SERVER_PORT_ENV, DEFAULT_SERVER_PORT);
         this.jarFilePath = getOrDefault(JAR_FILE_PATH_ENV, "");
@@ -69,6 +74,17 @@ public class Configuration {
     public void setOpenapiSpecLocation(final String openApiSpecLocation) {
         log.traceEntry(() -> openApiSpecLocation);
         this.openApiSpecLocation = openApiSpecLocation;
+        log.traceExit();
+    }
+
+    public String getServerConfigurationLocation() {
+        log.traceEntry();
+        return log.traceExit(serverConfigurationLocation);
+    }
+
+    public void setServerConfigurationLocation(final String serverConfigurationLocation) {
+        log.traceEntry(() -> serverConfigurationLocation);
+        this.serverConfigurationLocation = serverConfigurationLocation;
         log.traceExit();
     }
 

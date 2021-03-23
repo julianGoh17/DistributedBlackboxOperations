@@ -34,7 +34,7 @@ public class LeadershipElectionHandlerTest extends AbstractServerBase {
     @Test
     public void TestUpdateLeaderCorrectlyUpdatesServerToLeader() {
         Controller controller = new Controller(new Configuration());
-        RegistryManager manager = new RegistryManager();
+        RegistryManager manager = new RegistryManager(new Configuration());
 
 
         LeadershipElectionHandler handler = createTestHandler();
@@ -52,7 +52,7 @@ public class LeadershipElectionHandlerTest extends AbstractServerBase {
     @Test
     public void TestUpdateLeaderCorrectlyUpdatesServerToFollower() {
         Controller controller = new Controller(new Configuration());
-        RegistryManager manager = new RegistryManager();
+        RegistryManager manager = new RegistryManager(new Configuration());
 
         LeadershipElectionHandler handler = createTestHandler();
         manager.registerServer(HOST, PORT);
