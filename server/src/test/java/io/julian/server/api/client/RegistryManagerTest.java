@@ -1,5 +1,6 @@
 package io.julian.server.api.client;
 
+import io.julian.server.components.Configuration;
 import io.julian.server.models.control.ServerConfiguration;
 import org.junit.Assert;
 import org.junit.Test;
@@ -10,14 +11,33 @@ public class RegistryManagerTest {
 
     @Test
     public void TestRegistryMangerInit() {
-        RegistryManager registryManager = new RegistryManager();
+        RegistryManager registryManager = createTestRegistryManger();
         Assert.assertNotNull(registryManager.getOtherServers());
         Assert.assertEquals(0, registryManager.getOtherServers().size());
     }
 
     @Test
+    public void TestRegistryManagerWithServersLoaded() {
+        Configuration configuration = new Configuration();
+        configuration.setServerConfigurationLocation(ServerConfigReaderTest.VALID_CONFIGURATION_PATH);
+        RegistryManager registryManager = createTestRegistryManager(configuration);
+
+        Assert.assertEquals(2, registryManager.getOtherServers().size());
+    }
+
+    @Test
+    public void TestRegistryManagerDoesNotAddCurrentConfiguration() {
+        Configuration configuration = new Configuration();
+        configuration.setServerConfigurationLocation(ServerConfigReaderTest.VALID_CONFIGURATION_PATH);
+        configuration.setServerPort(9898);
+        RegistryManager registryManager = createTestRegistryManager(configuration);
+
+        Assert.assertEquals(1, registryManager.getOtherServers().size());
+    }
+
+    @Test
     public void TestRegistryMangerAdd() {
-        RegistryManager registryManager = new RegistryManager();
+        RegistryManager registryManager = createTestRegistryManger();
         Assert.assertNotNull(registryManager.getOtherServers());
         Assert.assertEquals(0, registryManager.getOtherServers().size());
 
@@ -28,7 +48,7 @@ public class RegistryManagerTest {
 
     @Test
     public void TestRegistryMangerFindServerWithLabel() {
-        RegistryManager registryManager = new RegistryManager();
+        RegistryManager registryManager = createTestRegistryManger();
         Assert.assertNotNull(registryManager.getOtherServers());
         Assert.assertEquals(0, registryManager.getOtherServers().size());
 
@@ -38,5 +58,13 @@ public class RegistryManagerTest {
         Assert.assertEquals(2, registryManager.getOtherServers().size());
         Assert.assertEquals(1, registryManager.getOtherServersWithLabel(LABEL_CONFIGURATION.getLabel()).size());
         Assert.assertEquals(LABEL_CONFIGURATION.getHost(), registryManager.getOtherServersWithLabel(LABEL_CONFIGURATION.getLabel()).get(0).getHost());
+    }
+
+    private RegistryManager createTestRegistryManger() {
+        return createTestRegistryManager(new Configuration());
+    }
+
+    private RegistryManager createTestRegistryManager(final Configuration configuration) {
+        return new RegistryManager(configuration);
     }
 }

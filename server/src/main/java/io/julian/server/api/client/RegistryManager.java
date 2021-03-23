@@ -2,12 +2,10 @@ package io.julian.server.api.client;
 
 import io.julian.server.components.Configuration;
 import io.julian.server.models.control.ServerConfiguration;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,7 +13,12 @@ import java.util.stream.Collectors;
 public class RegistryManager {
     private final Logger log = LogManager.getLogger(RegistryManager.class.getName());
     private final List<ServerConfiguration> otherServers = new ArrayList<>();
-    private final Configuration configuration = new Configuration();
+    private final Configuration configuration;
+
+    public RegistryManager(final Configuration configuration) {
+        this.configuration = configuration;
+        registerServers();
+    }
 
     public List<ServerConfiguration> getOtherServers() {
         log.traceEntry();
@@ -44,23 +47,26 @@ public class RegistryManager {
         log.traceExit();
     }
 
-    /**
-     * Exposed for Testing
-     */
-    public void registerServersInsideServerConfiguration() {
+    private void registerServers() {
         log.traceEntry();
         if (!configuration.getOpenapiSpecLocation().equals(Configuration.DEFAULT_SERVER_CONFIGURATION_LOCATION)) {
             log.info(String.format("Registering servers from file in path '%s'", configuration.getServerConfigurationLocation()));
-
+            ServerConfigReader reader = new ServerConfigReader();
+            try {
+                List<Pair<String, Integer>> serverConfigurations = reader.getServerConfigurations(configuration.getServerConfigurationLocation());
+                serverConfigurations.forEach(pair -> {
+                    if (!pair.getLeft().equals(configuration.getServerHost()) || pair.getRight() != (configuration.getServerPort())) {
+                        log.info(String.format("Registering server '%s:%d' into server", pair.getLeft(), pair.getRight()));
+                        otherServers.add(new ServerConfiguration(pair.getLeft(), pair.getRight()));
+                    }
+                });
+            } catch (Exception e) {
+                log.info("Couldn't register servers due to error");
+                log.error(e);
+            }
         } else {
             log.info("Skipping registering servers as no file passed in");
         }
         log.traceExit();
-    }
-
-    private String readFile(final String filePath) throws IOException {
-        log.traceEntry(() -> filePath);
-        Path path = Path.of(filePath);
-        return log.traceExit(Files.readString(path));
     }
 }

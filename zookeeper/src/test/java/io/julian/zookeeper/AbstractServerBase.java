@@ -57,10 +57,11 @@ public abstract class AbstractServerBase {
     }
 
     protected RegistryManager createTestRegistryManager() {
-        RegistryManager manager = new RegistryManager();
+        RegistryManager manager = new RegistryManager(new Configuration());
         manager.registerServer(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
         return manager;
     }
+
 
     protected ServerClient createServerClient() {
         return new ServerClient(this.vertx);
