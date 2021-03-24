@@ -10,6 +10,7 @@ import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.ConcurrentHashSet;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
@@ -34,6 +35,8 @@ public class State {
     private final MessageStore messageStore;
     private final AtomicInteger leaderEpoch;
     private final AtomicInteger counter;
+    private final ConcurrentHashSet<Zxid> addedIds;
+    private final ConcurrentHashSet<Zxid> processedIds;
 
     public State(final Vertx vertx, final MessageStore messageStore) {
         this.history = new ArrayList<>();
@@ -42,6 +45,8 @@ public class State {
         this.messageStore = messageStore;
         this.leaderEpoch = new AtomicInteger();
         this.counter = new AtomicInteger();
+        this.addedIds = new ConcurrentHashSet<>();
+        this.processedIds = new ConcurrentHashSet<>();
     }
 
     // Only used for JSON conversion
@@ -52,6 +57,8 @@ public class State {
         this.messageStore = null;
         this.leaderEpoch = new AtomicInteger(leaderEpoch);
         this.counter = new AtomicInteger(counter);
+        this.addedIds = new ConcurrentHashSet<>();
+        this.processedIds = new ConcurrentHashSet<>();
     }
 
     public Future<Void> addProposal(final Proposal proposal) {
@@ -60,7 +67,12 @@ public class State {
         Promise<Void> write = Promise.promise();
         vertx.executeBlocking(future -> {
             try {
-                history.add(proposal);
+                if (addedIds.contains(proposal.getTransactionId())) {
+                    log.info(String.format("Skipping adding proposal %s as it has already been added", proposal.getTransactionId()));
+                } else {
+                    history.add(proposal);
+                    addedIds.add(proposal.getTransactionId());
+                }
                 future.complete();
             } catch (Exception e) {
                 future.fail(e);
@@ -96,12 +108,13 @@ public class State {
                 }
             } else {
                 try {
-                    int index = retrieveStateUpdateIndex(id);
-                    ClientMessage message = retrieveStateUpdate(index);
+                    LastIndexResult res = retrieveStateUpdateIndex(id);
+                    ClientMessage message = retrieveStateUpdate(res.index);
                     if (message == null) {
                         update.fail(String.format("State update with %s does not exist", id.toString()));
                         vertx.cancelTimer(timerID);
                     }
+                    processedIds.add(id);
                     if (HTTPRequest.POST.equals(message.getRequest())) {
                         log.info("Processing POST state update");
                         messageStore.addMessageToServer(message.getMessageId(), message.getMessage());
@@ -110,7 +123,9 @@ public class State {
                         messageStore.deleteMessageFromServer(message.getMessageId());
                     }
                     setCounterToLatest(id.getCounter());
-                    setLastAcceptedIndexIfGreater(index);
+                    if (res.canUpdate) {
+                        setLastAcceptedIndexIfGreater(res.index);
+                    }
                     update.complete();
                 } catch (SameIDException | NoIDException e) {
                     log.info(String.format("Couldn't process state update %s", id.toString()));
@@ -123,17 +138,20 @@ public class State {
         return log.traceExit(update.future());
     }
 
-    public int retrieveStateUpdateIndex(final Zxid id) {
+    public LastIndexResult retrieveStateUpdateIndex(final Zxid id) {
         log.traceEntry(() -> id);
         log.info(String.format("Retrieving state update with %s id", id.toString()));
+        boolean canUpdate = true;
         for (int i = lastAcceptedIndex.get(); i < history.size(); i++) {
-            if (history.get(i).getTransactionId().equals(id)) {
+            if (history.get(i).getTransactionId().isLaterThan(id)) {
+                canUpdate = false;
+            } else if (history.get(i).getTransactionId().equals(id)) {
                 log.info(String.format("Successfully retrieved state update with %s id", id.toString()));
-                return log.traceExit(i);
+                return log.traceExit(new LastIndexResult(i, canUpdate));
             }
         }
         log.info(String.format("Could not find state update with %s id", id.toString()));
-        return log.traceExit(-1);
+        return log.traceExit(new LastIndexResult(-1, false));
     }
 
     public ClientMessage retrieveStateUpdate(final int i) {
@@ -145,7 +163,7 @@ public class State {
         log.traceEntry(() -> nextCounter);
         log.info(String.format("Checking for outstanding transaction with smaller counter than '%d'", nextCounter));
         for (int i = lastAcceptedIndex.get(); i < history.size(); i++) {
-            if (history.get(i).getTransactionId().getCounter() < nextCounter) {
+            if (history.get(i).getTransactionId().getCounter() < nextCounter && !processedIds.contains(history.get(i).getTransactionId())) {
                 log.info(String.format("Exists outstanding transaction with counter '%d'", history.get(i).getTransactionId().getCounter()));
                 return log.traceExit(true);
             }
@@ -239,6 +257,8 @@ public class State {
         setLeaderEpoch(other.getLeaderEpoch());
         this.history = other.getHistory();
         this.lastAcceptedIndex.set(other.getLastAcceptedIndex());
+        this.addedIds.clear();
+        this.processedIds.clear();
         log.info(String.format("State updated to latest epoch at (%d,%d)", getLeaderEpoch(), getCounter()));
         log.traceExit();
     }
@@ -269,5 +289,15 @@ public class State {
             json.getInteger(LEADER_EPOCH_KEY),
             json.getInteger(COUNTER_KEY)
             ));
+    }
+
+    public static class LastIndexResult {
+        public int index;
+        public boolean canUpdate;
+
+        public LastIndexResult(final int index, final boolean canUpdate) {
+            this.index = index;
+            this.canUpdate = canUpdate;
+        }
     }
 }
