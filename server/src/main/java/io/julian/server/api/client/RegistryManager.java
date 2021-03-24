@@ -49,7 +49,7 @@ public class RegistryManager {
 
     private void registerServers() {
         log.traceEntry();
-        if (!configuration.getOpenapiSpecLocation().equals(Configuration.DEFAULT_SERVER_CONFIGURATION_LOCATION)) {
+        if (!configuration.getServerConfigurationLocation().equals(Configuration.DEFAULT_SERVER_CONFIGURATION_LOCATION)) {
             log.info(String.format("Registering servers from file in path '%s'", configuration.getServerConfigurationLocation()));
             ServerConfigReader reader = new ServerConfigReader();
             try {
