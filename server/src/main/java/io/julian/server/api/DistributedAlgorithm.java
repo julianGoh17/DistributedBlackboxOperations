@@ -60,6 +60,25 @@ public abstract class DistributedAlgorithm {
     }
 
     /**
+     * Retrieve and remove the earliest message from the dead letter queue
+     * @return the earliest coordination message
+     */
+    public CoordinationMessage getDeadLetter() {
+        log.traceEntry();
+        return log.traceExit(controller.getDeadLetter());
+    }
+
+    /**
+     * Add a failed message to the dead letter queue to be retried later
+     * @param failedMessage failed message
+     */
+    public void addToDeadLetterQueue(final CoordinationMessage failedMessage) {
+        log.traceEntry(() -> failedMessage);
+        controller.addToDeadLetterQueue(failedMessage);
+        log.traceExit();
+    }
+
+    /**
      * Adds the user message and the id of that message (received from another server) to the server's messages if the
      * ID does not currently exist in the server.
      * @param message Coordination message received from another server.
@@ -82,7 +101,6 @@ public abstract class DistributedAlgorithm {
         messageStore.deleteMessageFromServer(message.getMetadata().getMessageID());
         log.traceExit();
     }
-
 
     /**
      * Retrieves the controller of the server, which will give access to the internal server settings

@@ -28,7 +28,9 @@ public class IntegrationTest extends AbstractServerBaseTest {
                 for (int i = 0; i < 2; i++) {
                     TestCoordinateMessagesAreTheSame(TestClient.MESSAGE, server.getController().getCoordinationMessage());
                 }
+                TestCoordinateMessagesAreTheSame(TestClient.MESSAGE, server.getController().getDeadLetter());
                 Assert.assertEquals(0, server.getController().getNumberOfCoordinationMessages());
+                Assert.assertEquals(0, server.getController().getNumberOfDeadLetters());
                 async.complete();
             }));
 
@@ -49,7 +51,6 @@ public class IntegrationTest extends AbstractServerBaseTest {
                 Assert.assertEquals(TEST_MESSAGE.encodePrettily(),
                     clientMessage.getMessage().encodePrettily());
                 Assert.assertEquals(HTTPRequest.POST, clientMessage.getRequest());
-
                 Assert.assertEquals(0, server.getController().getNumberOfClientMessages());
                 async.complete();
             }));

@@ -20,6 +20,7 @@ public class Controller {
     private final AtomicReference<String> label = new AtomicReference<>(DEFAULT_LABEL);
     private final ConcurrentLinkedQueue<CoordinationMessage> coordinationMessages = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<ClientMessage> clientMessages = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<CoordinationMessage> deadLetter = new ConcurrentLinkedQueue<>();
     private final AtomicReference<Float> failureChance = new AtomicReference<>(DEFAULT_MESSAGE_FAILURE_CHANCE);
     private final Configuration configuration;
 
@@ -84,6 +85,23 @@ public class Controller {
     public ClientMessage getClientMessage() {
         log.traceEntry();
         return log.traceExit(clientMessages.poll());
+    }
+
+    public void addToDeadLetterQueue(final CoordinationMessage message) {
+        log.traceEntry(() -> message);
+        log.info("Adding message to dead letter queue");
+        deadLetter.add(message);
+        log.traceExit();
+    }
+
+    public int getNumberOfDeadLetters() {
+        log.traceEntry();
+        return log.traceExit(deadLetter.size());
+    }
+
+    public CoordinationMessage getDeadLetter() {
+        log.traceEntry();
+        return log.traceExit(deadLetter.poll());
     }
 
     public Float getFailureChance() {
