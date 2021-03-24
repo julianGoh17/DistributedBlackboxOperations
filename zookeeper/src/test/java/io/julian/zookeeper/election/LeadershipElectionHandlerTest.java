@@ -83,6 +83,7 @@ public class LeadershipElectionHandlerTest extends AbstractServerBase {
             }));
         async.awaitSuccess();
         tearDownServer(context, serverComponents);
+        tearDownServer(context, otherServer);
     }
 
     private LeadershipElectionHandler createTestHandler() {

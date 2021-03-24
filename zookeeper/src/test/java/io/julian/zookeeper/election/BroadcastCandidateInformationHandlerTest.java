@@ -10,6 +10,7 @@ import io.julian.zookeeper.AbstractServerBase;
 import io.julian.zookeeper.TestServerComponents;
 import io.julian.zookeeper.models.CandidateInformationTest;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
 import org.junit.Test;
@@ -22,12 +23,15 @@ public class BroadcastCandidateInformationHandlerTest extends AbstractServerBase
         RegistryManager manager = createTestRegistryManager();
         ServerClient client = createServerClient();
 
+        Async async = context.async();
         handler.broadcast(manager, client, CandidateInformationTest.CANDIDATE_NUMBER,
             new ServerConfiguration(CandidateInformationTest.HOST, CandidateInformationTest.PORT))
             .onComplete(context.asyncAssertSuccess(future -> {
                 context.assertEquals(1, future.size());
                 context.assertTrue(future.succeeded(0));
+                async.complete();
             }));
+        async.awaitSuccess();
         tearDownServer(context, server);
     }
 

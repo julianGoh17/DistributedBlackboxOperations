@@ -63,18 +63,37 @@ public abstract class DistributedAlgorithm {
      * Retrieve and remove the earliest message from the dead letter queue
      * @return the earliest coordination message
      */
-    public CoordinationMessage getDeadLetter() {
+    public CoordinationMessage getDeadCoordinationLetter() {
         log.traceEntry();
-        return log.traceExit(controller.getDeadLetter());
+        return log.traceExit(controller.getDeadCoordinationLetter());
     }
 
     /**
      * Add a failed message to the dead letter queue to be retried later
      * @param failedMessage failed message
      */
-    public void addToDeadLetterQueue(final CoordinationMessage failedMessage) {
+    public void addToDeadCoordinationLetter(final CoordinationMessage failedMessage) {
         log.traceEntry(() -> failedMessage);
-        controller.addToDeadLetterQueue(failedMessage);
+        controller.addToDeadCoordinationLetterQueue(failedMessage);
+        log.traceExit();
+    }
+
+    /**
+     * Retrieve and remove the earliest message from the dead letter queue
+     * @return the earliest coordination message
+     */
+    public ClientMessage getDeadClientLetter() {
+        log.traceEntry();
+        return log.traceExit(controller.getDeadClientLetter());
+    }
+
+    /**
+     * Add a failed message to the dead letter queue to be retried later
+     * @param failedMessage failed message
+     */
+    public void addToDeadClientLetter(final ClientMessage failedMessage) {
+        log.traceEntry(() -> failedMessage);
+        controller.addToDeadClientLetterQueue(failedMessage);
         log.traceExit();
     }
 

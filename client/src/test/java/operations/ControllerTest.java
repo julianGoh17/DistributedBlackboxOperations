@@ -14,6 +14,7 @@ import io.julian.client.operations.Controller;
 import io.julian.client.operations.Coordinator;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.After;
@@ -90,6 +91,7 @@ public class ControllerTest extends AbstractClientTest {
             .thenReturn(VALID_OPERATION_CHAIN_NAME)
             .thenReturn("5");
 
+        Async async = context.async();
         controller.run(TEST_REPORT_FILE_PATH)
             .onComplete(context.asyncAssertSuccess(v -> vertx.fileSystem().exists(reportFilePath, context.asyncAssertSuccess(v2 -> {
                 InOrder order = inOrder(inputReader, outputPrinter);
@@ -105,8 +107,9 @@ public class ControllerTest extends AbstractClientTest {
                 order.verify(outputPrinter).println(TERMINATING_CLIENT_MESSAGE);
                 order.verifyNoMoreInteractions();
                 vertx.fileSystem().delete(reportFilePath, context.asyncAssertSuccess());
-            }))))
-            .onFailure(v -> context.asyncAssertFailure());
+                async.complete();
+            }))));
+        async.awaitSuccess();
     }
 
     @Test
@@ -119,6 +122,7 @@ public class ControllerTest extends AbstractClientTest {
             .thenReturn("3")
             .thenReturn("5");
 
+        Async async = context.async();
         controller.run(TEST_REPORT_FILE_PATH)
             .onComplete(context.asyncAssertSuccess(v -> vertx.fileSystem().exists(reportFilePath, context.asyncAssertSuccess(v2 -> {
                 InOrder order = inOrder(inputReader, outputPrinter);
@@ -141,8 +145,9 @@ public class ControllerTest extends AbstractClientTest {
                 order.verifyNoMoreInteractions();
 
                 vertx.fileSystem().delete(reportFilePath, context.asyncAssertSuccess());
-            }))))
-            .onFailure(v -> context.asyncAssertFailure());
+                async.complete();
+            }))));
+        async.awaitSuccess();
     }
 
     @Test
@@ -155,6 +160,7 @@ public class ControllerTest extends AbstractClientTest {
             .thenReturn(VALID_OPERATION_CHAIN_NAME)
             .thenReturn("5");
 
+        Async async = context.async();
         controller.run(wrongReportPath)
             .onComplete(context.asyncAssertFailure(e -> {
                 Assert.assertEquals(String.format("java.nio.file.NoSuchFileException: %s", wrongReportFilePath), e.getMessage());
@@ -170,15 +176,18 @@ public class ControllerTest extends AbstractClientTest {
                 order.verify(inputReader).nextLine();
                 order.verify(outputPrinter).println(TERMINATING_CLIENT_MESSAGE);
                 order.verifyNoMoreInteractions();
+                async.complete();
             }));
+        async.awaitSuccess();
     }
 
     @Test
-    public void TestControllerRepeatsWhenNotGivenANumber() {
+    public void TestControllerRepeatsWhenNotGivenANumber(final TestContext context) {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
             .thenReturn("Not A Number")
             .thenReturn("5");
+        Async async = context.async();
         controller.runOperation().onComplete(wantsToContinue -> {
             Assert.assertFalse(wantsToContinue.result());
             InOrder order = inOrder(inputReader, outputPrinter);
@@ -190,15 +199,19 @@ public class ControllerTest extends AbstractClientTest {
             order.verify(inputReader).nextLine();
             order.verify(outputPrinter).println(TERMINATING_CLIENT_MESSAGE);
             order.verifyNoMoreInteractions();
+            async.complete();
         });
+        async.awaitSuccess();
     }
 
     @Test
-    public void TestControllerRepeatsWhenInvalidNumberGiven() {
+    public void TestControllerRepeatsWhenInvalidNumberGiven(final TestContext context) {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
             .thenReturn("7")
             .thenReturn("5");
+
+        Async async = context.async();
         controller.runOperation().onComplete(wantsToContinue -> {
             Assert.assertFalse(wantsToContinue.result());
             InOrder order = inOrder(inputReader, outputPrinter);
@@ -210,16 +223,20 @@ public class ControllerTest extends AbstractClientTest {
             order.verify(inputReader).nextLine();
             order.verify(outputPrinter).println(TERMINATING_CLIENT_MESSAGE);
             order.verifyNoMoreInteractions();
+            async.complete();
         });
+        async.awaitSuccess();
     }
 
     @Test
-    public void TestControllerRunsOperationChain() {
+    public void TestControllerRunsOperationChain(final TestContext context) {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
             .thenReturn("1")
             .thenReturn(INVALID_OPERATION_CHAIN_NAME)
             .thenReturn(VALID_OPERATION_CHAIN_NAME);
+
+        Async async = context.async();
         controller.runOperation().onComplete(wantsToContinue -> {
             Assert.assertTrue(wantsToContinue.result());
             InOrder order = inOrder(inputReader, outputPrinter);
@@ -231,14 +248,18 @@ public class ControllerTest extends AbstractClientTest {
             order.verify(inputReader).nextLine();
             order.verify(outputPrinter).println(String.format(VALID_OPERATION_CHAIN_MESSAGE, VALID_OPERATION_CHAIN_NAME));
             order.verifyNoMoreInteractions();
+            async.complete();
         });
+        async.awaitSuccess();
     }
 
     @Test
-    public void TestControllerRunsSendCommandLineMessage() {
+    public void TestControllerRunsSendCommandLineMessage(final TestContext context) {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
             .thenReturn("2");
+
+        Async async = context.async();
         controller.runOperation().onComplete(wantsToContinue -> {
             Assert.assertTrue(wantsToContinue.result());
             InOrder order = inOrder(inputReader, outputPrinter);
@@ -246,14 +267,17 @@ public class ControllerTest extends AbstractClientTest {
             order.verify(inputReader).nextLine();
             order.verify(outputPrinter).println(SENDING_COMMAND_LINE_MESSAGE);
             order.verifyNoMoreInteractions();
+            async.complete();
         });
+        async.awaitSuccess();
     }
 
     @Test
-    public void TestControllerRunsPrintMessages() {
+    public void TestControllerRunsPrintMessages(final TestContext context) {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
             .thenReturn("3");
+        Async async = context.async();
         controller.runOperation().onComplete(wantsToContinue -> {
             Assert.assertTrue(wantsToContinue.result());
             InOrder order = inOrder(inputReader, outputPrinter);
@@ -263,14 +287,17 @@ public class ControllerTest extends AbstractClientTest {
             order.verify(outputPrinter).println(HEADER_CHAR.repeat(MESSAGES_HEADER.length()));
             order.verify(outputPrinter).println(String.format("Message '0': %s", message.encodePrettily()));
             order.verifyNoMoreInteractions();
+            async.complete();
         });
+        async.awaitSuccess();
     }
 
     @Test
-    public void TestControllerRunsPrintOperationChain() {
+    public void TestControllerRunsPrintOperationChain(final TestContext context) {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
             .thenReturn("4");
+        Async async = context.async();
         controller.runOperation().onComplete(wantsToContinue -> {
             Assert.assertTrue(wantsToContinue.result());
             InOrder order = inOrder(inputReader, outputPrinter);
@@ -280,14 +307,18 @@ public class ControllerTest extends AbstractClientTest {
             order.verify(outputPrinter).println(HEADER_CHAR.repeat(OPERATION_CHAIN_HEADER.length()));
             order.verify(outputPrinter).println(VALID_OPERATION_CHAIN_NAME);
             order.verifyNoMoreInteractions();
+            async.complete();
         });
+        async.awaitSuccess();
     }
 
     @Test
-    public void TestControllerRunsExit() {
+    public void TestControllerRunsExit(final TestContext context) {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
             .thenReturn("5");
+
+        Async async = context.async();
         controller.runOperation().onComplete(wantsToContinue -> {
             Assert.assertFalse(wantsToContinue.result());
             InOrder order = inOrder(inputReader, outputPrinter);
@@ -295,7 +326,9 @@ public class ControllerTest extends AbstractClientTest {
             order.verify(inputReader).nextLine();
             order.verify(outputPrinter).println(TERMINATING_CLIENT_MESSAGE);
             order.verifyNoMoreInteractions();
+            async.complete();
         });
+        async.awaitSuccess();
     }
 
     private void testControllerPrintsOperation(final InOrder order) {

@@ -148,8 +148,9 @@ public class Controller {
                         suppliedName.set(name.result());
                     } else {
                         log.error(String.format("Could not find registered operation chain '%s'", name.result()));
+                        output.println(String.format(INVALID_OPERATION_CHAIN_MESSAGE, name.result()));
+                        inFlight.set(false);
                     }
-                    inFlight.set(false);
                 });
             } else if (suppliedName.get() != null) {
                 vertx.cancelTimer(id);

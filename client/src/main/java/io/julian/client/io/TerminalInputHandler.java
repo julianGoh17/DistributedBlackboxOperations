@@ -22,7 +22,7 @@ public class TerminalInputHandler {
     public Future<Integer> getNumberFromInput() throws NumberFormatException {
         log.traceEntry();
         Promise<Integer> integer = Promise.promise();
-        log.info("Getting int from commandline");
+        log.debug("Getting int from commandline");
         vertx.executeBlocking(
             promise -> promise.complete(reader.nextLine().trim()),
             input -> {
@@ -39,7 +39,7 @@ public class TerminalInputHandler {
 
     public Future<String> getStringFromInput() {
         log.traceEntry();
-        log.info("Getting String from commandline");
+        log.debug("Getting String from commandline");
         Promise<String> string = Promise.promise();
         vertx.executeBlocking(
             promise -> promise.complete(reader.nextLine().trim()),

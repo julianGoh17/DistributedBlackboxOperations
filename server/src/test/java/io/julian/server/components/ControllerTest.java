@@ -15,7 +15,7 @@ public class ControllerTest {
         Controller controller = new Controller(new Configuration());
         Assert.assertEquals(ServerStatus.AVAILABLE, controller.getStatus());
         Assert.assertEquals("", controller.getLabel());
-        checkQueueSizes(controller, 0, 0, 0);
+        checkQueueSizes(controller, 0, 0, 0, 0);
     }
 
     @Test
@@ -44,30 +44,37 @@ public class ControllerTest {
     @Test
     public void TestAddToQueuesAndGetFromQueues() {
         Controller controller = new Controller(new Configuration());
-        checkQueueSizes(controller, 0, 0, 0);
+        checkQueueSizes(controller, 0, 0, 0, 0);
 
         controller.addToClientMessageQueue(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""));
-        checkQueueSizes(controller, 0, 1, 0);
+        checkQueueSizes(controller, 0, 1, 0, 0);
 
         controller.addToCoordinationQueue(new CoordinationMessage(HTTPRequest.POST, new JsonObject()));
-        checkQueueSizes(controller, 1, 1, 0);
+        checkQueueSizes(controller, 1, 1, 0, 0);
 
-        controller.addToDeadLetterQueue(new CoordinationMessage(HTTPRequest.POST, new JsonObject()));
-        checkQueueSizes(controller, 1, 1, 1);
+        controller.addToDeadCoordinationLetterQueue(new CoordinationMessage(HTTPRequest.POST, new JsonObject()));
+        checkQueueSizes(controller, 1, 1, 1, 0);
 
-        controller.getDeadLetter();
-        checkQueueSizes(controller, 1, 1, 0);
+        controller.addToDeadClientLetterQueue(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""));
+        checkQueueSizes(controller, 1, 1, 1, 1);
+
+        controller.getDeadCoordinationLetter();
+        checkQueueSizes(controller, 1, 1, 0, 1);
 
         controller.getCoordinationMessage();
-        checkQueueSizes(controller, 0, 1, 0);
+        checkQueueSizes(controller, 0, 1, 0, 1);
 
         controller.getClientMessage();
-        checkQueueSizes(controller, 0, 0, 0);
+        checkQueueSizes(controller, 0, 0, 0, 1);
+
+        controller.getDeadClientLetter();
+        checkQueueSizes(controller, 0, 0, 0, 0);
     }
 
-    private void checkQueueSizes(final Controller controller, final int coordinationMessages, final int clientMessages, final int deadLetters) {
+    private void checkQueueSizes(final Controller controller, final int coordinationMessages, final int clientMessages, final int deadCoordinationLetter, final int deadClientLetters) {
         Assert.assertEquals(coordinationMessages, controller.getNumberOfCoordinationMessages());
         Assert.assertEquals(clientMessages, controller.getNumberOfClientMessages());
-        Assert.assertEquals(deadLetters, controller.getNumberOfDeadLetters());
+        Assert.assertEquals(deadCoordinationLetter, controller.getNumberOfDeadCoordinationLetters());
+        Assert.assertEquals(deadClientLetters, controller.getNumberOfDeadClientLetters());
     }
 }

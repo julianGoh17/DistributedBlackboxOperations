@@ -71,7 +71,12 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
             log.info("Received state update");
             if (messageClass == ClientMessage.class) {
                 log.info("Received forwarded request");
-                this.writeHandler.handleCoordinationMessage(message);
+                this.writeHandler.handleCoordinationMessage(message)
+                    .onFailure(throwable -> {
+                        log.info("Failed to deliver update to followers");
+                        log.error(throwable.getMessage());
+                        addToDeadCoordinationLetter(message);
+                    });
             } else {
                 log.info("Received broadcast candidate number request");
                 broadcastCandidateNumber();
@@ -84,7 +89,13 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
     @Override
     public void actOnInitialMessage() {
         log.traceEntry();
-        writeHandler.handleClientMessage(getClientMessage());
+        ClientMessage message = getClientMessage();
+        writeHandler.handleClientMessage(message)
+            .onFailure(throwable -> {
+                log.info("Failed to deliver update to followers");
+                log.error(throwable.getMessage());
+                addToDeadClientLetter(message);
+            });
         log.traceExit();
     }
 

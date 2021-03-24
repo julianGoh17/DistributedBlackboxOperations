@@ -20,7 +20,9 @@ public class Controller {
     private final AtomicReference<String> label = new AtomicReference<>(DEFAULT_LABEL);
     private final ConcurrentLinkedQueue<CoordinationMessage> coordinationMessages = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<ClientMessage> clientMessages = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<CoordinationMessage> deadLetter = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationLetter = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<ClientMessage> deadClientLetter = new ConcurrentLinkedQueue<>();
+
     private final AtomicReference<Float> failureChance = new AtomicReference<>(DEFAULT_MESSAGE_FAILURE_CHANCE);
     private final Configuration configuration;
 
@@ -87,21 +89,38 @@ public class Controller {
         return log.traceExit(clientMessages.poll());
     }
 
-    public void addToDeadLetterQueue(final CoordinationMessage message) {
+    public void addToDeadCoordinationLetterQueue(final CoordinationMessage message) {
         log.traceEntry(() -> message);
         log.info("Adding message to dead letter queue");
-        deadLetter.add(message);
+        deadCoordinationLetter.add(message);
         log.traceExit();
     }
 
-    public int getNumberOfDeadLetters() {
+    public int getNumberOfDeadCoordinationLetters() {
         log.traceEntry();
-        return log.traceExit(deadLetter.size());
+        return log.traceExit(deadCoordinationLetter.size());
     }
 
-    public CoordinationMessage getDeadLetter() {
+    public CoordinationMessage getDeadCoordinationLetter() {
         log.traceEntry();
-        return log.traceExit(deadLetter.poll());
+        return log.traceExit(deadCoordinationLetter.poll());
+    }
+
+    public void addToDeadClientLetterQueue(final ClientMessage message) {
+        log.traceEntry(() -> message);
+        log.info("Adding message to dead letter queue");
+        deadClientLetter.add(message);
+        log.traceExit();
+    }
+
+    public int getNumberOfDeadClientLetters() {
+        log.traceEntry();
+        return log.traceExit(deadClientLetter.size());
+    }
+
+    public ClientMessage getDeadClientLetter() {
+        log.traceEntry();
+        return log.traceExit(deadClientLetter.poll());
     }
 
     public Float getFailureChance() {

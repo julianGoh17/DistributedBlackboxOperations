@@ -62,9 +62,8 @@ public class TestServerComponents {
 
     protected void tearDownServer(final TestContext context, final Vertx vertx) {
         server = null;
-        api = null;
         Async async = context.async();
-        vertx.undeploy(deploymentID.get(), context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> async.complete())));
+        api.close(res -> vertx.undeploy(deploymentID.get(), context.asyncAssertSuccess(v ->  async.complete())));
         async.awaitSuccess();
     }
 }

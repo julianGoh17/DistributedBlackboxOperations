@@ -19,7 +19,7 @@ public class ExampleDistributedAlgorithm extends DistributedAlgorithm {
         CoordinationMessage message = getController().getCoordinationMessage();
         getController().addToCoordinationQueue(message);
         getController().addToCoordinationQueue(message);
-        addToDeadLetterQueue(message);
+        addToDeadCoordinationLetter(message);
         acceptedMessages.getAndIncrement();
     }
 

@@ -11,6 +11,7 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Order;
 
 import java.util.Arrays;
 import java.util.List;
@@ -72,6 +73,7 @@ public class IntegrationTest extends AbstractServerBase {
     }
 
     @Test(timeout = 300000)
+    @Order(3)
     public void TestFollowerWriteRequestForwardsToLeader(final TestContext context) {
         TestServerComponents server1 = setUpZookeeperApiServer(context, DEFAULT_SEVER_CONFIG);
         TestServerComponents server2 = setUpZookeeperApiServer(context, SECOND_SERVER_CONFIG);
@@ -84,14 +86,39 @@ public class IntegrationTest extends AbstractServerBase {
         TestClient client = createTestClient();
         Async async = context.async();
         client.POST_MESSAGE(follower.configuration.getHost(), follower.configuration.getPort(), MESSAGE)
-            .onComplete(v -> vertx.setTimer(2500, v2 -> {
+            .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(2500, v2 -> {
                 Assert.assertEquals(1, server1.server.getMessages().getNumberOfMessages());
                 Assert.assertEquals(1, server2.server.getMessages().getNumberOfMessages());
                 async.complete();
-            }));
+            })));
         async.awaitSuccess();
         tearDownServer(context, server1);
         tearDownServer(context, server2);
+    }
+
+    @Test
+    public void TestLeaderAddToDeadLetter(final TestContext context) {
+        TestServerComponents server1 = setUpZookeeperApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server2 = setUpZookeeperApiServer(context, SECOND_SERVER_CONFIG);
+        registerConfigurationInServer(server1, SECOND_SERVER_CONFIG);
+        registerConfigurationInServer(server2, DEFAULT_SEVER_CONFIG);
+        sendElectionMessage(context);
+
+        TestServerComponents leader = findLeader(server1, server2);
+        TestServerComponents follower = findFollower(server1, server2);
+        context.assertNotNull(leader);
+        context.assertNotNull(follower);
+        tearDownServer(context, follower);
+        TestClient client = createTestClient();
+        Async async = context.async();
+        client.POST_MESSAGE(leader.configuration.getHost(), leader.configuration.getPort(), MESSAGE)
+            .onComplete(v -> vertx.setTimer(4000, v2 -> {
+                Assert.assertEquals(1, leader.server.getMessages().getNumberOfMessages());
+                Assert.assertEquals(1, leader.server.getVerticle().getAlgorithm().getController().getNumberOfDeadClientLetters());
+                async.complete();
+            }));
+        async.awaitSuccess();
+        tearDownServer(context, leader);
     }
 
     private void sendElectionMessage(final TestContext context) {
