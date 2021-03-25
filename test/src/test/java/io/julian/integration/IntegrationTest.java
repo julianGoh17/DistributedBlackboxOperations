@@ -55,7 +55,7 @@ public class IntegrationTest extends AbstractServerBaseTest {
                 async.complete();
             }));
 
-        async.await();
+        async.awaitSuccess();
         tearDownServer(context);
     }
 
@@ -95,7 +95,6 @@ public class IntegrationTest extends AbstractServerBaseTest {
 
     public void TestCoordinateMessagesAreTheSame(final CoordinationMessage expected, final CoordinationMessage found) {
         Assert.assertEquals(expected.getMetadata().getTimestamp().toValue(), found.getMetadata().getTimestamp().toValue());
-
         Assert.assertEquals(expected.getMessage().encodePrettily(), expected.getMessage().encodePrettily());
         Assert.assertEquals(expected.getDefinition().encodePrettily(), expected.getDefinition().encodePrettily());
     }

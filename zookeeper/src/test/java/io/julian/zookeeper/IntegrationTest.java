@@ -11,7 +11,6 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.jupiter.api.Order;
 
 import java.util.Arrays;
 import java.util.List;
@@ -73,7 +72,6 @@ public class IntegrationTest extends AbstractServerBase {
     }
 
     @Test(timeout = 300000)
-    @Order(3)
     public void TestFollowerWriteRequestForwardsToLeader(final TestContext context) {
         TestServerComponents server1 = setUpZookeeperApiServer(context, DEFAULT_SEVER_CONFIG);
         TestServerComponents server2 = setUpZookeeperApiServer(context, SECOND_SERVER_CONFIG);

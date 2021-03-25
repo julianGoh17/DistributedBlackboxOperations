@@ -61,9 +61,9 @@ public abstract class AbstractServerBaseTest {
 
     protected void tearDownServer(final TestContext context) {
         server = null;
-        api = null;
         Async async = context.async();
-        vertx.undeploy(deploymentID.get(), context.asyncAssertSuccess(v -> async.complete()));
+        api.close(context.asyncAssertSuccess(v ->
+            vertx.undeploy(deploymentID.get(), context.asyncAssertSuccess(v1 -> async.complete()))));
         async.awaitSuccess();
     }
 }

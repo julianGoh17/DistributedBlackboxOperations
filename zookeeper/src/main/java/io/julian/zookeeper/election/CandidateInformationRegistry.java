@@ -32,8 +32,6 @@ public class CandidateInformationRegistry {
                 candidateInformation.getHost(), candidateInformation.getPort(), candidateInformation.getCandidateNumber()));
             candidateNumberAndInformationMap.put(candidateInformation.getCandidateNumber(),
                 new ServerConfiguration(candidateInformation.getHost(), candidateInformation.getPort()));
-        } else {
-            log.info(String.format("Adding candidate information for candidate number '%d'", candidateInformation.getCandidateNumber()));
         }
         log.traceExit();
     }
