@@ -40,7 +40,7 @@ public class Configuration {
         this.host = getOrDefault(SERVER_HOST_ENV, DEFAULT_SERVER_HOST);
         this.port = getOrDefault(SERVER_PORT_ENV, DEFAULT_SERVER_PORT);
         this.jarFilePath = getOrDefault(JAR_FILE_PATH_ENV, "");
-        this.packageName = getOrDefault(JAR_FILE_PATH_ENV, "");
+        this.packageName = getOrDefault(PACKAGE_NAME_ENV, "");
         this.doesProcessRequest = getOrDefault(DOES_PROCESS_REQUEST_ENV, DEFAULT_DOES_PROCESS_REQUEST);
     }
 
