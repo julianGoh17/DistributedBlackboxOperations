@@ -40,7 +40,7 @@ public class FollowerDiscoveryHandler {
                 post.complete();
             })
             .onFailure(cause -> {
-                log.info("Unsuccessfully sent leader latest state ZXID");
+                log.info("Unsuccessfully sent leader latest state");
                 deadCoordinationMessages.add(createCoordinationMessage());
                 log.error(cause);
                 post.fail(cause);

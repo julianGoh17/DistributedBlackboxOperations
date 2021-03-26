@@ -9,6 +9,7 @@ import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.models.Proposal;
+import io.julian.zookeeper.models.Stage;
 import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -49,7 +50,10 @@ public class FollowerSynchronizeHandler {
                     log.error(res.cause());
                 }
                 client.sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), getCoordinationMessage())
-                    .onSuccess(v -> reply.complete())
+                    .onSuccess(v -> {
+                        state.setServerStage(Stage.WRITE);
+                        reply.complete();
+                    })
                     .onFailure(cause -> {
                         log.info("Failed to send synchronize reply to leader");
                         deadCoordinationMessages.add(getCoordinationMessage());

@@ -6,6 +6,7 @@ import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.zookeeper.models.Proposal;
+import io.julian.zookeeper.models.Stage;
 import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -19,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class State {
     private static final Logger log = LogManager.getLogger(State.class.getName());
@@ -37,6 +39,7 @@ public class State {
     private final AtomicInteger counter;
     private final ConcurrentHashSet<Zxid> addedIds;
     private final ConcurrentHashSet<Zxid> processedIds;
+    private final AtomicReference<Stage> serverStage = new AtomicReference<>(Stage.SETUP);
 
     public State(final Vertx vertx, final MessageStore messageStore) {
         this.history = new ArrayList<>();
@@ -299,5 +302,16 @@ public class State {
             this.index = index;
             this.canUpdate = canUpdate;
         }
+    }
+
+    public void setServerStage(final Stage stage) {
+        log.traceEntry(() -> stage);
+        serverStage.set(stage);
+        log.traceExit();
+    }
+
+    public Stage getServerStage() {
+        log.traceEntry();
+        return log.traceExit(serverStage.get());
     }
 }

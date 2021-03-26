@@ -11,6 +11,7 @@ import io.julian.zookeeper.TestServerComponents;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.models.Proposal;
+import io.julian.zookeeper.models.Stage;
 import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -37,6 +38,7 @@ public class SynchronizeHandlerTest extends AbstractServerBase {
         handler.handleCoordinationMessage(new CoordinationMessage(HTTPRequest.POST, new JsonObject()))
             .onComplete(context.asyncAssertSuccess(v -> {
                 Assert.assertTrue(handler.hasReceivedEnoughAcknowledgements());
+                Assert.assertEquals(Stage.WRITE, handler.getState().getServerStage());
                 async.complete();
             }));
         async.awaitSuccess();
@@ -51,6 +53,7 @@ public class SynchronizeHandlerTest extends AbstractServerBase {
         handler.handleCoordinationMessage(new CoordinationMessage(HTTPRequest.POST, state.toJson()))
             .onComplete(context.asyncAssertSuccess(v -> {
                 Assert.assertEquals(1, handler.getLeaderSynchronizeHandler().getState().getHistory().size());
+                Assert.assertEquals(Stage.WRITE, handler.getState().getServerStage());
                 async.complete();
             }));
         async.awaitSuccess();
@@ -66,6 +69,7 @@ public class SynchronizeHandlerTest extends AbstractServerBase {
             .onComplete(context.asyncAssertFailure(cause -> {
                 Assert.assertEquals(1, handler.getLeaderSynchronizeHandler().getState().getHistory().size());
                 Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                Assert.assertEquals(Stage.SYNCHRONIZE, handler.getState().getServerStage());
                 async.complete();
             }));
         async.awaitSuccess();
@@ -74,12 +78,15 @@ public class SynchronizeHandlerTest extends AbstractServerBase {
     private SynchronizeHandler createTestHandler(final boolean isLeader) {
         Controller controller = new Controller(new Configuration());
         controller.setLabel(isLeader ? LeadershipElectionHandler.LEADER_LABEL : LeadershipElectionHandler.FOLLOWER_LABEL);
-        return new SynchronizeHandler(vertx, new State(vertx, new MessageStore()), createTestRegistryManager(),
+        State state = new State(vertx, new MessageStore());
+        state.setServerStage(Stage.SYNCHRONIZE);
+        return new SynchronizeHandler(vertx, state, createTestRegistryManager(),
             createServerClient(), createTestCandidateInformationRegistry(!isLeader), controller, new ConcurrentLinkedQueue<>());
     }
 
     private State createInitializedState(final TestContext context) {
         State state = new State(vertx, new MessageStore());
+        state.setServerStage(Stage.SYNCHRONIZE);
         Async async = context.async();
         state.addProposal(new Proposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), "0"), new Zxid(0, 1)))
             .onComplete(context.asyncAssertSuccess(v -> async.complete()));

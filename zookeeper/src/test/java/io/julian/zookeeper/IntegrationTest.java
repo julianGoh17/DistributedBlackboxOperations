@@ -6,6 +6,7 @@ import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
+import io.julian.zookeeper.models.Stage;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -150,13 +151,20 @@ public class IntegrationTest extends AbstractServerBase {
         tearDownServer(context, server2);
     }
 
-    private void sendElectionMessage(final TestContext context) {
+    private void sendElectionMessage(final TestContext context, final TestServerComponents... components) {
         Async async = context.async();
         ServerClient client = createServerClient();
+
         client.sendCoordinateMessageToServer(AbstractServerBase.DEFAULT_SEVER_CONFIG, new CoordinationMessage(HTTPRequest.POST, new JsonObject()))
             .onComplete(context.asyncAssertSuccess(res ->
                 // Wait 2 seconds to let servers stabilize
-                vertx.setTimer(2000, complete -> async.complete())));
+                vertx.setTimer(2000, complete -> {
+                    for (TestServerComponents server : components) {
+                        ZookeeperAlgorithm algo = (ZookeeperAlgorithm) server.server.getVerticle().getAlgorithm();
+                        Assert.assertEquals(Stage.WRITE, algo.getState().getServerStage());
+                    }
+                    async.complete();
+                })));
         async.awaitSuccess();
     }
 
