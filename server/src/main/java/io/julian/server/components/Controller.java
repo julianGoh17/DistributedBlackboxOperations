@@ -144,4 +144,14 @@ public class Controller {
         log.traceEntry();
         return log.traceExit(configuration);
     }
+
+    public ConcurrentLinkedQueue<CoordinationMessage> getCoordinationMessages() {
+        log.traceEntry();
+        return log.traceExit(coordinationMessages);
+    }
+
+    public ConcurrentLinkedQueue<ClientMessage> getClientMessages() {
+        log.traceEntry();
+        return log.traceExit(clientMessages);
+    }
 }

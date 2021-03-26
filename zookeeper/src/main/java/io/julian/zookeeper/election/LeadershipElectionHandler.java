@@ -3,27 +3,43 @@ package io.julian.zookeeper.election;
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Controller;
+import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ServerConfiguration;
+import io.julian.server.models.coordination.CoordinationMessage;
+import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.models.CandidateInformation;
 import io.vertx.core.CompositeFuture;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.stream.Collectors;
 
 @Getter
 public class LeadershipElectionHandler {
     private final Logger log = LogManager.getLogger(LeadershipElectionHandler.class);
     public final static String LEADER_LABEL = "leader";
     public final static String FOLLOWER_LABEL = "follower";
+    public final static String TYPE = "candidate_information";
 
     private final long candidateNumber;
     private final CandidateInformationRegistry candidateRegistry;
-    private final BroadcastCandidateInformationHandler broadcastHandler;
+    private final ServerClient client;
+    private final RegistryManager registryManager;
+    private final Controller controller;
+    private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
-    public LeadershipElectionHandler(final long candidateNumber, final CandidateInformationRegistry candidateRegistry) {
+    public LeadershipElectionHandler(final long candidateNumber, final CandidateInformationRegistry candidateRegistry, final ServerClient client, final RegistryManager registryManager, final Controller controller, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
         this.candidateNumber = candidateNumber;
         this.candidateRegistry = candidateRegistry;
-        broadcastHandler = new BroadcastCandidateInformationHandler();
+        this.client = client;
+        this.registryManager = registryManager;
+        this.controller = controller;
+        this.deadCoordinationMessages = deadCoordinationMessages;
     }
 
     /**
@@ -38,14 +54,50 @@ public class LeadershipElectionHandler {
 
     /**
      * Broadcast the server's candidate number to all other servers
-     * @param manager manager containing the address of all other servers
-     * @param client the API client which knows how to talk to the other servers
-     * @param controller the current server controller
      * @return A composite future that contains the outcome of all individual broadcasts to all other servers
      */
-    public CompositeFuture broadcast(final RegistryManager manager, final ServerClient client, final Controller controller) {
-        log.traceEntry(() -> manager, () -> client, () -> controller);
-        return log.traceExit(broadcastHandler.broadcast(manager, client, candidateNumber, controller.getServerConfiguration()));
+    public Future<Void> broadcast() {
+        log.traceEntry();
+        final ServerConfiguration currentConfig = controller.getServerConfiguration();
+        log.info(String.format("Broadcasting candidate number '%d' to all servers", candidateNumber));
+        Promise<Void> res = Promise.promise();
+        List<Future> sentRequests = registryManager.getOtherServers()
+            .stream()
+            .map(config -> {
+                log.info(String.format("Broadcasting server's candidate information to '%s:%d'", currentConfig.getHost(), currentConfig.getPort()));
+                return client.sendCoordinateMessageToServer(config, createCandidateInformationMessage(candidateNumber, currentConfig));
+            })
+            .collect(Collectors.toList());
+
+        CompositeFuture.all(sentRequests)
+            .onSuccess(v -> res.complete())
+            .onFailure(cause -> {
+                log.info(String.format("Failed to broadcast candidate number '%d' to all servers", candidateNumber));
+                deadCoordinationMessages.add(createCandidateInformationMessage(candidateNumber, currentConfig));
+                log.error(cause.getMessage());
+                res.fail(cause);
+            });
+
+        return log.traceExit(res.future());
+    }
+
+    /**
+     * Exposed for testing
+     * Creates a coordinate message with the candidate information stored inside the user definition
+     * @param candidateNumber candidate number to send to other servers
+     * @param serverConfig the server's host and port
+     * @return a message to be send to other servers
+     */
+    public CoordinationMessage createCandidateInformationMessage(final long candidateNumber, final ServerConfiguration serverConfig) {
+        log.traceEntry(() -> candidateNumber, () -> serverConfig);
+        return log.traceExit(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, null, TYPE),
+            null,
+            new CandidateInformation(serverConfig.getHost(), serverConfig.getPort(), candidateNumber).toJson()));
+    }
+
+    public ConcurrentLinkedQueue<CoordinationMessage> getDeadCoordinationMessages() {
+        log.traceEntry();
+        return log.traceExit(deadCoordinationMessages);
     }
 
     /**

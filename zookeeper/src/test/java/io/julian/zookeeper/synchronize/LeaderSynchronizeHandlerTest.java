@@ -12,6 +12,8 @@ import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class LeaderSynchronizeHandlerTest extends AbstractServerBase {
     @Test
     public void TestCoordinationMessage() {
@@ -47,6 +49,7 @@ public class LeaderSynchronizeHandlerTest extends AbstractServerBase {
             .onComplete(context.asyncAssertFailure(cause -> {
                 Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
                 Assert.assertEquals(0, handler.getAcknowledgements());
+                Assert.assertEquals(1, handler.getDeadCoordinationMessages().size());
                 async.complete();
             }));
         async.awaitSuccess();
@@ -72,6 +75,6 @@ public class LeaderSynchronizeHandlerTest extends AbstractServerBase {
     }
 
     private LeaderSynchronizeHandler createTestHandler() {
-        return new LeaderSynchronizeHandler(new State(vertx, new MessageStore()), createTestRegistryManager(), createServerClient());
+        return new LeaderSynchronizeHandler(new State(vertx, new MessageStore()), createTestRegistryManager(), createServerClient(), new ConcurrentLinkedQueue<>());
     }
 }

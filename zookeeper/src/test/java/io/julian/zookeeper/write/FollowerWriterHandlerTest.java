@@ -15,6 +15,8 @@ import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class FollowerWriterHandlerTest extends AbstractServerBase {
     private final static int EPOCH = 12;
     private final static int COUNTER = 1234;
@@ -56,12 +58,14 @@ public class FollowerWriterHandlerTest extends AbstractServerBase {
         writeHandler.acknowledgeCommitToLeader(ID)
             .onComplete(context.asyncAssertFailure(res -> {
                 context.assertEquals(CONNECTION_REFUSED_EXCEPTION, res.getMessage());
+                Assert.assertEquals(1, writeHandler.getDeadCoordinationMessages().size());
                 async.countDown();
             }));
 
         writeHandler.acknowledgeProposalToLeader(ID)
             .onComplete(context.asyncAssertFailure(res -> {
                 context.assertEquals(CONNECTION_REFUSED_EXCEPTION, res.getMessage());
+                Assert.assertEquals(2, writeHandler.getDeadCoordinationMessages().size());
                 async.countDown();
             }));
 
@@ -76,6 +80,7 @@ public class FollowerWriterHandlerTest extends AbstractServerBase {
         writeHandler.forwardRequestToLeader(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""))
             .onComplete(context.asyncAssertFailure(cause -> {
                 context.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                Assert.assertEquals(1, writeHandler.getDeadCoordinationMessages().size());
                 async.complete();
             }));
         async.awaitSuccess();
@@ -117,6 +122,6 @@ public class FollowerWriterHandlerTest extends AbstractServerBase {
     }
 
     private FollowerWriteHandler createFollowerWriteHandler() {
-        return new FollowerWriteHandler(createTestCandidateInformationRegistry(true), createServerClient());
+        return new FollowerWriteHandler(createTestCandidateInformationRegistry(true), createServerClient(), new ConcurrentLinkedQueue<>());
     }
 }

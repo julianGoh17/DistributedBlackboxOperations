@@ -12,6 +12,8 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public abstract class DistributedAlgorithm {
     private static final Logger log = LogManager.getLogger(DistributedAlgorithm.class.getName());
     protected final Controller controller;
@@ -155,6 +157,11 @@ public abstract class DistributedAlgorithm {
     public MessageStore getMessageStore() {
         log.traceEntry();
         return log.traceExit(messageStore);
+    }
+
+    public ConcurrentLinkedQueue<CoordinationMessage> getDeadCoordinationQueue() {
+        log.traceEntry();
+        return log.traceExit(controller.getCoordinationMessages());
     }
 
     /**

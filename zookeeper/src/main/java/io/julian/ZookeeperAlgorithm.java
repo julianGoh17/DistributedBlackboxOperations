@@ -16,7 +16,7 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
 
     public ZookeeperAlgorithm(final Controller controller, final MessageStore messageStore, final Vertx vertx) {
         super(controller, messageStore, vertx);
-        this.handler = new MessageHandler(controller, messageStore, vertx, getRegistryManager(), getClient());
+        this.handler = new MessageHandler(controller, messageStore, vertx, getRegistryManager(), getClient(), getDeadCoordinationQueue());
     }
 
     // To start simulation, will send a coordination message to do candidate broadcast.

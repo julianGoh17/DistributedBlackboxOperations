@@ -17,6 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class MessageHandlerTest extends AbstractServerBase {
     HashMap<String, Class> map = new HashMap<>();
@@ -60,6 +61,6 @@ public class MessageHandlerTest extends AbstractServerBase {
     }
 
     private MessageHandler createTestHandler() {
-        return new MessageHandler(new Controller(new Configuration()), new MessageStore(), this.vertx, createTestRegistryManager(), createServerClient());
+        return new MessageHandler(new Controller(new Configuration()), new MessageStore(), this.vertx, createTestRegistryManager(), createServerClient(), new ConcurrentLinkedQueue<>());
     }
 }

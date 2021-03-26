@@ -13,6 +13,8 @@ import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class FollowerDiscoveryHandlerTest extends AbstractServerBase {
     @Test
     public void TestCreateCoordinationMessage() {
@@ -47,6 +49,7 @@ public class FollowerDiscoveryHandlerTest extends AbstractServerBase {
         handler.replyToLeader()
             .onComplete(context.asyncAssertFailure(cause -> {
                 context.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                Assert.assertEquals(1, handler.getDeadCoordinationMessages().size());
                 async.complete();
             }));
         async.awaitSuccess();
@@ -67,6 +70,6 @@ public class FollowerDiscoveryHandlerTest extends AbstractServerBase {
     }
 
     private FollowerDiscoveryHandler getTestHandler(final CandidateInformationRegistry registry) {
-        return new FollowerDiscoveryHandler(new State(vertx, new MessageStore()), registry, createServerClient());
+        return new FollowerDiscoveryHandler(new State(vertx, new MessageStore()), registry, createServerClient(), new ConcurrentLinkedQueue<>());
     }
 }

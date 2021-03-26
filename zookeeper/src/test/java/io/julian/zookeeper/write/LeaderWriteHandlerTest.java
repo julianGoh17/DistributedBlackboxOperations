@@ -17,6 +17,8 @@ import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class LeaderWriteHandlerTest extends AbstractServerBase {
     private final static int MAJORITY = 2;
     private final static String MESSAGE_ID = "id-1234";
@@ -46,6 +48,7 @@ public class LeaderWriteHandlerTest extends AbstractServerBase {
         handler.broadcastInitialProposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), "id"), new Zxid(0, 1))
             .onComplete(context.asyncAssertFailure(cause -> {
                 context.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                context.assertEquals(1, handler.getDeadCoordinationMessages().size());
                 async.complete();
             }));
         async.awaitSuccess();
@@ -73,6 +76,7 @@ public class LeaderWriteHandlerTest extends AbstractServerBase {
         handler.broadcastCommit(new Zxid(0, 0))
             .onComplete(context.asyncAssertFailure(cause -> {
                 context.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                context.assertEquals(1, handler.getDeadCoordinationMessages().size());
                 async.complete();
             }));
 
@@ -135,6 +139,6 @@ public class LeaderWriteHandlerTest extends AbstractServerBase {
 
     private LeaderWriteHandler createWriteHandler(final RegistryManager manager) {
         ServerClient client = createServerClient();
-        return new LeaderWriteHandler(MAJORITY, client, manager);
+        return new LeaderWriteHandler(MAJORITY, client, manager, new ConcurrentLinkedQueue<>());
     }
 }

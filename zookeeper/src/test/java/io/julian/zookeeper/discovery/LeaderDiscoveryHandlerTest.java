@@ -13,6 +13,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
     private final static State LOWER_STATE = new State(new ArrayList<>(), 0, 0, 0);
@@ -100,6 +101,7 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
         handler.broadcastGatherZXID()
             .onComplete(context.asyncAssertFailure(cause -> {
                 Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                Assert.assertEquals(1, handler.getDeadCoordinationMessages().size());
                 async.complete();
             }));
         async.awaitSuccess();
@@ -123,6 +125,7 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
         handler.broadcastLeaderState()
             .onComplete(context.asyncAssertFailure(cause -> {
                 Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                Assert.assertEquals(1, handler.getDeadCoordinationMessages().size());
                 async.complete();
             }));
         async.awaitSuccess();
@@ -152,6 +155,6 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
     }
 
     private LeaderDiscoveryHandler createHandler() {
-        return new LeaderDiscoveryHandler(new State(vertx, new MessageStore()), createTestRegistryManager(), createServerClient());
+        return new LeaderDiscoveryHandler(new State(vertx, new MessageStore()), createTestRegistryManager(), createServerClient(), new ConcurrentLinkedQueue<>());
     }
 }

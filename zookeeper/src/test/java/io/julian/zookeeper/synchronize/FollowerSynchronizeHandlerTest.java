@@ -15,6 +15,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class FollowerSynchronizeHandlerTest extends AbstractServerBase {
     private static final int INITIALIZED_MESSAGES = 5;
@@ -45,6 +46,7 @@ public class FollowerSynchronizeHandlerTest extends AbstractServerBase {
         handler.replyToLeader(leader)
             .onComplete(context.asyncAssertFailure(cause -> {
                 context.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                Assert.assertEquals(1, handler.getDeadCoordinationMessages().size());
                 checkHandlerHasSameState(context, handler.getState(), leader);
                 async.complete();
             }));
@@ -96,7 +98,7 @@ public class FollowerSynchronizeHandlerTest extends AbstractServerBase {
     }
 
     private FollowerSynchronizeHandler createTestHandler() {
-        return new FollowerSynchronizeHandler(vertx, new State(vertx, new MessageStore()), createTestCandidateInformationRegistry(true), createServerClient());
+        return new FollowerSynchronizeHandler(vertx, new State(vertx, new MessageStore()), createTestCandidateInformationRegistry(true), createServerClient(), new ConcurrentLinkedQueue<>());
     }
 
     private void checkHandlerHasSameState(final TestContext context, final State handler, final State leader) {

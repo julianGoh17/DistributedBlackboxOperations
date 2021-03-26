@@ -23,6 +23,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class DiscoveryHandlerTest extends AbstractServerBase {
     private final static int EPOCH = 12;
@@ -136,6 +137,6 @@ public class DiscoveryHandlerTest extends AbstractServerBase {
 
         RegistryManager manager = createTestRegistryManager();
         for (ServerConfiguration configuration : configurations) manager.registerServer(configuration.getHost(), configuration.getPort());
-        return new DiscoveryHandler(controller, new State(vertx, new MessageStore()), candidateInformationRegistry, manager, createServerClient());
+        return new DiscoveryHandler(controller, new State(vertx, new MessageStore()), candidateInformationRegistry, manager, createServerClient(), new ConcurrentLinkedQueue<>());
     }
 }

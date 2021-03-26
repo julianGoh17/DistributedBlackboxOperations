@@ -5,14 +5,12 @@ import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
-import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.discovery.DiscoveryHandler;
 import io.julian.zookeeper.discovery.LeaderDiscoveryHandler;
-import io.julian.zookeeper.election.BroadcastCandidateInformationHandler;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.models.CandidateInformation;
@@ -29,29 +27,30 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Optional;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class MessageHandler {
     private static final Logger log = LogManager.getLogger(MessageHandler.class);
     private final State state;
     private final CandidateInformationRegistry registry;
+    private final Controller controller;
+    private final RegistryManager registryManager;
+    private final ServerClient client;
+
     private final LeadershipElectionHandler electionHandler;
     private final DiscoveryHandler discoveryHandler;
     private final SynchronizeHandler synchronizeHandler;
     private final WriteHandler writeHandler;
     private boolean hasNotBroadcast = true;
 
-    private final Controller controller;
-    private final RegistryManager registryManager;
-    private final ServerClient client;
-
-    public MessageHandler(final Controller controller, final MessageStore messageStore, final Vertx vertx, final RegistryManager manager, final ServerClient client) {
+    public MessageHandler(final Controller controller, final MessageStore messageStore, final Vertx vertx, final RegistryManager manager, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
         long candidateNumber = generateCandidateNumber(vertx.deploymentIDs().size());
         this.state = new State(vertx, messageStore);
         this.registry = initializeCandidateInformationRegistry(controller.getConfiguration(), candidateNumber);
-        this.electionHandler = new LeadershipElectionHandler(candidateNumber, this.registry);
-        this.discoveryHandler = new DiscoveryHandler(controller, state, registry, manager, client);
-        this.writeHandler = new WriteHandler(controller, state, electionHandler.getCandidateRegistry(), client, manager);
-        this.synchronizeHandler = new SynchronizeHandler(vertx, state, manager, client, registry, controller);
+        this.electionHandler = new LeadershipElectionHandler(candidateNumber, this.registry, client, manager, controller, deadCoordinationMessages);
+        this.discoveryHandler = new DiscoveryHandler(controller, state, registry, manager, client, deadCoordinationMessages);
+        this.writeHandler = new WriteHandler(controller, state, electionHandler.getCandidateRegistry(), client, manager, deadCoordinationMessages);
+        this.synchronizeHandler = new SynchronizeHandler(vertx, state, manager, client, registry, controller, deadCoordinationMessages);
         this.controller = controller;
         this.registryManager = manager;
         this.client = client;
@@ -65,28 +64,20 @@ public class MessageHandler {
     public Future<Void> actOnMessage(final CoordinationMessage message) {
         log.traceEntry(() -> message);
         Class messageClass = getMessageClass(message.getMetadata());
-        if (message.getMetadata().getRequest().equals(HTTPRequest.UNKNOWN)) {
-            if (messageClass == ShortenedExchange.class) {
-                log.info("Received state update");
-                return log.traceExit(this.writeHandler.handleCoordinationMessage(message));
-            } else if (messageClass == Zxid.class) {
-                return log.traceExit(handleDiscoveryUpdate(message));
-            } else if (messageClass == State.class) {
-                log.info("Received Synchronize update");
-                return log.traceExit(this.synchronizeHandler.handleCoordinationMessage(message));
-            } else {
-                log.info("Received Election update");
-                return log.traceExit(addCandidateInformation(message.getDefinition().mapTo(CandidateInformation.class)));
-            }
-        } else {
+        if (messageClass == ShortenedExchange.class || messageClass == ClientMessage.class) {
             log.info("Received state update");
-            if (messageClass == ClientMessage.class) {
-                log.info("Received forwarded request");
-                return log.traceExit(this.writeHandler.handleCoordinationMessage(message));
-            } else {
-                log.info("Received broadcast candidate number request");
-                return log.traceExit(broadcastCandidateNumber());
-            }
+            return log.traceExit(this.writeHandler.handleCoordinationMessage(message));
+        } else if (messageClass == Zxid.class) {
+            return log.traceExit(handleDiscoveryUpdate(message));
+        } else if (messageClass == State.class) {
+            log.info("Received Synchronize update");
+            return log.traceExit(this.synchronizeHandler.handleCoordinationMessage(message));
+        } else if (messageClass == CandidateInformation.class) {
+            log.info("Received Election update");
+            return log.traceExit(addCandidateInformation(message.getDefinition().mapTo(CandidateInformation.class)));
+        } else {
+            log.info("Received broadcast candidate number request");
+            return log.traceExit(broadcastCandidateNumber());
         }
     }
 
@@ -123,7 +114,7 @@ public class MessageHandler {
         Promise<Void> res = Promise.promise();
         if (hasNotBroadcast) {
             log.info("Broadcasting candidate information to other servers");
-            electionHandler.broadcast(registryManager, client, controller)
+            electionHandler.broadcast()
                 .onSuccess(v -> res.complete())
                 .onFailure(res::fail);
             hasNotBroadcast = false;
@@ -155,7 +146,7 @@ public class MessageHandler {
             .map(CoordinationMetadata::getType)
             .orElse("");
         switch (type) {
-            case BroadcastCandidateInformationHandler.TYPE:
+            case LeadershipElectionHandler.TYPE:
                 return log.traceExit(CandidateInformation.class);
             case LeaderWriteHandler.TYPE:
             case FollowerWriteHandler.ACK_TYPE:
@@ -215,5 +206,25 @@ public class MessageHandler {
     public State getState() {
         log.traceEntry();
         return log.traceExit(state);
+    }
+
+    public Controller getController() {
+        log.traceEntry();
+        return log.traceExit(controller);
+    }
+
+    public CandidateInformationRegistry getRegistry() {
+        log.traceEntry();
+        return log.traceExit(registry);
+    }
+
+    public RegistryManager getRegistryManager() {
+        log.traceEntry();
+        return log.traceExit(registryManager);
+    }
+
+    public ServerClient getClient() {
+        log.traceEntry();
+        return log.traceExit(client);
     }
 }

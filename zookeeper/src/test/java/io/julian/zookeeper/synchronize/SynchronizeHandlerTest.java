@@ -18,6 +18,8 @@ import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class SynchronizeHandlerTest extends AbstractServerBase {
     @Test
     public void TestHasReceivedEnoughAcknowledgements() {
@@ -73,7 +75,7 @@ public class SynchronizeHandlerTest extends AbstractServerBase {
         Controller controller = new Controller(new Configuration());
         controller.setLabel(isLeader ? LeadershipElectionHandler.LEADER_LABEL : LeadershipElectionHandler.FOLLOWER_LABEL);
         return new SynchronizeHandler(vertx, new State(vertx, new MessageStore()), createTestRegistryManager(),
-            createServerClient(), createTestCandidateInformationRegistry(!isLeader), controller);
+            createServerClient(), createTestCandidateInformationRegistry(!isLeader), controller, new ConcurrentLinkedQueue<>());
     }
 
     private State createInitializedState(final TestContext context) {

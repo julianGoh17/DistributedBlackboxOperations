@@ -12,6 +12,8 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class SynchronizeHandler {
     private static final Logger log = LogManager.getLogger(SynchronizeHandler.class);
     public static final String SYNCHRONIZE_TYPE = "synchronize";
@@ -21,9 +23,9 @@ public class SynchronizeHandler {
     private final Controller controller;
 
     public SynchronizeHandler(final Vertx vertx, final State state, final RegistryManager registryManager, final ServerClient client,
-                              final CandidateInformationRegistry candidateInformationRegistry, final Controller controller) {
-        this.leader = new LeaderSynchronizeHandler(state, registryManager, client);
-        this.follower = new FollowerSynchronizeHandler(vertx, state, candidateInformationRegistry, client);
+                              final CandidateInformationRegistry candidateInformationRegistry, final Controller controller, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
+        this.leader = new LeaderSynchronizeHandler(state, registryManager, client, deadCoordinationMessages);
+        this.follower = new FollowerSynchronizeHandler(vertx, state, candidateInformationRegistry, client, deadCoordinationMessages);
         this.controller = controller;
     }
 
