@@ -28,6 +28,7 @@ public class StateTest {
     private final static int EPOCH = 0;
     private final static int COUNTER = 0;
     private final static Zxid ID = new Zxid(EPOCH, COUNTER);
+    private final static Zxid LATER_ID = new Zxid(EPOCH, COUNTER + 1);
 
     private final static String MESSAGE_ID = "random-id";
     private final static ClientMessage POST_MESSAGE = new ClientMessage(HTTPRequest.POST, new JsonObject(), MESSAGE_ID);
@@ -79,6 +80,18 @@ public class StateTest {
     }
 
     @Test
+    public void TestAddProposalCompletesDoesNotAddSameID(final TestContext context) {
+        State state = new State(vertx, new MessageStore());
+
+        Assert.assertEquals(0, state.getHistory().size());
+        addProposal(context, state, Proposal.mapFrom(ProposalTest.JSON));
+        Assert.assertEquals(1, state.getHistory().size());
+        addProposal(context, state, Proposal.mapFrom(ProposalTest.JSON));
+        Assert.assertEquals(1, state.getHistory().size());
+        Assert.assertEquals(ProposalTest.JSON.encodePrettily(), state.getHistory().get(0).toJson().encodePrettily());
+    }
+
+    @Test
     public void TestSetLastAcceptedIfGreaterIndex() {
         State state = new State(vertx, new MessageStore());
         Assert.assertEquals(0, state.getLastAcceptedIndex());
@@ -114,7 +127,8 @@ public class StateTest {
     @Test
     public void TestRetrieveStateUpdateIndexReturnsInvalidWhenNotFound() {
         State state = new State(vertx, new MessageStore());
-        Assert.assertEquals(-1, state.retrieveStateUpdateIndex(ID));
+        State.LastIndexResult res = state.retrieveStateUpdateIndex(ID);
+        Assert.assertEquals(-1, res.index);
     }
 
     @Test
@@ -122,8 +136,36 @@ public class StateTest {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
         addProposal(context, state, new Proposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""), ID));
-        Assert.assertEquals(0, state.retrieveStateUpdateIndex(ID));
-        Assert.assertEquals(0, state.retrieveStateUpdateIndex(ID));
+        State.LastIndexResult res = state.retrieveStateUpdateIndex(ID);
+        Assert.assertEquals(0, res.index);
+        Assert.assertTrue(res.canUpdate);
+    }
+
+    @Test
+    public void TestRetrieveStateUpdateIndexReturnsSuccessfullyButCannotUpdate(final TestContext context) {
+        MessageStore messageStore = new MessageStore();
+        State state = new State(vertx, messageStore);
+        addProposal(context, state, new Proposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""), LATER_ID));
+        addProposal(context, state, new Proposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""), ID));
+        State.LastIndexResult res = state.retrieveStateUpdateIndex(ID);
+        Assert.assertEquals(1, res.index);
+        Assert.assertFalse(res.canUpdate);
+    }
+
+    @Test
+    public void TestStateUpdatesEvenIfMessagesOutOfOrder(final TestContext context) {
+        MessageStore messageStore = new MessageStore();
+        State state = new State(vertx, messageStore);
+        addProposal(context, state, new Proposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), LATER_ID.toString()), LATER_ID));
+        addProposal(context, state, new Proposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), ID.toString()), ID));
+        Async async = context.async();
+        state.processStateUpdate(ID)
+            .compose(v -> state.processStateUpdate(LATER_ID))
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertEquals(1, state.getLastAcceptedIndex());
+                async.complete();
+            }));
+        async.awaitSuccess();
     }
 
     @Test
@@ -140,11 +182,10 @@ public class StateTest {
         State state = new State(vertx, messageStore);
         addProposal(context, state, new Proposal(POST_MESSAGE, ID));
 
-        Zxid higherID = new Zxid(EPOCH, COUNTER + 1);
-        Future<Void> update = state.processStateUpdate(higherID);
+        Future<Void> update = state.processStateUpdate(LATER_ID);
         Async async = context.async();
         update.onComplete(context.asyncAssertFailure(cause -> {
-            context.assertEquals("State update timeout for '" + higherID.toString() + "'", cause.getMessage());
+            context.assertEquals("State update timeout for '" + LATER_ID.toString() + "'", cause.getMessage());
             async.complete();
         }));
         async.awaitSuccess();
@@ -154,11 +195,10 @@ public class StateTest {
     public void processStateUpdateEventuallySucceeds(final TestContext context) {
         MessageStore messageStore = new MessageStore();
         State state = new State(vertx, messageStore);
-        Zxid higherID = new Zxid(EPOCH, COUNTER + 1);
         addProposal(context, state, new Proposal(POST_MESSAGE, ID));
-        addProposal(context, state, new Proposal(POST_MESSAGE, higherID));
+        addProposal(context, state, new Proposal(POST_MESSAGE, LATER_ID));
 
-        Future<Void> update = state.processStateUpdate(higherID);
+        Future<Void> update = state.processStateUpdate(LATER_ID);
         Async async = context.async();
 
         vertx.setTimer(500, v -> state.getHistory().remove(0));

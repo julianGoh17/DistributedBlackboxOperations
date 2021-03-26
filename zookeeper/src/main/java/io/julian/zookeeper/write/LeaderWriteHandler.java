@@ -17,21 +17,23 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 public class LeaderWriteHandler {
     private final Logger log = LogManager.getLogger(LeaderWriteHandler.class);
-
     public static final String TYPE = "state_update";
 
     private final LeaderProposalTracker proposalTracker;
     private final ServerClient client;
     private final RegistryManager manager;
+    private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
-    public LeaderWriteHandler(final int majority, final ServerClient client, final RegistryManager manager) {
+    public LeaderWriteHandler(final int majority, final ServerClient client, final RegistryManager manager, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
         this.proposalTracker = new LeaderProposalTracker(majority);
         this.client = client;
         this.manager = manager;
+        this.deadCoordinationMessages = deadCoordinationMessages;
     }
 
     public Future<Void> broadcastInitialProposal(final ClientMessage message, final Zxid id) {
@@ -49,9 +51,10 @@ public class LeaderWriteHandler {
         Promise<Void> broadcast = Promise.promise();
 
         log.info(String.format("Broadcasting '%s' update %s to servers", phase.toValue(), id.toString()));
+        final CoordinationMessage broadcastMessage = createCoordinationMessage(phase, message, id);
         List<Future> futures = manager.getOtherServers()
             .stream()
-            .map(server -> client.sendCoordinateMessageToServer(server, createCoordinationMessage(phase, message, id)))
+            .map(server -> client.sendCoordinateMessageToServer(server, broadcastMessage))
             .collect(Collectors.toList());
 
         CompositeFuture.all(futures)
@@ -66,6 +69,7 @@ public class LeaderWriteHandler {
             })
             .onFailure(cause -> {
                 log.info(String.format("Could not broadcast state update %s to servers", id));
+                deadCoordinationMessages.add(broadcastMessage);
                 log.error(cause);
                 broadcast.fail(cause);
             });
@@ -118,5 +122,10 @@ public class LeaderWriteHandler {
     public LeaderProposalTracker getProposalTracker() {
         log.traceEntry();
         return log.traceExit(proposalTracker);
+    }
+
+    public ConcurrentLinkedQueue<CoordinationMessage> getDeadCoordinationMessages() {
+        log.traceEntry();
+        return log.traceExit(deadCoordinationMessages);
     }
 }

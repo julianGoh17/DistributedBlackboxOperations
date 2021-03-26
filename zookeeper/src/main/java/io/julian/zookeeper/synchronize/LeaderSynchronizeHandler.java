@@ -14,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -24,11 +25,13 @@ public class LeaderSynchronizeHandler {
     private final RegistryManager manager;
     private final ServerClient client;
     private final AtomicInteger acknowledgements = new AtomicInteger();
+    private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
-    public LeaderSynchronizeHandler(final State state, final RegistryManager manager, final ServerClient client) {
+    public LeaderSynchronizeHandler(final State state, final RegistryManager manager, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
         this.state = state;
         this.manager = manager;
         this.client = client;
+        this.deadCoordinationMessages = deadCoordinationMessages;
     }
 
     public Future<Void> broadcastState() {
@@ -41,7 +44,7 @@ public class LeaderSynchronizeHandler {
             .map(server -> client.sendCoordinateMessageToServer(server, getCoordinationMessage()))
             .collect(Collectors.toList());
 
-        CompositeFuture all = CompositeFuture.all(broadcast)
+        CompositeFuture.all(broadcast)
             .onSuccess(v -> {
                 log.info("Leader successfully broadcast state to followers");
                 acknowledgements.set(0);
@@ -49,6 +52,7 @@ public class LeaderSynchronizeHandler {
             })
             .onFailure(cause -> {
                 log.info("Leader unsuccessfully broadcast state to followers");
+                deadCoordinationMessages.add(getCoordinationMessage());
                 log.error(cause);
                 res.fail(cause);
             });
@@ -84,5 +88,10 @@ public class LeaderSynchronizeHandler {
     public int getAcknowledgements() {
         log.traceEntry();
         return log.traceExit(acknowledgements.get());
+    }
+
+    public ConcurrentLinkedQueue<CoordinationMessage> getDeadCoordinationMessages() {
+        log.traceEntry();
+        return log.traceExit(deadCoordinationMessages);
     }
 }

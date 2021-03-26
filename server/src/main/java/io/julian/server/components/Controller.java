@@ -20,6 +20,9 @@ public class Controller {
     private final AtomicReference<String> label = new AtomicReference<>(DEFAULT_LABEL);
     private final ConcurrentLinkedQueue<CoordinationMessage> coordinationMessages = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<ClientMessage> clientMessages = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<ClientMessage> deadClientMessages = new ConcurrentLinkedQueue<>();
+
     private final AtomicReference<Float> failureChance = new AtomicReference<>(DEFAULT_MESSAGE_FAILURE_CHANCE);
     private final Configuration configuration;
 
@@ -86,6 +89,40 @@ public class Controller {
         return log.traceExit(clientMessages.poll());
     }
 
+    public void addToDeadCoordinationLetterQueue(final CoordinationMessage message) {
+        log.traceEntry(() -> message);
+        log.info("Adding message to dead letter queue");
+        deadCoordinationMessages.add(message);
+        log.traceExit();
+    }
+
+    public int getNumberOfDeadCoordinationLetters() {
+        log.traceEntry();
+        return log.traceExit(deadCoordinationMessages.size());
+    }
+
+    public CoordinationMessage getDeadCoordinationMessage() {
+        log.traceEntry();
+        return log.traceExit(deadCoordinationMessages.poll());
+    }
+
+    public void addToDeadClientLetterQueue(final ClientMessage message) {
+        log.traceEntry(() -> message);
+        log.info("Adding message to dead letter queue");
+        deadClientMessages.add(message);
+        log.traceExit();
+    }
+
+    public int getNumberOfDeadClientLetters() {
+        log.traceEntry();
+        return log.traceExit(deadClientMessages.size());
+    }
+
+    public ClientMessage getDeadClientMessage() {
+        log.traceEntry();
+        return log.traceExit(deadClientMessages.poll());
+    }
+
     public Float getFailureChance() {
         log.traceEntry();
         return log.traceExit(failureChance.get());
@@ -106,5 +143,25 @@ public class Controller {
     public Configuration getConfiguration() {
         log.traceEntry();
         return log.traceExit(configuration);
+    }
+
+    public ConcurrentLinkedQueue<CoordinationMessage> getCoordinationMessages() {
+        log.traceEntry();
+        return log.traceExit(coordinationMessages);
+    }
+
+    public ConcurrentLinkedQueue<ClientMessage> getClientMessages() {
+        log.traceEntry();
+        return log.traceExit(clientMessages);
+    }
+
+    public ConcurrentLinkedQueue<CoordinationMessage> getDeadCoordinationMessages() {
+        log.traceEntry();
+        return log.traceExit(deadCoordinationMessages);
+    }
+
+    public ConcurrentLinkedQueue<ClientMessage> getDeadClientMessages() {
+        log.traceEntry();
+        return log.traceExit(deadClientMessages);
     }
 }

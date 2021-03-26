@@ -13,17 +13,21 @@ import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 @Getter
 public class FollowerDiscoveryHandler {
     private final static Logger log = LogManager.getLogger(FollowerDiscoveryHandler.class);
     private final State state;
     private final CandidateInformationRegistry registry;
     private final ServerClient client;
+    private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
-    public FollowerDiscoveryHandler(final State state, final CandidateInformationRegistry registry, final ServerClient client) {
+    public FollowerDiscoveryHandler(final State state, final CandidateInformationRegistry registry, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
         this.state = state;
         this.registry = registry;
         this.client = client;
+        this.deadCoordinationMessages = deadCoordinationMessages;
     }
 
     public Future<Void> replyToLeader() {
@@ -36,7 +40,8 @@ public class FollowerDiscoveryHandler {
                 post.complete();
             })
             .onFailure(cause -> {
-                log.info("Unsuccessfully sent leader latest state ZXID");
+                log.info("Unsuccessfully sent leader latest state");
+                deadCoordinationMessages.add(createCoordinationMessage());
                 log.error(cause);
                 post.fail(cause);
             });
@@ -57,5 +62,10 @@ public class FollowerDiscoveryHandler {
             new CoordinationMetadata(HTTPRequest.UNKNOWN, "", DiscoveryHandler.DISCOVERY_TYPE),
             null,
             state.toJson()));
+    }
+
+    public ConcurrentLinkedQueue<CoordinationMessage> getDeadCoordinationMessages() {
+        log.traceEntry();
+        return log.traceExit(deadCoordinationMessages);
     }
 }

@@ -9,6 +9,7 @@ import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.models.Proposal;
+import io.julian.zookeeper.models.Stage;
 import io.julian.zookeeper.models.Zxid;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -18,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class FollowerSynchronizeHandler {
     private static final Logger log = LogManager.getLogger(FollowerSynchronizeHandler.class);
@@ -25,12 +27,14 @@ public class FollowerSynchronizeHandler {
     private final State state;
     private final CandidateInformationRegistry registry;
     private final ServerClient client;
+    private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
-    public FollowerSynchronizeHandler(final Vertx vertx, final State state, final CandidateInformationRegistry registry, final ServerClient client) {
+    public FollowerSynchronizeHandler(final Vertx vertx, final State state, final CandidateInformationRegistry registry, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
         this.vertx = vertx;
         this.state = state;
         this.registry = registry;
         this.client = client;
+        this.deadCoordinationMessages = deadCoordinationMessages;
     }
 
     public Future<Void> replyToLeader(final State leader) {
@@ -46,8 +50,16 @@ public class FollowerSynchronizeHandler {
                     log.error(res.cause());
                 }
                 client.sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), getCoordinationMessage())
-                    .onSuccess(v -> reply.complete())
-                    .onFailure(reply::fail);
+                    .onSuccess(v -> {
+                        state.setServerStage(Stage.WRITE);
+                        reply.complete();
+                    })
+                    .onFailure(cause -> {
+                        log.info("Failed to send synchronize reply to leader");
+                        deadCoordinationMessages.add(getCoordinationMessage());
+                        log.error(cause.getMessage());
+                        reply.fail(cause);
+                    });
             });
         return log.traceExit(reply.future());
     }
@@ -104,5 +116,10 @@ public class FollowerSynchronizeHandler {
     public State getState() {
         log.traceEntry();
         return log.traceExit(state);
+    }
+
+    public ConcurrentLinkedQueue<CoordinationMessage> getDeadCoordinationMessages() {
+        log.traceEntry();
+        return log.traceExit(deadCoordinationMessages);
     }
 }

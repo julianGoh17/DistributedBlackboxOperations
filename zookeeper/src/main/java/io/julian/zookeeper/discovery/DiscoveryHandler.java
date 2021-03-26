@@ -12,6 +12,8 @@ import io.vertx.core.Future;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class DiscoveryHandler {
     public static final String NOT_ENOUGH_RESPONSES_ERROR = "Leader has not received enough follower ZXID responses";
     public static final String DISCOVERY_TYPE = "discovery";
@@ -23,10 +25,10 @@ public class DiscoveryHandler {
     private boolean hasBroadcastFollowerZXID = false;
 
     public DiscoveryHandler(final Controller controller, final State state, final CandidateInformationRegistry candidateInformationRegistry,
-                            final RegistryManager registryManager, final ServerClient client) {
+                            final RegistryManager registryManager, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
         this.controller = controller;
-        this.followerHandler = new FollowerDiscoveryHandler(state, candidateInformationRegistry, client);
-        this.leaderHandler = new LeaderDiscoveryHandler(state, registryManager, client);
+        this.followerHandler = new FollowerDiscoveryHandler(state, candidateInformationRegistry, client, deadCoordinationMessages);
+        this.leaderHandler = new LeaderDiscoveryHandler(state, registryManager, client, deadCoordinationMessages);
     }
 
     public void reset() {

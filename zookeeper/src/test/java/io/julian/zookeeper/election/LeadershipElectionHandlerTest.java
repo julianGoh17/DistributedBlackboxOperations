@@ -1,9 +1,10 @@
 package io.julian.zookeeper.election;
 
 import io.julian.server.api.client.RegistryManager;
-import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
+import io.julian.server.models.HTTPRequest;
+import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.zookeeper.AbstractServerBase;
 import io.julian.zookeeper.TestServerComponents;
 import io.julian.zookeeper.models.CandidateInformation;
@@ -12,6 +13,8 @@ import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class LeadershipElectionHandlerTest extends AbstractServerBase {
     private final static String HOST = "random-host-1235";
@@ -35,7 +38,6 @@ public class LeadershipElectionHandlerTest extends AbstractServerBase {
     public void TestUpdateLeaderCorrectlyUpdatesServerToLeader() {
         Controller controller = new Controller(new Configuration());
         RegistryManager manager = new RegistryManager(new Configuration());
-
 
         LeadershipElectionHandler handler = createTestHandler();
         manager.registerServer(HOST, PORT + 234);
@@ -69,25 +71,43 @@ public class LeadershipElectionHandlerTest extends AbstractServerBase {
     @Test
     public void TestBroadcastIsSuccessful(final TestContext context) {
         TestServerComponents serverComponents = setUpBasicApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
-        TestServerComponents otherServer = setUpBasicApiServer(context, AbstractServerBase.SECOND_SERVER_CONFIG);
-        RegistryManager registryManager = createTestRegistryManager();
-        registryManager.registerServer(otherServer.configuration.getHost(), otherServer.configuration.getPort());
-        ServerClient client = createServerClient();
 
         LeadershipElectionHandler handler = createTestHandler();
         Async async = context.async();
-        handler.broadcast(registryManager, client, serverComponents.server.getController())
-            .onComplete(context.asyncAssertSuccess(res -> {
-                context.assertEquals(registryManager.getOtherServers().size(), res.size());
+        handler.broadcast()
+            .onComplete(context.asyncAssertSuccess(res -> async.complete()));
+        async.awaitSuccess();
+        tearDownServer(context, serverComponents);
+    }
+
+    @Test
+    public void TestBroadcastIsUnsuccessful(final TestContext context) {
+        LeadershipElectionHandler handler = createTestHandler();
+        Async async = context.async();
+        handler.broadcast()
+            .onComplete(context.asyncAssertFailure(cause -> {
+                Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
+                Assert.assertEquals(1, handler.getDeadCoordinationMessages().size());
                 async.complete();
             }));
         async.awaitSuccess();
-        tearDownServer(context, serverComponents);
+    }
+
+    @Test
+    public void TestCreateCoordinationMessages() {
+        LeadershipElectionHandler handler = createTestHandler();
+        CoordinationMessage message = handler.createCandidateInformationMessage(1L, DEFAULT_SEVER_CONFIG);
+        Assert.assertNull(message.getMessage());
+        Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
+        Assert.assertEquals("candidate_information", message.getMetadata().getType());
+        Assert.assertEquals(DEFAULT_SEVER_CONFIG.getHost(), message.getDefinition().getString("host"));
+        Assert.assertEquals(DEFAULT_SEVER_CONFIG.getPort(), message.getDefinition().getInteger("port").intValue());
+        Assert.assertEquals(1L, message.getDefinition().getLong("candidate_number").longValue());
     }
 
     private LeadershipElectionHandler createTestHandler() {
         CandidateInformationRegistry registry = new CandidateInformationRegistry();
         registry.addCandidateInformation(new CandidateInformation(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT, 100L));
-        return new LeadershipElectionHandler(100L, registry);
+        return new LeadershipElectionHandler(100L, registry, createServerClient(), createTestRegistryManager(), new Controller(new Configuration()), new ConcurrentLinkedQueue<>());
     }
 }

@@ -7,10 +7,13 @@ import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
+import io.julian.zookeeper.models.Stage;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SynchronizeHandler {
     private static final Logger log = LogManager.getLogger(SynchronizeHandler.class);
@@ -19,12 +22,14 @@ public class SynchronizeHandler {
     private final LeaderSynchronizeHandler leader;
     private final FollowerSynchronizeHandler follower;
     private final Controller controller;
+    private final State state;
 
     public SynchronizeHandler(final Vertx vertx, final State state, final RegistryManager registryManager, final ServerClient client,
-                              final CandidateInformationRegistry candidateInformationRegistry, final Controller controller) {
-        this.leader = new LeaderSynchronizeHandler(state, registryManager, client);
-        this.follower = new FollowerSynchronizeHandler(vertx, state, candidateInformationRegistry, client);
+                              final CandidateInformationRegistry candidateInformationRegistry, final Controller controller, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
+        this.leader = new LeaderSynchronizeHandler(state, registryManager, client, deadCoordinationMessages);
+        this.follower = new FollowerSynchronizeHandler(vertx, state, candidateInformationRegistry, client, deadCoordinationMessages);
         this.controller = controller;
+        this.state = state;
     }
 
     public Future<Void> broadcastState() {
@@ -38,6 +43,9 @@ public class SynchronizeHandler {
         if (controller.getLabel().equals(LeadershipElectionHandler.LEADER_LABEL)) {
             log.info("Leader has received acknowledgement from the messages");
             leader.incrementAcknowledgement();
+            if (leader.hasReceivedAcknowledgementsFromFollowers()) {
+                state.setServerStage(Stage.WRITE);
+            }
             return log.traceExit(Future.succeededFuture());
         }
         log.info("Follower has received synchronize state update from leader");
@@ -53,5 +61,10 @@ public class SynchronizeHandler {
     public LeaderSynchronizeHandler getLeaderSynchronizeHandler() {
         log.traceEntry();
         return log.traceExit(leader);
+    }
+
+    public State getState() {
+        log.traceEntry();
+        return log.traceExit(state);
     }
 }

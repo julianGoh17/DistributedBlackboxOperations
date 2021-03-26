@@ -14,32 +14,37 @@ import io.vertx.core.Promise;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class FollowerWriteHandler {
     private final static Logger log = LogManager.getLogger(FollowerWriteHandler.class);
     private final CandidateInformationRegistry registry;
     private final ServerClient client;
+    private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
     public final static String ACK_TYPE = "state_acknowledgement";
     public final static String FORWARD_TYPE = "forward";
 
-    public FollowerWriteHandler(final CandidateInformationRegistry registry, final ServerClient client) {
+    public FollowerWriteHandler(final CandidateInformationRegistry registry, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
         this.registry = registry;
         this.client = client;
+        this.deadCoordinationMessages = deadCoordinationMessages;
     }
 
     public Future<Void> forwardRequestToLeader(final ClientMessage message) {
         log.traceEntry(() -> message);
         Promise<Void> forward = Promise.promise();
         log.info(String.format("Attempting to forward %s to leader", message.getRequest()));
+        final CoordinationMessage reply = new CoordinationMessage(new CoordinationMetadata(message.getRequest(), message.getMessageId(), FORWARD_TYPE), message.toJson(), null);
         client
-            .sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(),
-                new CoordinationMessage(new CoordinationMetadata(message.getRequest(), message.getMessageId(), FORWARD_TYPE), message.toJson(), null))
+            .sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), reply)
             .onSuccess(res -> {
                 log.info(String.format("Successfully forwarded %s to leader", message.getRequest()));
                 forward.complete();
             })
             .onFailure(cause -> {
                 log.info(String.format("Failed to forwarded %s to leader", message.getRequest()));
+                deadCoordinationMessages.add(reply);
                 log.error(cause.getMessage());
                 forward.fail(cause);
             });
@@ -61,13 +66,15 @@ public class FollowerWriteHandler {
         log.traceEntry(() -> phase, () -> id);
         Promise<Void> reply = Promise.promise();
         log.info(String.format("Attempting to send '%s' reply for Zxid %s to leader", phase.toValue(), id.toString()));
-        client.sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), createCoordinationMessage(phase, id))
+        final CoordinationMessage message = createCoordinationMessage(phase, id);
+        client.sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), message)
             .onSuccess(res -> {
                 log.info(String.format("Successfully sent '%s' reply for Zxid %s to leader", phase.toValue(), id.toString()));
                 reply.complete();
             })
             .onFailure(cause -> {
                 log.info(String.format("Could not send '%s' reply for Zxid %s to leader", phase.toValue(), id.toString()));
+                deadCoordinationMessages.add(message);
                 log.error(cause);
                 reply.fail(cause);
             });
@@ -82,5 +89,10 @@ public class FollowerWriteHandler {
             null,
             new ShortenedExchange(phase, id).toJson()
         ));
+    }
+
+    public ConcurrentLinkedQueue<CoordinationMessage> getDeadCoordinationMessages() {
+        log.traceEntry();
+        return log.traceExit(deadCoordinationMessages);
     }
 }

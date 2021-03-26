@@ -32,8 +32,6 @@ public class CandidateInformationRegistry {
                 candidateInformation.getHost(), candidateInformation.getPort(), candidateInformation.getCandidateNumber()));
             candidateNumberAndInformationMap.put(candidateInformation.getCandidateNumber(),
                 new ServerConfiguration(candidateInformation.getHost(), candidateInformation.getPort()));
-        } else {
-            log.info(String.format("Adding candidate information for candidate number '%d'", candidateInformation.getCandidateNumber()));
         }
         log.traceExit();
     }
@@ -47,6 +45,7 @@ public class CandidateInformationRegistry {
         ArrayList<Long> candidateNumbers = new ArrayList<>();
         candidateNumberAndInformationMap.forEach((key, v) -> candidateNumbers.add(key));
         Collections.sort(candidateNumbers);
+        System.out.println(candidateNumbers);
         for (long num : candidateNumbers) {
             if (num > leaderCandidateNumber.get()) {
                 log.info(String.format("Updated leader candidate number '%d'", num));

@@ -12,6 +12,8 @@ import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public abstract class DistributedAlgorithm {
     private static final Logger log = LogManager.getLogger(DistributedAlgorithm.class.getName());
     protected final Controller controller;
@@ -60,6 +62,44 @@ public abstract class DistributedAlgorithm {
     }
 
     /**
+     * Retrieve and remove the earliest message from the dead letter queue
+     * @return the earliest coordination message
+     */
+    public CoordinationMessage getDeadCoordinationLetter() {
+        log.traceEntry();
+        return log.traceExit(controller.getDeadCoordinationMessage());
+    }
+
+    /**
+     * Add a failed message to the dead letter queue to be retried later
+     * @param failedMessage failed message
+     */
+    public void addToDeadCoordinationLetter(final CoordinationMessage failedMessage) {
+        log.traceEntry(() -> failedMessage);
+        controller.addToDeadCoordinationLetterQueue(failedMessage);
+        log.traceExit();
+    }
+
+    /**
+     * Retrieve and remove the earliest message from the dead letter queue
+     * @return the earliest coordination message
+     */
+    public ClientMessage getDeadClientLetter() {
+        log.traceEntry();
+        return log.traceExit(controller.getDeadClientMessage());
+    }
+
+    /**
+     * Add a failed message to the dead letter queue to be retried later
+     * @param failedMessage failed message
+     */
+    public void addToDeadClientLetter(final ClientMessage failedMessage) {
+        log.traceEntry(() -> failedMessage);
+        controller.addToDeadClientLetterQueue(failedMessage);
+        log.traceExit();
+    }
+
+    /**
      * Adds the user message and the id of that message (received from another server) to the server's messages if the
      * ID does not currently exist in the server.
      * @param message Coordination message received from another server.
@@ -82,7 +122,6 @@ public abstract class DistributedAlgorithm {
         messageStore.deleteMessageFromServer(message.getMetadata().getMessageID());
         log.traceExit();
     }
-
 
     /**
      * Retrieves the controller of the server, which will give access to the internal server settings
@@ -118,6 +157,16 @@ public abstract class DistributedAlgorithm {
     public MessageStore getMessageStore() {
         log.traceEntry();
         return log.traceExit(messageStore);
+    }
+
+    public ConcurrentLinkedQueue<CoordinationMessage> getDeadCoordinationQueue() {
+        log.traceEntry();
+        return log.traceExit(controller.getDeadCoordinationMessages());
+    }
+
+    public ConcurrentLinkedQueue<ClientMessage> getDeadClientQueue() {
+        log.traceEntry();
+        return log.traceExit(controller.getDeadClientMessages());
     }
 
     /**

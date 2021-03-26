@@ -18,6 +18,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.Optional;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class WriteHandler {
     private static final Logger log = LogManager.getLogger(WriteHandler.class);
@@ -27,11 +28,11 @@ public class WriteHandler {
     private final LeaderWriteHandler leaderWrite;
     private final FollowerWriteHandler followerWrite;
 
-    public WriteHandler(final Controller controller, final State state, final CandidateInformationRegistry registry, final ServerClient client, final RegistryManager manager) {
+    public WriteHandler(final Controller controller, final State state, final CandidateInformationRegistry registry, final ServerClient client, final RegistryManager manager, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
         this.controller = controller;
         this.state = state;
-        this.leaderWrite = new LeaderWriteHandler(getMajority(registry), client, manager);
-        this.followerWrite = new FollowerWriteHandler(registry, client);
+        this.leaderWrite = new LeaderWriteHandler(getMajority(registry), client, manager, deadCoordinationMessages);
+        this.followerWrite = new FollowerWriteHandler(registry, client, deadCoordinationMessages);
     }
 
     public Future<Void> handleCoordinationMessage(final CoordinationMessage message) {

@@ -62,7 +62,6 @@ public abstract class AbstractServerBase {
         return manager;
     }
 
-
     protected ServerClient createServerClient() {
         return new ServerClient(this.vertx);
     }

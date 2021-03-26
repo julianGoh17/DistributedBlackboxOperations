@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -24,17 +25,19 @@ public class LeaderDiscoveryHandler {
     private final static Logger log = LogManager.getLogger(LeadershipElectionHandler.class);
 
     private final AtomicReference<State> latestState;
-
     private final AtomicInteger followerResponses = new AtomicInteger();
     private State state;
     private final RegistryManager manager;
     private final ServerClient client;
 
-    public LeaderDiscoveryHandler(final State state, final RegistryManager manager, final ServerClient client) {
+    private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
+
+    public LeaderDiscoveryHandler(final State state, final RegistryManager manager, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
         this.state = state;
         this.manager = manager;
         this.client = client;
         this.latestState = new AtomicReference<>(state);
+        this.deadCoordinationMessages = deadCoordinationMessages;
     }
 
     public void processFollowerState(final State other) {
@@ -71,6 +74,7 @@ public class LeaderDiscoveryHandler {
             .onSuccess(v -> broadcast.complete())
             .onFailure(cause -> {
                 log.info("Failed to broadcast to followers");
+                deadCoordinationMessages.add(message);
                 log.error(cause.getMessage());
                 broadcast.fail(cause);
             });
@@ -130,5 +134,10 @@ public class LeaderDiscoveryHandler {
             new CoordinationMetadata(HTTPRequest.UNKNOWN, "", LEADER_STATE_UPDATE_TYPE),
             null,
             new Zxid(state.getLeaderEpoch(), state.getCounter()).toJson()));
+    }
+
+    public ConcurrentLinkedQueue<CoordinationMessage> getDeadCoordinationMessages() {
+        log.traceEntry();
+        return log.traceExit(deadCoordinationMessages);
     }
 }

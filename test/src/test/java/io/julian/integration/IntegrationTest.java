@@ -28,7 +28,9 @@ public class IntegrationTest extends AbstractServerBaseTest {
                 for (int i = 0; i < 2; i++) {
                     TestCoordinateMessagesAreTheSame(TestClient.MESSAGE, server.getController().getCoordinationMessage());
                 }
+                TestCoordinateMessagesAreTheSame(TestClient.MESSAGE, server.getController().getDeadCoordinationMessage());
                 Assert.assertEquals(0, server.getController().getNumberOfCoordinationMessages());
+                Assert.assertEquals(0, server.getController().getNumberOfDeadCoordinationLetters());
                 async.complete();
             }));
 
@@ -49,12 +51,11 @@ public class IntegrationTest extends AbstractServerBaseTest {
                 Assert.assertEquals(TEST_MESSAGE.encodePrettily(),
                     clientMessage.getMessage().encodePrettily());
                 Assert.assertEquals(HTTPRequest.POST, clientMessage.getRequest());
-
                 Assert.assertEquals(0, server.getController().getNumberOfClientMessages());
                 async.complete();
             }));
 
-        async.await();
+        async.awaitSuccess();
         tearDownServer(context);
     }
 
@@ -94,7 +95,6 @@ public class IntegrationTest extends AbstractServerBaseTest {
 
     public void TestCoordinateMessagesAreTheSame(final CoordinationMessage expected, final CoordinationMessage found) {
         Assert.assertEquals(expected.getMetadata().getTimestamp().toValue(), found.getMetadata().getTimestamp().toValue());
-
         Assert.assertEquals(expected.getMessage().encodePrettily(), expected.getMessage().encodePrettily());
         Assert.assertEquals(expected.getDefinition().encodePrettily(), expected.getDefinition().encodePrettily());
     }

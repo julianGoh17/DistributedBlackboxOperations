@@ -23,6 +23,8 @@ import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class WriteHandlerTest extends AbstractServerBase {
     private final static JsonObject MESSAGE_JSON = new JsonObject().put("test", "message");
     private final static String MESSAGE_ID = "id";
@@ -249,7 +251,7 @@ public class WriteHandlerTest extends AbstractServerBase {
     }
 
     private WriteHandler createWriteHandler(final CandidateInformationRegistry candidateInformationRegistry) {
-        return new WriteHandler(new Controller(new Configuration()), new State(vertx, new MessageStore()), candidateInformationRegistry, createServerClient(), createTestRegistryManager());
+        return new WriteHandler(new Controller(new Configuration()), new State(vertx, new MessageStore()), candidateInformationRegistry, createServerClient(), createTestRegistryManager(), new ConcurrentLinkedQueue<>());
     }
 
     private WriteHandler createWriteHandler() {
