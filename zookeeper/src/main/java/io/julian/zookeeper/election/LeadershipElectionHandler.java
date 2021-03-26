@@ -64,7 +64,7 @@ public class LeadershipElectionHandler {
         List<Future> sentRequests = registryManager.getOtherServers()
             .stream()
             .map(config -> {
-                log.info(String.format("Broadcasting server's candidate information to '%s:%d'", currentConfig.getHost(), currentConfig.getPort()));
+                log.info(String.format("Broadcasting server's candidate information to '%s:%d'", config.getHost(), config.getPort()));
                 return client.sendCoordinateMessageToServer(config, createCandidateInformationMessage(candidateNumber, currentConfig));
             })
             .collect(Collectors.toList());
@@ -74,7 +74,6 @@ public class LeadershipElectionHandler {
             .onFailure(cause -> {
                 log.info(String.format("Failed to broadcast candidate number '%d' to all servers", candidateNumber));
                 deadCoordinationMessages.add(createCandidateInformationMessage(candidateNumber, currentConfig));
-                log.error(cause.getMessage());
                 res.fail(cause);
             });
 

@@ -67,7 +67,7 @@ public abstract class DistributedAlgorithm {
      */
     public CoordinationMessage getDeadCoordinationLetter() {
         log.traceEntry();
-        return log.traceExit(controller.getDeadCoordinationLetter());
+        return log.traceExit(controller.getDeadCoordinationMessage());
     }
 
     /**
@@ -86,7 +86,7 @@ public abstract class DistributedAlgorithm {
      */
     public ClientMessage getDeadClientLetter() {
         log.traceEntry();
-        return log.traceExit(controller.getDeadClientLetter());
+        return log.traceExit(controller.getDeadClientMessage());
     }
 
     /**
@@ -161,7 +161,12 @@ public abstract class DistributedAlgorithm {
 
     public ConcurrentLinkedQueue<CoordinationMessage> getDeadCoordinationQueue() {
         log.traceEntry();
-        return log.traceExit(controller.getCoordinationMessages());
+        return log.traceExit(controller.getDeadCoordinationMessages());
+    }
+
+    public ConcurrentLinkedQueue<ClientMessage> getDeadClientQueue() {
+        log.traceEntry();
+        return log.traceExit(controller.getDeadClientMessages());
     }
 
     /**

@@ -58,7 +58,7 @@ public class ControllerTest {
         controller.addToDeadClientLetterQueue(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""));
         checkQueueSizes(controller, 1, 1, 1, 1);
 
-        controller.getDeadCoordinationLetter();
+        controller.getDeadCoordinationMessage();
         checkQueueSizes(controller, 1, 1, 0, 1);
 
         controller.getCoordinationMessage();
@@ -67,7 +67,7 @@ public class ControllerTest {
         controller.getClientMessage();
         checkQueueSizes(controller, 0, 0, 0, 1);
 
-        controller.getDeadClientLetter();
+        controller.getDeadClientMessage();
         checkQueueSizes(controller, 0, 0, 0, 0);
     }
 

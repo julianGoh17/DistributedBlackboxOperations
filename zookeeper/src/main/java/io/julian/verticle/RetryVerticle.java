@@ -1,7 +1,6 @@
 package io.julian.verticle;
 
 import io.julian.MessageHandler;
-import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.vertx.core.AbstractVerticle;
@@ -29,19 +28,16 @@ public class RetryVerticle extends AbstractVerticle {
     private final Vertx vertx;
     private final int verticleNumber;
     private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationLetters;
-    private final ConcurrentLinkedQueue<ClientMessage> deadClientLetters;
     private final AtomicBoolean isRunning = new AtomicBoolean(true);
 
-    private AtomicInteger failedConsecutiveRequests = new AtomicInteger(0);
+    private final AtomicInteger failedConsecutiveRequests = new AtomicInteger(0);
 
     public RetryVerticle(final MessageHandler handler, final Vertx vertx,
-                         final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationLetters,
-                         final ConcurrentLinkedQueue<ClientMessage> deadClientLetters) {
+                         final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationLetters) {
         this.handler = handler;
         this.vertx = vertx;
         this.verticleNumber = vertx.deploymentIDs().size();
         this.deadCoordinationLetters = deadCoordinationLetters;
-        this.deadClientLetters = deadClientLetters;
     }
 
     public void retryCoordinationMessages() {
@@ -65,39 +61,6 @@ public class RetryVerticle extends AbstractVerticle {
                                 } else {
                                     failedConsecutiveRequests.set(0);
                                     log.info("Succeeded retrying dead coordination letter");
-                                }
-                                inFlight.set(false);
-                            });
-                    });
-                }
-            } else {
-                vertx.cancelTimer(id);
-            }
-        });
-        log.traceExit();
-    }
-
-    public void retryClientMessages() {
-        log.traceEntry();
-        final AtomicBoolean inFlight = new AtomicBoolean(false);
-        log.info("Starting to retry client loop");
-        vertx.setPeriodic(500, id -> {
-            if (isRunning.get()) {
-                if (!inFlight.get() && deadClientLetters.size() > 0) {
-                    inFlight.set(true);
-                    vertx.setTimer(getTimeout(failedConsecutiveRequests.get()).longValue(), v -> {
-                        final ClientMessage message = deadClientLetters.poll();
-                        log.info("Retrying client message");
-                        handler.actOnInitialMessage(message)
-                            .onComplete(res -> {
-                                if (res.failed()) {
-                                    log.info("Failed to retry dead client letter");
-                                    log.error(res.cause().getMessage());
-                                    failedConsecutiveRequests.incrementAndGet();
-                                    deadClientLetters.add(message);
-                                } else {
-                                    log.info("Succeeded retrying dead client letter");
-                                    failedConsecutiveRequests.set(0);
                                 }
                                 inFlight.set(false);
                             });
@@ -144,6 +107,7 @@ public class RetryVerticle extends AbstractVerticle {
         log.traceEntry();
         log.info(String.format("Retry Verticle '%s-%d' has started", VERTICLE_ADDRESS, verticleNumber));
         vertx.eventBus().consumer(formatAddress(STOP_POSTFIX), v -> stopRetrying());
+        retryCoordinationMessages();
         log.traceExit();
     }
 

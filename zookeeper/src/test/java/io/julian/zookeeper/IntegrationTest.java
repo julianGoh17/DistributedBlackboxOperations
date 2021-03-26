@@ -42,6 +42,7 @@ public class IntegrationTest extends AbstractServerBase {
                 ZookeeperAlgorithm algorithm = (ZookeeperAlgorithm) server.server.getVerticle().getAlgorithm();
                 Assert.assertEquals(epoch, algorithm.getState().getLeaderEpoch());
                 Assert.assertEquals(counter, algorithm.getState().getCounter());
+                assertNoDeadLetters(context, server);
             });
 
         tearDownServer(context, server1);
@@ -64,6 +65,8 @@ public class IntegrationTest extends AbstractServerBase {
             .onComplete(v -> vertx.setTimer(4000, v2 -> {
                 Assert.assertEquals(1, server1.server.getMessages().getNumberOfMessages());
                 Assert.assertEquals(1, server2.server.getMessages().getNumberOfMessages());
+                assertNoDeadLetters(context, server1);
+                assertNoDeadLetters(context, server2);
                 async.complete();
             }));
         async.awaitSuccess();
@@ -87,6 +90,8 @@ public class IntegrationTest extends AbstractServerBase {
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(2500, v2 -> {
                 Assert.assertEquals(1, server1.server.getMessages().getNumberOfMessages());
                 Assert.assertEquals(1, server2.server.getMessages().getNumberOfMessages());
+                assertNoDeadLetters(context, server1);
+                assertNoDeadLetters(context, server2);
                 async.complete();
             })));
         async.awaitSuccess();
@@ -119,6 +124,32 @@ public class IntegrationTest extends AbstractServerBase {
         tearDownServer(context, leader);
     }
 
+    @Test
+    public void TestServerRetriesFailedMessages(final TestContext context) {
+        TestServerComponents server1 = setUpZookeeperApiServer(context, DEFAULT_SEVER_CONFIG);
+        registerConfigurationInServer(server1, SECOND_SERVER_CONFIG);
+        sendElectionMessage(context);
+
+        Assert.assertEquals(1, server1.server.getVerticle().getAlgorithm().getDeadCoordinationQueue().size());
+        TestServerComponents server2 = setUpZookeeperApiServer(context, SECOND_SERVER_CONFIG);
+        registerConfigurationInServer(server2, DEFAULT_SEVER_CONFIG);
+
+        Async async = context.async();
+        vertx.setTimer(2000, v -> {
+            List<String> labels = Arrays.asList(server2.server.getController().getLabel(), server1.server.getController().getLabel());
+            Assert.assertEquals(1,
+                labels.stream().filter(label -> label.equals(LeadershipElectionHandler.LEADER_LABEL)).count());
+            Assert.assertEquals(1,
+                labels.stream().filter(label -> label.equals(LeadershipElectionHandler.FOLLOWER_LABEL)).count());
+            async.complete();
+            assertNoDeadLetters(context, server1);
+            assertNoDeadLetters(context, server2);
+        });
+        async.awaitSuccess();
+        tearDownServer(context, server1);
+        tearDownServer(context, server2);
+    }
+
     private void sendElectionMessage(final TestContext context) {
         Async async = context.async();
         ServerClient client = createServerClient();
@@ -149,5 +180,9 @@ public class IntegrationTest extends AbstractServerBase {
             }
         }
         return null;
+    }
+
+    private void assertNoDeadLetters(final TestContext context, final TestServerComponents server) {
+        context.assertEquals(0, server.server.getController().getNumberOfDeadCoordinationLetters());
     }
 }

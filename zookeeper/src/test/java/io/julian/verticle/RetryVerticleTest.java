@@ -5,7 +5,6 @@ import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
-import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.AbstractServerBase;
@@ -30,16 +29,15 @@ public class RetryVerticleTest extends AbstractServerBase {
     @Test
     public void TestRetryVerticleFailsCoordinationMessage(final TestContext context) {
         ConcurrentLinkedQueue<CoordinationMessage> messages = new ConcurrentLinkedQueue<>();
-        RetryVerticle verticle = createVerticle(messages, null);
+        RetryVerticle verticle = createVerticle(messages);
         deployVerticle(context, verticle);
         messages.add(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.POST, "", ""), new JsonObject(), new JsonObject()));
         Assert.assertEquals(0, verticle.getFailedConsecutiveRequests());
 
-        verticle.retryCoordinationMessages();
         Async async = context.async();
         vertx.setTimer(3500, id -> {
             vertx.eventBus().publish(getVerticleAddress(), "");
-            Assert.assertTrue(verticle.getFailedConsecutiveRequests() > 0);
+            Assert.assertEquals(1, verticle.getFailedConsecutiveRequests());
             async.complete();
         });
         async.awaitSuccess();
@@ -49,50 +47,11 @@ public class RetryVerticleTest extends AbstractServerBase {
     public void TestRetryVerticleCoordinationMessageIsSuccessful(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
         ConcurrentLinkedQueue<CoordinationMessage> messages = new ConcurrentLinkedQueue<>();
-        RetryVerticle verticle = createVerticle(messages, null);
+        RetryVerticle verticle = createVerticle(messages);
         deployVerticle(context, verticle);
         messages.add(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.POST, "", ""), new JsonObject(), new JsonObject()));
         Assert.assertEquals(0, verticle.getFailedConsecutiveRequests());
 
-        verticle.retryCoordinationMessages();
-        Async async = context.async();
-        vertx.setTimer(3500, id -> {
-            vertx.eventBus().publish(getVerticleAddress(), "");
-            Assert.assertEquals(0, verticle.getFailedConsecutiveRequests());
-            async.complete();
-        });
-        async.awaitSuccess();
-        tearDownServer(context, server);
-    }
-
-    @Test
-    public void TestRetryVerticleFailsClientMessage(final TestContext context) {
-        ConcurrentLinkedQueue<ClientMessage> messages = new ConcurrentLinkedQueue<>();
-        RetryVerticle verticle = createVerticle(null, messages);
-        deployVerticle(context, verticle);
-        messages.add(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""));
-        Assert.assertEquals(0, verticle.getFailedConsecutiveRequests());
-
-        verticle.retryClientMessages();
-        Async async = context.async();
-        vertx.setTimer(3500, id -> {
-            vertx.eventBus().publish(getVerticleAddress(), "");
-            Assert.assertTrue(verticle.getFailedConsecutiveRequests() > 0);
-            async.complete();
-        });
-        async.awaitSuccess();
-    }
-
-    @Test
-    public void TestRetryVerticleSucceedsClientMessage(final TestContext context) {
-        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
-        ConcurrentLinkedQueue<ClientMessage> messages = new ConcurrentLinkedQueue<>();
-        RetryVerticle verticle = createVerticle(null, messages);
-        deployVerticle(context, verticle);
-        messages.add(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""));
-        Assert.assertEquals(0, verticle.getFailedConsecutiveRequests());
-
-        verticle.retryClientMessages();
         Async async = context.async();
         vertx.setTimer(3500, id -> {
             vertx.eventBus().publish(getVerticleAddress(), "");
@@ -119,17 +78,15 @@ public class RetryVerticleTest extends AbstractServerBase {
     }
 
     private RetryVerticle createVerticle() {
-        return createVerticle(null, null);
+        return createVerticle(null);
     }
 
-    private RetryVerticle createVerticle(final ConcurrentLinkedQueue<CoordinationMessage> coordination, final ConcurrentLinkedQueue<ClientMessage> client) {
+    private RetryVerticle createVerticle(final ConcurrentLinkedQueue<CoordinationMessage> coordination) {
         final ConcurrentLinkedQueue<CoordinationMessage> coordinationQueue = Optional.ofNullable(coordination)
-            .orElse(new ConcurrentLinkedQueue<>());
-        final ConcurrentLinkedQueue<ClientMessage> clientQueue = Optional.ofNullable(client)
             .orElse(new ConcurrentLinkedQueue<>());
         MessageHandler handler = createHandler();
         handler.getController().setLabel(LeadershipElectionHandler.LEADER_LABEL);
-        return new RetryVerticle(handler, vertx, coordinationQueue, clientQueue);
+        return new RetryVerticle(handler, vertx, coordinationQueue);
     }
 
     private MessageHandler createHandler() {
@@ -157,7 +114,6 @@ public class RetryVerticleTest extends AbstractServerBase {
         });
         return deployment.future();
     }
-
 
     private String getVerticleAddress() {
         return String.format("%s-%s-0", RetryVerticle.VERTICLE_ADDRESS, RetryVerticle.STOP_POSTFIX);
