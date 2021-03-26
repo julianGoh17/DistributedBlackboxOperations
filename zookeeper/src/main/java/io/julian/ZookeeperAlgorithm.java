@@ -40,7 +40,10 @@ public class ZookeeperAlgorithm extends DistributedAlgorithm {
     public void actOnCoordinateMessage() {
         log.traceEntry();
         CoordinationMessage message = getCoordinationMessage();
-        handler.actOnCoordinateMessage(message)
+        handler.updateFollowerState(message);
+        handler
+            .checkMessageStage(message)
+            .compose(v -> handler.actOnCoordinateMessage(message))
             .onFailure(cause -> log.error(cause.getMessage()));
         log.traceExit();
     }

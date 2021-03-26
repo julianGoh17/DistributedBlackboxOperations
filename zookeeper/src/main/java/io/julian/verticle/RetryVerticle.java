@@ -51,7 +51,8 @@ public class RetryVerticle extends AbstractVerticle {
                     vertx.setTimer(getTimeout(failedConsecutiveRequests.get()).longValue(), v -> {
                         final CoordinationMessage message = deadCoordinationLetters.poll();
                         log.info("Retrying coordination message");
-                        sendCoordinationMessage(message)
+                        handler.checkMessageStage(message)
+                            .compose(v1 -> sendCoordinationMessage(message))
                             .onComplete(res -> {
                                 if (res.failed()) {
                                     log.info("Failed to retry dead coordination letter");

@@ -24,12 +24,16 @@ import org.apache.logging.log4j.Logger;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class MessageHandler {
+    public static final String EARLIER_STAGE_ERROR = "Message from earlier stage";
+    public static final String LATER_STAGE_ERROR = "Message from later stage";
+
     private static final Logger log = LogManager.getLogger(MessageHandler.class);
     private final State state;
     private final CandidateInformationRegistry registry;
     private final Controller controller;
     private final RegistryManager registryManager;
     private final ServerClient client;
+    private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
     private final LeadershipElectionHandler electionHandler;
     private final DiscoveryHandler discoveryHandler;
@@ -48,12 +52,12 @@ public class MessageHandler {
         this.controller = controller;
         this.registryManager = manager;
         this.client = client;
+        this.deadCoordinationMessages = deadCoordinationMessages;
     }
 
     public Future<Void> actOnCoordinateMessage(final CoordinationMessage message) {
         log.traceEntry(() -> message);
         Stage messageStage = Stage.fromType(message.getMetadata().getType());
-        updateFollowerState(message);
         if (messageStage.equals(Stage.WRITE)) {
             log.info("Received state update");
             return log.traceExit(this.writeHandler.handleCoordinationMessage(message));
@@ -71,6 +75,23 @@ public class MessageHandler {
         }
     }
 
+    public Future<Void> checkMessageStage(final CoordinationMessage message) {
+        log.traceEntry(() -> message);
+        Promise<Void> res = Promise.promise();
+        final Stage stage = Stage.fromType(message.getMetadata().getType());
+        if (stage.toStageNumber() < state.getServerStage().toStageNumber()) {
+            log.debug("Coordination message from previous stage removed");
+            res.fail(EARLIER_STAGE_ERROR);
+        } else if (stage.toStageNumber() == state.getServerStage().toStageNumber()) {
+            res.complete();
+        } else {
+            log.debug("Coordination message from later stage placed on retry loop for later");
+            deadCoordinationMessages.add(message);
+            res.fail(LATER_STAGE_ERROR);
+        }
+        return log.traceExit(res.future());
+    }
+
     public Future<Void> actOnInitialMessage(final ClientMessage message) {
         log.traceEntry(() -> message);
         Promise<Void> res = Promise.promise();
@@ -84,14 +105,13 @@ public class MessageHandler {
         return log.traceExit(res.future());
     }
 
-
     /**
      * Adds candidate information in message received from other server to candidate registry
      * @param information another server's candidate information
      */
     private Future<Void> addCandidateInformation(final CandidateInformation information) {
         log.traceEntry(() -> information);
-        electionHandler.addCandidateInformation(information);
+        if (information.getHost() != null) electionHandler.addCandidateInformation(information);
         return log.traceExit(broadcastCandidateNumber()
             .compose(v -> updateLeader()));
     }
@@ -175,8 +195,9 @@ public class MessageHandler {
      */
     public long generateCandidateNumber(final int offset) {
         log.traceEntry();
-        log.info("Generating random candidate number");
-        return log.traceExit((long) (Math.random() * Math.pow(10, 10) + offset));
+        long candidateNumber = (long) (Math.random() * Math.pow(10, 10) + offset);
+        log.info(String.format("Generated candidate number: %d", candidateNumber));
+        return log.traceExit(candidateNumber);
     }
 
     /**

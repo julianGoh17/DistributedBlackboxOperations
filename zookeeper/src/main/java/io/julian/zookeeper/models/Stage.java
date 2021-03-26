@@ -2,7 +2,6 @@ package io.julian.zookeeper.models;
 
 import io.julian.zookeeper.discovery.DiscoveryHandler;
 import io.julian.zookeeper.discovery.LeaderDiscoveryHandler;
-import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.synchronize.SynchronizeHandler;
 import io.julian.zookeeper.write.FollowerWriteHandler;
 import io.julian.zookeeper.write.LeaderWriteHandler;
@@ -15,8 +14,7 @@ public enum Stage {
     SETUP,
     DISCOVERY,
     SYNCHRONIZE,
-    WRITE,
-    START;
+    WRITE;
 
     private static final Logger log = LogManager.getLogger(Stage.class);
     private static final String EMPTY_STRING = "";
@@ -25,8 +23,6 @@ public enum Stage {
         log.traceEntry(() -> type);
 
         switch (Optional.ofNullable(type).orElse(EMPTY_STRING)) {
-            case LeadershipElectionHandler.TYPE:
-                return log.traceExit(SETUP);
             case DiscoveryHandler.DISCOVERY_TYPE:
             case LeaderDiscoveryHandler.LEADER_STATE_UPDATE_TYPE:
                 return log.traceExit(DISCOVERY);
@@ -37,23 +33,37 @@ public enum Stage {
             case FollowerWriteHandler.FORWARD_TYPE:
                 return log.traceExit(WRITE);
             default:
-                return log.traceExit(START);
+                return log.traceExit(SETUP);
         }
     }
 
     public String toString() {
-        log.traceExit();
+        log.traceEntry();
         switch (this) {
             case SETUP:
-                return "Set Up";
+                return log.traceExit("Set Up");
             case DISCOVERY:
-                return "Discovery";
+                return log.traceExit("Discovery");
             case SYNCHRONIZE:
-                return "Synchronize";
+                return log.traceExit("Synchronize");
             case WRITE:
-                return "Write";
+                return log.traceExit("Write");
             default:
-                return "Start";
+                return log.traceExit("Start");
+        }
+    }
+
+    public int toStageNumber() {
+        log.traceEntry();
+        switch (this) {
+            case DISCOVERY:
+                return log.traceExit(1);
+            case SYNCHRONIZE:
+                return log.traceExit(2);
+            case WRITE:
+                return log.traceExit(3);
+            default:
+                return log.traceExit(-1);
         }
     }
 }

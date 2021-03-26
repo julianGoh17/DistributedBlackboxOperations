@@ -30,7 +30,6 @@ public class LeaderDiscoveryHandler {
     private final RegistryManager manager;
     private final ServerClient client;
 
-    // TODO: pass in dead coordination queue
     private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
     public LeaderDiscoveryHandler(final State state, final RegistryManager manager, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {

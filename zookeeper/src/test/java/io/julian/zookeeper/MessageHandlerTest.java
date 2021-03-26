@@ -7,12 +7,15 @@ import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
+import io.julian.zookeeper.discovery.DiscoveryHandler;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.models.CandidateInformation;
 import io.julian.zookeeper.models.Stage;
 import io.julian.zookeeper.synchronize.SynchronizeHandler;
 import io.julian.zookeeper.write.LeaderWriteHandler;
+import io.vertx.ext.unit.Async;
+import io.vertx.ext.unit.TestContext;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -89,6 +92,30 @@ public class MessageHandlerTest extends AbstractServerBase {
     }
 
     @Test
+    public void TestCheckMessageStage(final TestContext context) {
+        MessageHandler handler = createTestHandler();
+        handler.getState().setServerStage(Stage.DISCOVERY);
+
+        Async async = context.async(3);
+        handler.checkMessageStage(createTypeCoordinationMessage(""))
+            .onComplete(context.asyncAssertFailure(cause -> {
+                Assert.assertEquals(MessageHandler.EARLIER_STAGE_ERROR, cause.getMessage());
+                async.countDown();
+            }));
+
+        handler.checkMessageStage(createTypeCoordinationMessage(LeaderWriteHandler.TYPE))
+            .onComplete(context.asyncAssertFailure(cause -> {
+                Assert.assertEquals(MessageHandler.LATER_STAGE_ERROR, cause.getMessage());
+                async.countDown();
+            }));
+
+        handler.checkMessageStage(createTypeCoordinationMessage(DiscoveryHandler.DISCOVERY_TYPE))
+            .onComplete(context.asyncAssertSuccess(v -> async.countDown()));
+
+        async.awaitSuccess();
+    }
+
+    @Test
     public void TestCanChangeStateTo() {
         MessageHandler handler = createTestHandler();
         for (Stage stage : Stage.values()) {
@@ -102,5 +129,9 @@ public class MessageHandlerTest extends AbstractServerBase {
 
     private MessageHandler createTestHandler() {
         return new MessageHandler(new Controller(new Configuration()), new MessageStore(), this.vertx, createTestRegistryManager(), createServerClient(), new ConcurrentLinkedQueue<>());
+    }
+
+    private CoordinationMessage createTypeCoordinationMessage(final String type) {
+        return new CoordinationMessage(new CoordinationMetadata(HTTPRequest.POST, "", type), null, null);
     }
 }

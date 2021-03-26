@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 
 public class LeaderWriteHandler {
     private final Logger log = LogManager.getLogger(LeaderWriteHandler.class);
-
     public static final String TYPE = "state_update";
 
     private final LeaderProposalTracker proposalTracker;
