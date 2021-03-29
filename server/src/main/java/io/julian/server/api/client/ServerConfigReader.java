@@ -26,7 +26,7 @@ public class ServerConfigReader {
                 if (components.length == 2) {
                     String host = components[HOST_INDEX];
                     int port = Integer.parseInt(components[PORT_INDEX]);
-                    log.info(String.format("Registering server '%s:%d'", host, port));
+                    log.debug(String.format("Registering server '%s:%d'", host, port));
                     serverConfigurations.add(Pair.of(host, port));
                 }
             }
