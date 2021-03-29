@@ -3,17 +3,23 @@ ARG BASE_IMAGE
 FROM ${BASE_IMAGE}:latest
 
 ARG JAR_NAME
+ARG LOG4J2_FILE
+ENV LOG4J2_LOCATION="/resources/log4j2.xml"
+
 COPY client/target/${JAR_NAME} ${JAR_NAME}
+COPY ${LOG4J2_FILE} ${LOG4J2_LOCATION}
 
 ENV JAR_NAME=${JAR_NAME}
 ENV OPERATIONS_FILE_PATH="/resources/operations"
 ENV MESSAGE_FILE_PATH="/resources/messages"
 ENV REPORT_FILE_PATH="/resources/report"
+ENV LOG_PATH="/resources/logs"
 
 ARG CLIENT_GENERATED_FOLDER
 COPY ${CLIENT_GENERATED_FOLDER}/operations ${OPERATIONS_FILE_PATH}
 COPY ${CLIENT_GENERATED_FOLDER}/messages ${MESSAGE_FILE_PATH}
+COPY dockerfiles/client-run.sh /client-run.sh
 
-VOLUME [ ${REPORT_FILE_PATH} ]
+VOLUME [ ${REPORT_FILE_PATH} , ${LOG_PATH}]
 
-CMD java -jar ${JAR_NAME}
+ENTRYPOINT ["/bin/sh", "-c", "./client-run.sh "]
