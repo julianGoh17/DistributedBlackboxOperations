@@ -8,3 +8,4 @@ logs
 target
 generated
 docker-compose.yaml
+server-list.txt

@@ -1,2 +1,0 @@
-server1:8888
-server2:9999
