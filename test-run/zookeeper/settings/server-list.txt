@@ -1,2 +1,2 @@
-localhost:8888
-localhost:9999
+server1:8888
+server2:9999

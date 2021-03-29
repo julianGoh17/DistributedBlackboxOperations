@@ -7,3 +7,4 @@ client/src/main/resources/generated/operations
 logs
 target
 generated
+docker-compose.yaml

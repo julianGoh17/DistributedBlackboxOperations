@@ -45,7 +45,6 @@ public class CandidateInformationRegistry {
         ArrayList<Long> candidateNumbers = new ArrayList<>();
         candidateNumberAndInformationMap.forEach((key, v) -> candidateNumbers.add(key));
         Collections.sort(candidateNumbers);
-        System.out.println(candidateNumbers);
         for (long num : candidateNumbers) {
             if (num > leaderCandidateNumber.get()) {
                 log.info(String.format("Updated leader candidate number '%d'", num));
