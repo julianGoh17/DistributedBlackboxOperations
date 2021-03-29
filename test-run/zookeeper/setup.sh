@@ -37,5 +37,7 @@ networks:
   distributed-server:
     driver: bridge
 "
-echo -n "$DOCKER_COMPOSE_FILE" > "$CWD/docker-compose.yaml"
+DOCKER_COMPOSE_FILE_NAME="$CWD/docker-compose.yaml"
+echo -n "$DOCKER_COMPOSE_FILE" > "$DOCKER_COMPOSE_FILE_NAME"
 echo -n "$SERVER_LIST_CONTENTS" > "$CWD/$SERVER_LIST_FILE"
+docker-compose -f "$DOCKER_COMPOSE_FILE_NAME" up -d 
