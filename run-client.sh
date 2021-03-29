@@ -7,6 +7,8 @@ CLIENT_IMAGE="${PROJECT_NAME}-client"
 IMAGE_TAG="latest"
 CONTAINER_REPORT_PATH="/resources/report"
 REPORT_FOLDER="${WORKDIR}/generated/report"
+CONTAINER_LOGS_FOLDER="/resources/logs"
+LOGS_FOLDER="${WORKDIR}/generated/logs"
 DEFAULT_SERVER_PORT="8888"
 
 echo "Usage: use this script to run a client after running ./build.sh to build the necessary docker image"
@@ -18,5 +20,6 @@ echo "Client will connect to server on port ${SERVER_PORT}"
 docker run -it \
     --network="host" \
     -v "$REPORT_FOLDER":${CONTAINER_REPORT_PATH} \
+    -v "$LOGS_FOLDER":${CONTAINER_LOGS_FOLDER} \
     -e SERVER_PORT="${SERVER_PORT}" \
     "${CLIENT_IMAGE}:${IMAGE_TAG}"

@@ -10,10 +10,14 @@ ENV SETTINGS_FOLDER="/settings"
 COPY server/target/${JAR_NAME} ${JAR_NAME}
 
 ARG SERVER_OPENAPI_YAML
+ARG LOG4J2_FILE
 ENV OPENAPI_SPEC_LOCATION="/resources/ServerEndpoints.yaml"
+ENV LOG4J2_LOCATION="/resources/log4j2.xml"
 
 COPY ${SERVER_OPENAPI_YAML} ${OPENAPI_SPEC_LOCATION}
+COPY ${LOG4J2_FILE} ${LOG4J2_LOCATION}
+COPY dockerfiles/server-run.sh /server-run.sh
 
-VOLUME [ ${JAR_FILE_FOLDER}, ${SETTINGS_FOLDER} ]
+VOLUME [ ${JAR_FILE_FOLDER} , ${SETTINGS_FOLDER} ]
 
-CMD java -jar ${JAR_NAME}
+ENTRYPOINT ["/bin/sh", "-c", "./server-run.sh "]
