@@ -9,6 +9,13 @@ JAR_NAME="zookeeper-1.0-SNAPSHOT-jar-with-dependencies.jar"
 SERVER_LIST_FILE="settings/server-list.txt"
 SERVER_LIST_CONTENTS=""
 
+GREP_FOR_CADVISOR_HOST=$(cat "$CWD/settings/server-ports.txt" | grep 8080)
+
+if [ -n "$GREP_FOR_CADVISOR_HOST" ]; then
+  echo "Server Ports can't contain 8080 as cAdvisor is created on that port"
+  exit 1
+fi
+
 while IFS= read -r PORT
 do
   DOCKER_COMPOSE_FILE="$DOCKER_COMPOSE_FILE

@@ -2,6 +2,7 @@
 
 CWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
+"$CWD/../cAdvisor/setup.sh"
 "$CWD/setup.sh"
 echo "Waiting 5 seconds to setup servers"
 sleep 5
