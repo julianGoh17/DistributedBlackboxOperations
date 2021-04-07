@@ -30,6 +30,12 @@ paths:
     post:
       operationId: createReport
       description: Create report with the current given metrics
+      parameters:
+        - in: query
+          name: filterName
+          schema:
+            type: string
+          required: true
       responses:
         '200':
           description: Successfully sent message to the Server

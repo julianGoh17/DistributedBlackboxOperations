@@ -13,12 +13,10 @@ public class GenericStatistics {
     public final static String TOTAL_FAILED_MESSAGES_KEY = "Total Failed Messages";
     public final static String TOTAL_SUCCEEDED_MESSAGES_KEY = "Total Succeeded Messages";
 
-    public String toReportEntry(final String messageId, final MessageStatus messageStatus) {
-        log.traceEntry(() -> messageId, () -> messageStatus);
-        log.info(String.format("Creating Report Entry for '%s'", messageId));
+    public String toReportEntry(final MessageStatus messageStatus) {
+        log.traceEntry(() -> messageStatus);
+        log.info("Creating Generic Report Entry");
         ReportStringBuilder builder = new ReportStringBuilder();
-        builder.appendLine(messageId);
-        builder.appendLine("-".repeat(messageId.length()));
 
         final int totalMessages = messageStatus.getFailedMessages() + messageStatus.getSuccessfulMessages();
         builder.appendLine(String.format("%s: %.2f", AVERAGE_MESSAGE_SIZE_KEY, messageStatus.getTotalMessageSize() / totalMessages));

@@ -17,6 +17,7 @@ public class TestClient {
     private final WebClient client;
 
     private final static String TRACK_URI = "/track";
+    private final static String REPORT_URI = "/report";
 
     public TestClient(final Vertx vertx) {
         this.client = WebClient.create(vertx);
@@ -33,29 +34,64 @@ public class TestClient {
         async.awaitSuccess();
     }
 
-    public void unsuccessfulTrackMessage(final TestContext context, final JsonObject json, final String error) {
+    public void unsuccessfulTrackMessage(final TestContext context, final JsonObject json, final String error, final int statusCode) {
         Async async = context.async();
         trackMessage(json)
-            .onComplete(context.asyncAssertFailure(cause -> {
-                Assert.assertEquals(error, cause.getMessage());
+            .onComplete(context.asyncAssertSuccess(res -> {
+                ErrorResponse response = res.mapTo(ErrorResponse.class);
+                Assert.assertEquals(error, response.getError().getMessage());
+                Assert.assertEquals(statusCode, response.getStatusCode());
                 async.complete();
             }));
         async.awaitSuccess();
     }
+
     public Future<JsonObject> trackMessage(final JsonObject object) {
         Promise<JsonObject> json = Promise.promise();
         this.client
             .post(PORT, HOST, TRACK_URI)
             .sendJsonObject(object, res -> {
                 if (res.succeeded()) {
-                    if (res.result().statusCode() == 200) {
-                        json.complete(res.result().bodyAsJsonObject());
-                    } else {
-                        ErrorResponse response = res.result().bodyAsJsonObject().mapTo(ErrorResponse.class);
-                        json.fail(response.getError());
-                    }
+                    json.complete(res.result().bodyAsJsonObject());
                 } else {
-                    json.fail(res.cause());
+                    json.complete(new ErrorResponse(500, res.cause()).toJson());
+                }
+            });
+        return json.future();
+    }
+
+    public void successfulCreateReport(final TestContext context, final String filter) {
+        Async async = context.async();
+        createReport(filter)
+            .onComplete(context.asyncAssertSuccess(res -> {
+                SuccessResponse response = res.mapTo(SuccessResponse.class);
+                Assert.assertEquals(200, response.getStatusCode());
+                async.complete();
+            }));
+        async.awaitSuccess();
+    }
+
+    public void unsuccessfulCreateReport(final TestContext context, final String filter, final String error, final int statusCode) {
+        Async async = context.async();
+        createReport(filter)
+            .onComplete(context.asyncAssertSuccess(res -> {
+                ErrorResponse response = res.mapTo(ErrorResponse.class);
+                Assert.assertEquals(error, response.getError().getMessage());
+                Assert.assertEquals(statusCode, response.getStatusCode());
+                async.complete();
+            }));
+        async.awaitSuccess();
+    }
+
+    public Future<JsonObject> createReport(final String filter) {
+        Promise<JsonObject> json = Promise.promise();
+        this.client
+            .post(PORT, HOST, String.format("%s?filterName=%s", REPORT_URI, filter))
+            .send(res -> {
+                if (res.succeeded()) {
+                    json.complete(res.result().bodyAsJsonObject());
+                } else {
+                    json.complete(new ErrorResponse(500, res.cause()).toJson());
                 }
             });
         return json.future();

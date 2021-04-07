@@ -49,7 +49,7 @@ public class TrackHandlerTest extends AbstractHandlerTest {
         for (String key : keys) {
             JsonObject json = MESSAGE.toJson().copy();
             json.remove(key);
-            client.unsuccessfulTrackMessage(context, json, String.format("$.%s: is missing but it is required", key));
+            client.unsuccessfulTrackMessage(context, json, String.format("$.%s: is missing but it is required", key), 400);
             server.testHasExpectedStatusSize(0);
         }
 

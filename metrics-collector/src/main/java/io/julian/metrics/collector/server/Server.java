@@ -1,6 +1,7 @@
 package io.julian.metrics.collector.server;
 
 import io.julian.metrics.collector.server.handlers.ErrorHandler;
+import io.julian.metrics.collector.server.handlers.ReportHandler;
 import io.julian.metrics.collector.server.handlers.TrackHandler;
 import io.julian.metrics.collector.tracking.StatusTracker;
 import io.vertx.core.Future;
@@ -16,8 +17,11 @@ public class Server {
     private final static Logger log = LogManager.getLogger(Server.class.getName());
     private OpenAPI3RouterFactory routerFactory;
     private final StatusTracker tracker = new StatusTracker();
+    private final Configuration configuration;
 
-    public final static String DEFAULT_OPENAPI_SPEC_LOCATION = "src/main/resources/metrics-collector-endpoints.yaml";
+    public Server(final Configuration configuration) {
+        this.configuration = configuration;
+    }
 
     public Future<Boolean> startServer(final Vertx vertx, final String specLocation) {
         log.traceEntry(() -> vertx, () -> specLocation);
@@ -40,10 +44,13 @@ public class Server {
     public void addHandlers(final Vertx vertx) {
         log.traceEntry(() -> vertx);
         TrackHandler trackHandler = new TrackHandler(tracker);
+        ReportHandler reportHandler = new ReportHandler(tracker, vertx, configuration);
         ErrorHandler errorHandler = new ErrorHandler();
 
         routerFactory.addHandlerByOperationId("trackMessage", trackHandler::handle);
         routerFactory.addFailureHandlerByOperationId("trackMessage", errorHandler::handle);
+        routerFactory.addHandlerByOperationId("createReport", reportHandler::handle);
+        routerFactory.addFailureHandlerByOperationId("createReport", errorHandler::handle);
         log.traceExit();
     }
 

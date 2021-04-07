@@ -28,8 +28,8 @@ public class ServerTest {
     public void TestServerCanDeploy(final TestContext context) {
         Async async = context.async();
 
-        Server server = new Server();
-        server.startServer(vertx, String.format("%s/%s", System.getProperty("user.dir"), Server.DEFAULT_OPENAPI_SPEC_LOCATION))
+        Server server = new Server(new Configuration());
+        server.startServer(vertx, String.format("%s/%s", System.getProperty("user.dir"), Configuration.DEFAULT_OPENAPI_SPEC_LOCATION))
             .onComplete(context.asyncAssertSuccess(v -> async.complete()));
         async.awaitSuccess();
     }
@@ -39,7 +39,7 @@ public class ServerTest {
         Async async = context.async();
 
         String filePath = "incorrect-file-path";
-        Server server = new Server();
+        Server server = new Server(new Configuration());
         server.startServer(vertx, filePath)
             .onComplete(context.asyncAssertFailure(cause -> {
                 Assert.assertEquals(String.format("Wrong specification url/path: %s", filePath), cause.getMessage());

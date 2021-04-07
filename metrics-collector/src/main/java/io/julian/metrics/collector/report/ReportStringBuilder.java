@@ -18,4 +18,10 @@ public class ReportStringBuilder {
         builder.append("\n");
         log.traceExit();
     }
+
+    public void append(final String line) {
+        log.traceEntry(() -> line);
+        builder.append(line);
+        log.traceExit();
+    }
 }

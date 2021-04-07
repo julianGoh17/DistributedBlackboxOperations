@@ -2,6 +2,8 @@ package io.julian.metrics.collector.server.handlers;
 
 import io.julian.metrics.collector.TestClient;
 import io.julian.metrics.collector.TestServerComponents;
+import io.julian.metrics.collector.report.ReportCreatorTest;
+import io.julian.metrics.collector.server.Configuration;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
@@ -25,7 +27,15 @@ public abstract class AbstractHandlerTest {
 
     protected TestServerComponents startServer(final TestContext context) {
         TestServerComponents server = new TestServerComponents();
-        server.setUpServer(context, vertx);
+        Configuration configuration = new Configuration();
+        configuration.setReportPath(ReportCreatorTest.REPORT_LOCATION);
+        server.setUpServer(configuration, context, vertx);
+        return server;
+    }
+
+    protected TestServerComponents startServer(final Configuration configuration, final TestContext context) {
+        TestServerComponents server = new TestServerComponents();
+        server.setUpServer(configuration, context, vertx);
         return server;
     }
 
