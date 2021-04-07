@@ -6,6 +6,7 @@ import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
+import org.junit.Assert;
 
 import java.io.File;
 
@@ -17,7 +18,9 @@ public class TestServerComponents {
     public static final String HOST = "localhost";
     public static final int PORT = 9999;
 
-    protected void setUpServer(final TestContext context, final Vertx vertx) {
+    public static final String CONNECTION_REFUSED = String.format("Connections Refused at %s:%d", HOST, PORT);
+
+    public void setUpServer(final TestContext context, final Vertx vertx) {
         server = new Server();
         Async async = context.async();
         api = vertx.createHttpServer(new HttpServerOptions()
@@ -35,10 +38,14 @@ public class TestServerComponents {
         async.awaitSuccess();
     }
 
-    protected void tearDownServer(final TestContext context) {
+    public void tearDownServer(final TestContext context) {
         server = null;
         Async async = context.async();
         api.close(context.asyncAssertSuccess(v ->  async.complete()));
         async.awaitSuccess();
+    }
+
+    public void testHasExpectedStatusSize(final int expectedSize) {
+        Assert.assertEquals(expectedSize, server.getTracker().getStatuses().size());
     }
 }

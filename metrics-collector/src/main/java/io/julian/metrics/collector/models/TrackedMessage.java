@@ -29,7 +29,7 @@ public class TrackedMessage {
         log.traceEntry();
         return log.traceExit(new JsonObject()
             .put(STATUS_CODE_KEY, statusCode)
-            .put(MESSAGE_ID_KEY, messageId))
-            .put(MESSAGE_SIZE_KEY, messageSize);
+            .put(MESSAGE_ID_KEY, messageId)
+            .put(MESSAGE_SIZE_KEY, messageSize));
     }
 }

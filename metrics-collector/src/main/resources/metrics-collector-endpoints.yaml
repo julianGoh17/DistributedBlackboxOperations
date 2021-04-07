@@ -42,12 +42,17 @@ components:
     TrackedMessage:
       type: object
       properties:
-        messageID:
+        messageId:
           type: string
         statusCode:
           type: integer
         messageSize:
-          type: float
+          type: number
+          format: float
+      required:
+        - messageId
+        - statusCode
+        - messageSize
     ErrorResponse:
       type: object
       properties:

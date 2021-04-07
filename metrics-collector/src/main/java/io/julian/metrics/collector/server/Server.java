@@ -1,5 +1,8 @@
 package io.julian.metrics.collector.server;
 
+import io.julian.metrics.collector.server.handlers.ErrorHandler;
+import io.julian.metrics.collector.server.handlers.TrackHandler;
+import io.julian.metrics.collector.tracking.StatusTracker;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -12,6 +15,7 @@ import org.apache.logging.log4j.Logger;
 public class Server {
     private final static Logger log = LogManager.getLogger(Server.class.getName());
     private OpenAPI3RouterFactory routerFactory;
+    private final StatusTracker tracker = new StatusTracker();
 
     public final static String DEFAULT_OPENAPI_SPEC_LOCATION = "src/main/resources/metrics-collector-endpoints.yaml";
 
@@ -35,7 +39,19 @@ public class Server {
 
     public void addHandlers(final Vertx vertx) {
         log.traceEntry(() -> vertx);
+        TrackHandler trackHandler = new TrackHandler(tracker);
+        ErrorHandler errorHandler = new ErrorHandler();
 
+        routerFactory.addHandlerByOperationId("trackMessage", trackHandler::handle);
+        routerFactory.addFailureHandlerByOperationId("trackMessage", errorHandler::handle);
         log.traceExit();
+    }
+
+    /*
+     * Exposed for Testing
+     */
+    public StatusTracker getTracker() {
+        log.traceEntry();
+        return log.traceExit(tracker);
     }
 }
