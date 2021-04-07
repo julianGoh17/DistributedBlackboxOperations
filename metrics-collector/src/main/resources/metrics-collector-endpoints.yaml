@@ -46,6 +46,8 @@ components:
           type: string
         statusCode:
           type: integer
+        messageSize:
+          type: float
     ErrorResponse:
       type: object
       properties:
