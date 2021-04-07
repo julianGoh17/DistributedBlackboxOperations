@@ -2,7 +2,7 @@ package operations;
 
 import io.julian.server.components.Configuration;
 import io.julian.server.components.Server;
-import io.vertx.core.Promise;
+import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerOptions;
@@ -18,13 +18,13 @@ public class AbstractClientTest {
 
     protected void setUpApiServer(final TestContext context) {
         server = new Server();
-        Promise<Boolean> hasDeployed = server.startServer(vertx, System.getProperty("user.dir") + File.separator + ".."  + File.separator + "server" + File.separator + Configuration.DEFAULT_OPENAPI_SPEC_LOCATION);
+        Future<Boolean> hasDeployed = server.startServer(vertx, System.getProperty("user.dir") + File.separator + ".."  + File.separator + "server" + File.separator + Configuration.DEFAULT_OPENAPI_SPEC_LOCATION);
         api = vertx.createHttpServer(new HttpServerOptions()
             .setPort(Configuration.DEFAULT_SERVER_PORT)
             .setHost(Configuration.DEFAULT_SERVER_HOST));
 
         Async async = context.async();
-        hasDeployed.future().onComplete(context.asyncAssertSuccess(v -> {
+        hasDeployed.onComplete(context.asyncAssertSuccess(v -> {
             api.requestHandler(server.getRouterFactory().getRouter()).listen(ar -> {
                 context.assertTrue(ar.succeeded());
                 async.complete();

@@ -46,7 +46,7 @@ public class TestServerComponents {
         this.configuration = configuration;
 
         CompositeFuture.all(
-            server.startServer(vertx, System.getProperty("user.dir") + File.separator + ".." + File.separator + "server" + File.separator + Configuration.DEFAULT_OPENAPI_SPEC_LOCATION).future(),
+            server.startServer(vertx, System.getProperty("user.dir") + File.separator + ".." + File.separator + "server" + File.separator + Configuration.DEFAULT_OPENAPI_SPEC_LOCATION),
             server.deployDistributedAlgorithmVerticle(server.getController(), vertx, new DistributedAlgorithmSettings(true, true, testJar, serverPackage))
         )
             .onComplete(context.asyncAssertSuccess(compositeFuture -> {

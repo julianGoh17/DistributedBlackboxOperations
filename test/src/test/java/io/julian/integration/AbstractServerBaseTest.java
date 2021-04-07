@@ -45,7 +45,7 @@ public abstract class AbstractServerBaseTest {
             .setHost(Configuration.DEFAULT_SERVER_HOST));
 
         CompositeFuture.all(
-            server.startServer(vertx, System.getProperty("user.dir") + File.separator + ".." + File.separator + "server" + File.separator + Configuration.DEFAULT_OPENAPI_SPEC_LOCATION).future(),
+            server.startServer(vertx, System.getProperty("user.dir") + File.separator + ".." + File.separator + "server" + File.separator + Configuration.DEFAULT_OPENAPI_SPEC_LOCATION),
             server.deployDistributedAlgorithmVerticle(server.getController(), vertx, new DistributedAlgorithmSettings(true, true, CORRECT_TEST_JAR_PATH, PACKAGE_NAME))
         )
             .onComplete(context.asyncAssertSuccess(compositeFuture -> {

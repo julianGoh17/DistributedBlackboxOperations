@@ -48,13 +48,13 @@ public abstract class AbstractHandlerTest {
 
     protected void setUpApiServer(final TestContext context) {
         server = new Server();
-        Promise<Boolean> hasDeployed = server.startServer(vertx, Configuration.DEFAULT_OPENAPI_SPEC_LOCATION);
+        Future<Boolean> hasDeployed = server.startServer(vertx, Configuration.DEFAULT_OPENAPI_SPEC_LOCATION);
         api = vertx.createHttpServer(new HttpServerOptions()
             .setPort(Configuration.DEFAULT_SERVER_PORT)
             .setHost(Configuration.DEFAULT_SERVER_HOST));
 
         Async async = context.async();
-        hasDeployed.future().onComplete(context.asyncAssertSuccess(v ->
+        hasDeployed.onComplete(context.asyncAssertSuccess(v ->
             api.requestHandler(server.getRouterFactory().getRouter()).listen(ar -> {
                 context.assertTrue(ar.succeeded());
                 async.complete();
