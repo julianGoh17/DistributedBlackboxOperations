@@ -89,7 +89,7 @@ public class ServerClientTest extends AbstractServerHandlerTest {
     }
 
     @Test
-    public void TestServerClientCanSendMessageToMetricsCollector(final TestContext context) {
+    public void TestServerClientCanSendTrackMessageToMetricsCollector(final TestContext context) {
         TestMetricsCollector collector = createCollector(context);
         ServerClient client = new ServerClient(vertx, new Configuration());
         Async async = context.async();
@@ -101,7 +101,7 @@ public class ServerClientTest extends AbstractServerHandlerTest {
     }
 
     @Test
-    public void TestServerClientFailsToSendMessageToMetricsCollector(final TestContext context) {
+    public void TestServerClientFailsToSendTrackMessageToMetricsCollector(final TestContext context) {
         ServerClient client = new ServerClient(vertx, new Configuration());
         Async async = context.async();
         client.trackMessage(new TrackedMessage(200, "random-id", 10.4f))
@@ -113,7 +113,7 @@ public class ServerClientTest extends AbstractServerHandlerTest {
     }
 
     @Test
-    public void TestServerClientFailsToSendMessageWhenMissingFiledToMetricsCollector(final TestContext context) {
+    public void TestServerClientFailsToSendTrackMessageWhenMissingFiledToMetricsCollector(final TestContext context) {
         TestMetricsCollector collector = createCollector(context);
         ServerClient client = new ServerClient(vertx, new Configuration());
         Async async = context.async();
@@ -126,9 +126,55 @@ public class ServerClientTest extends AbstractServerHandlerTest {
         collector.tearDownServer(context);
     }
 
+    @Test
+    public void TestServerClientCanSendCreateReportToMetricsCollector(final TestContext context) {
+        TestMetricsCollector collector = createCollector(context);
+        ServerClient client = new ServerClient(vertx, new Configuration());
+        Async async = context.async();
+        client.createReport()
+            .onComplete(context.asyncAssertSuccess(res -> async.complete()));
+        async.awaitSuccess();
+        collector.assertFileReportDoesExists(context, vertx, true);
+        collector.deleteReportFile(context, vertx);
+        collector.tearDownServer(context);
+    }
+
+    @Test
+    public void TestServerClientFailsToConnectWhenCreatingReportToMetricsCollector(final TestContext context) {
+        ServerClient client = new ServerClient(vertx, new Configuration());
+        Async async = context.async();
+        client.createReport()
+            .onComplete(context.asyncAssertFailure(cause -> {
+                Assert.assertEquals(TestMetricsCollector.FAILED_TO_CONNECT, cause.getMessage());
+                async.complete();
+            }));
+        async.awaitSuccess();
+    }
+
+    @Test
+    public void TestServerClientFailsWhenCreatingReportToMetricsCollector(final TestContext context) {
+        TestMetricsCollector collector = createCollectorWithWrongReportPath(context);
+        ServerClient client = new ServerClient(vertx, new Configuration());
+        Async async = context.async();
+        client.createReport()
+            .onComplete(context.asyncAssertFailure(cause -> {
+                Assert.assertEquals(String.format("java.nio.file.NoSuchFileException: %s", TestMetricsCollector.INVALID_REPORT_FILE_PATH), cause.getMessage());
+                async.complete();
+            }));
+        async.awaitSuccess();
+        collector.assertFileReportDoesExists(context, vertx, false);
+        collector.tearDownServer(context);
+    }
+
     private TestMetricsCollector createCollector(final TestContext context) {
         TestMetricsCollector collector = new TestMetricsCollector();
         collector.setUpMetricsCollector(context, vertx);
+        return collector;
+    }
+
+    private TestMetricsCollector createCollectorWithWrongReportPath(final TestContext context) {
+        TestMetricsCollector collector = new TestMetricsCollector();
+        collector.setUpMetricsCollectorWithWrongReportPath(context, vertx);
         return collector;
     }
 }

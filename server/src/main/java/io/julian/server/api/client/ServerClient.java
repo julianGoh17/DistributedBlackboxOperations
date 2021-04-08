@@ -138,6 +138,33 @@ public class ServerClient {
         return log.traceExit(res.future());
     }
 
+    public Future<Void> createReport() {
+        log.traceEntry();
+        Promise<Void> res = Promise.promise();
+        log.info("Sending message to create message in metrics collector");
+        client
+            .post(configuration.getMetricsCollectorPort(), configuration.getServerHost(), REPORT_URI)
+            .send(ar -> {
+                if (ar.succeeded()) {
+                    if (ar.result().statusCode() == 200) {
+                        log.info("Successfully created report in metrics collector");
+                        res.complete();
+                    } else {
+                        ErrorResponse response = ErrorResponse.fromJson(ar.result().bodyAsJsonObject());
+                        log.info("Failed to created report in metrics collector");
+                        log.error(response.getException());
+                        res.fail(response.getException());
+                    }
+                } else {
+                    ErrorResponse response = new ErrorResponse(500, ar.cause());
+                    log.info("Failed to created report in metrics collector");
+                    log.error(response.getException());
+                    res.fail(response.getException());
+                }
+            });
+        return log.traceExit(res.future());
+    }
+
     public WebClient getWebClient() {
         log.traceEntry();
         return log.traceExit(client);
