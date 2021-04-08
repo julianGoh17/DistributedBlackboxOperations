@@ -14,7 +14,7 @@ public class TestMetricsCollector {
     public static final String HOST = Configuration.DEFAULT_SERVER_HOST;
     public static final int PORT = Configuration.DEFAULT_SERVER_PORT;
     public static final String OPENAPI_SPEC_LOCATION = String.format("%s/../metrics-collector/src/main/resources/metrics-collector-endpoints.yaml", System.getProperty("user.dir"));
-    public static final String REPORT_LOCATION = String.format("%s/src/test/resources", System.getProperty("user.dir"));
+    public static final String REPORT_LOCATION = String.format("%s/../metrics-collector/src/test/resources", System.getProperty("user.dir"));
     public static final String REPORT_FILE_PATH = String.format("%s/%s", REPORT_LOCATION, ReportCreator.REPORT_FILE_NAME);
     public static final String FAILED_TO_CONNECT = String.format("Connection refused: %s/127.0.0.1:%d", HOST, PORT);
     public static final String INVALID_REPORT_LOCATION = "/invalid-path";

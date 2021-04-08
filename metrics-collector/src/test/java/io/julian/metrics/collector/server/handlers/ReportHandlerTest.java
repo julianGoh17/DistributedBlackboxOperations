@@ -15,8 +15,10 @@ public class ReportHandlerTest extends AbstractHandlerTest {
         TestClient client = createTestClient();
 
         client.successfulCreateReport(context, ReportCreator.GENERAL_STATISTIC_FILTER_NAME);
-        ReportCreatorTest.assertReportFileExists(vertx, context, true);
-        ReportCreatorTest.deleteReportFile(vertx, context);
+        vertx.setTimer(2000, res -> {
+            ReportCreatorTest.assertReportFileExists(vertx, context, true);
+            ReportCreatorTest.deleteReportFile(vertx, context);
+        });
         server.tearDownServer(context);
     }
 
