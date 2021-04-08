@@ -44,7 +44,7 @@ public class Server {
         this.messages = new MessageStore();
     }
 
-    public Promise<Boolean> startServer(final Vertx vertx, final String specLocation) {
+    public Future<Boolean> startServer(final Vertx vertx, final String specLocation) {
         log.traceEntry(() -> vertx, () -> specLocation);
         Promise<Boolean> hasDeployed = Promise.promise();
         OpenAPI3RouterFactory.create(vertx, specLocation, ar -> {
@@ -59,7 +59,7 @@ public class Server {
                 hasDeployed.fail(exception);
             }
         });
-        return hasDeployed;
+        return log.traceExit(hasDeployed.future());
     }
 
     public void addHandlers(final Vertx vertx) {

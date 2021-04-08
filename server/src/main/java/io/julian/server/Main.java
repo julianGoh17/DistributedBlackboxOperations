@@ -16,7 +16,7 @@ public class Main {
         Server server = new Server();
 
         server.deployDistributedAlgorithmVerticle(server.getController(), vertx, server.getConfiguration().getDistributedAlgorithmSettings())
-            .compose(v -> server.startServer(vertx, server.getConfiguration().getOpenapiSpecLocation()).future())
+            .compose(v -> server.startServer(vertx, server.getConfiguration().getOpenapiSpecLocation()))
             .onSuccess(v -> {
                 HttpServer api = vertx.createHttpServer(new HttpServerOptions()
                     .setPort(server.getConfiguration().getServerPort())

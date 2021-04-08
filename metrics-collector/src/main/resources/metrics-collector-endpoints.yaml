@@ -1,0 +1,73 @@
+openapi: "3.0.0"
+info:
+  title: Metrics Collecotr Endpoints
+  version: 1.0.0
+paths:
+  ######################
+  # Tracking Endpoints #
+  ######################
+  /track:
+    post:
+      operationId: trackMessage
+      description: Track a messageID status
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TrackedMessage"
+      responses:
+        '200':
+          description: Successfully sent message to the Server
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+  ####################
+  # Report Endpoints #
+  ####################
+  /report:
+    post:
+      operationId: createReport
+      description: Create report with the current given metrics
+      parameters:
+        - in: query
+          name: filterName
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Successfully sent message to the Server
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+components:
+  schemas:
+    TrackedMessage:
+      type: object
+      properties:
+        messageId:
+          type: string
+        statusCode:
+          type: integer
+        messageSize:
+          type: number
+          format: float
+      required:
+        - messageId
+        - statusCode
+        - messageSize
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        error:
+          type: string
+    SuccessResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer

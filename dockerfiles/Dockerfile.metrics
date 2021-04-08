@@ -1,0 +1,22 @@
+ARG BASE_IMAGE
+
+FROM ${BASE_IMAGE}:latest
+
+ARG JAR_NAME
+ENV JAR_NAME=${JAR_NAME}
+
+ARG METRICS_COLLECTOR_OPENAPI_YAML
+ENV OPENAPI_SPEC_LOCATION="/resources/metrics-collector-endpoints.yaml"
+COPY ${METRICS_COLLECTOR_OPENAPI_YAML} ${OPENAPI_SPEC_LOCATION}
+
+ARG LOG4J2_FILE
+ENV LOG4J2_LOCATION="/resources/log4j2.xml"
+
+COPY metrics-collector/target/${JAR_NAME} ${JAR_NAME}
+COPY ${LOG4J2_FILE} ${LOG4J2_LOCATION}
+
+COPY dockerfiles/metrics-collector-run.sh /metrics-collector-run.sh
+
+VOLUME [ ${REPORT_FILE_PATH}]
+
+ENTRYPOINT ["/bin/sh", "-c", "./metrics-collector-run.sh "]
