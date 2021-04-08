@@ -25,6 +25,14 @@ public class Configuration {
     public static final int DEFAULT_SERVER_PORT = 8888;
     private int port;
 
+    public static final String METRICS_COLLECTOR_HOST_ENV = "METRICS_COLLECTOR_HOST";
+    public static final String DEFAULT_METRICS_COLLECTOR_HOST = "localhost";
+    private String metricsCollectorHost;
+
+    public static final String METRICS_COLLECTOR_PORT_ENV = "METRICS_COLLECTOR_PORT";
+    public static final int DEFAULT_METRICS_COLLECTOR_PORT = 9090;
+    private int metricsCollectorPort;
+
     public static final String DOES_PROCESS_REQUEST_ENV = "DOES_PROCESS_REQUEST";
     public static final boolean DEFAULT_DOES_PROCESS_REQUEST = true;
     private boolean doesProcessRequest;
@@ -39,6 +47,8 @@ public class Configuration {
         this.serverConfigurationLocation = getOrDefault(SERVER_CONFIGURATION_LOCATION, DEFAULT_SERVER_CONFIGURATION_LOCATION);
         this.host = getOrDefault(SERVER_HOST_ENV, DEFAULT_SERVER_HOST);
         this.port = getOrDefault(SERVER_PORT_ENV, DEFAULT_SERVER_PORT);
+        this.metricsCollectorHost = getOrDefault(METRICS_COLLECTOR_HOST_ENV, DEFAULT_METRICS_COLLECTOR_HOST);
+        this.metricsCollectorPort = getOrDefault(METRICS_COLLECTOR_PORT_ENV, DEFAULT_METRICS_COLLECTOR_PORT);
         this.jarFilePath = getOrDefault(JAR_FILE_PATH_ENV, "");
         this.packageName = getOrDefault(PACKAGE_NAME_ENV, "");
         this.doesProcessRequest = getOrDefault(DOES_PROCESS_REQUEST_ENV, DEFAULT_DOES_PROCESS_REQUEST);
@@ -63,6 +73,28 @@ public class Configuration {
     public void setServerHost(final String host) {
         log.traceEntry(() -> host);
         this.host = host;
+        log.traceExit();
+    }
+
+    public int getMetricsCollectorPort() {
+        log.traceEntry();
+        return log.traceExit(metricsCollectorPort);
+    }
+
+    public void setMetricsCollectorPort(final int metricsCollectorPort) {
+        log.traceEntry(() -> metricsCollectorPort);
+        this.metricsCollectorPort = metricsCollectorPort;
+        log.traceExit();
+    }
+
+    public String getMetricsCollectorHost() {
+        log.traceEntry();
+        return log.traceExit(metricsCollectorHost);
+    }
+
+    public void setMetricsCollectorHost(final String metricsCollectorHost) {
+        log.traceEntry(() -> metricsCollectorHost);
+        this.metricsCollectorHost = metricsCollectorHost;
         log.traceExit();
     }
 

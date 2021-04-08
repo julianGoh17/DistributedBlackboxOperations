@@ -1,5 +1,7 @@
 package io.julian.server.api.client;
 
+import io.julian.metrics.collector.models.TrackedMessage;
+import io.julian.server.components.Configuration;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.response.ErrorResponse;
@@ -15,12 +17,16 @@ public class ServerClient {
     public static final String COORDINATOR_URI = "/coordinate";
     public static final String COORDINATION_MESSAGE_ENDPOINT = "message";
     public static final String LABEL_SERVER_ENDPOINT = "label";
+    public static final String TRACK_URI = "/track";
+    public static final String REPORT_URI = "/report?filterName=general";
 
     private final Logger log = LogManager.getLogger(ServerClient.class.getName());
     private final WebClient client;
+    private final Configuration configuration;
 
-    public ServerClient(final Vertx vertx) {
+    public ServerClient(final Vertx vertx, final Configuration configuration) {
         this.client = WebClient.create(vertx);
+        this.configuration = configuration;
     }
 
     public Future<Void> sendCoordinateMessageToServer(final ServerConfiguration configuration, final CoordinationMessage message) {
@@ -102,6 +108,34 @@ public class ServerClient {
             });
 
         return log.traceExit(label.future());
+    }
+
+    public Future<Void> trackMessage(final TrackedMessage message) {
+        log.traceEntry(() -> message);
+        Promise<Void> res = Promise.promise();
+        log.info(String.format("Sending message '%s' for metrics collector to track", message.getMessageId()));
+        client
+            .post(configuration.getMetricsCollectorPort(), configuration.getServerHost(), TRACK_URI)
+            .sendJsonObject(message.toJson(), ar -> {
+                if (ar.succeeded()) {
+                    if (ar.result().statusCode() == 200) {
+                        log.info(String.format("Successfully sent message '%s' to metrics collector", message.getMessageId()));
+                        res.complete();
+                    } else {
+                        ErrorResponse response = ErrorResponse.fromJson(ar.result().bodyAsJsonObject());
+                        log.info(String.format("Failed to send message '%s' to metrics collector", message.getMessageId()));
+                        log.error(response.getException());
+                        res.fail(response.getException());
+                    }
+                } else {
+                    ErrorResponse response = new ErrorResponse(500, ar.cause());
+                    log.info(String.format("Failed to send message '%s' to metrics collector", message.getMessageId()));
+                    log.error(response.getException());
+                    res.fail(response.getException());
+                }
+            });
+
+        return log.traceExit(res.future());
     }
 
     public WebClient getWebClient() {
