@@ -63,7 +63,7 @@ public abstract class AbstractServerBase {
     }
 
     protected ServerClient createServerClient() {
-        return new ServerClient(this.vertx);
+        return new ServerClient(this.vertx, new Configuration());
     }
 
     protected TestClient createTestClient() {

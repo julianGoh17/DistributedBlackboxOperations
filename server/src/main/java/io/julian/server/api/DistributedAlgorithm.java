@@ -25,7 +25,7 @@ public abstract class DistributedAlgorithm {
     public DistributedAlgorithm(final Controller controller, final MessageStore messageStore, final Vertx vertx) {
         this.controller = controller;
         this.messageStore = messageStore;
-        this.client = new ServerClient(vertx);
+        this.client = new ServerClient(vertx, controller.getConfiguration());
         this.registryManager = new RegistryManager(controller.getConfiguration());
         this.vertx = vertx;
     }
