@@ -6,8 +6,13 @@ import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Action;
 import io.julian.client.model.operation.Expected;
 import io.julian.client.model.operation.Operation;
+import io.julian.client.model.operation.OverviewComparison;
+import io.julian.server.models.response.ServerOverview;
 import org.junit.Assert;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class MetricsCollectorTest {
     private final Operation getOperation = createOperation(RequestMethod.GET);
@@ -161,7 +166,13 @@ public class MetricsCollectorTest {
         Assert.assertEquals(EXPECTED_STATUS_CODE, collector.getMismatchedResponses().get(2).getExpectedStatusCode());
         Assert.assertEquals(MESSAGE_NUMBER, collector.getMismatchedResponses().get(2).getMessageNumber());
         Assert.assertEquals(EXCEPTION_MESSAGE, collector.getMismatchedResponses().get(2).getError());
+    }
 
+    @Test
+    public void TestMetricsCollectorAddsOverviewComparison() {
+        MetricsCollector collector = new MetricsCollector();
+        collector.addComparisonCheck(Collections.emptyList(), new ServerOverview("local", 999, 0, Collections.emptyList()));
+        Assert.assertEquals(1, collector.getOverviewComparisons().size());
     }
 
     private Operation createOperation(final RequestMethod method) {

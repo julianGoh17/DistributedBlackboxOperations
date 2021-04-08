@@ -3,11 +3,12 @@ package metrics;
 import io.julian.client.exception.ClientException;
 import io.julian.client.metrics.GeneralMetrics;
 import io.julian.client.metrics.Reporter;
-import io.julian.client.model.response.MismatchedResponse;
 import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Action;
 import io.julian.client.model.operation.Expected;
 import io.julian.client.model.operation.Operation;
+import io.julian.client.model.operation.OverviewComparison;
+import io.julian.client.model.response.MismatchedResponse;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -28,6 +29,10 @@ import static io.julian.client.metrics.Reporter.REPORT_FILE_NAME;
 public class ReporterTest {
     private Vertx vertx;
 
+    private final static String HOST = "localhost";
+    private final static int PORT = 999;
+    private final static String MISSING_SERVER_ID = "server";
+    private final static String MISSING_CLIENT_ID = "client";
     // Putting in /tmp so that we have permissions to create file in Github Action pipeline
     private static final String TEST_REPORT_FILE_PATH = "/tmp";
     private final static RequestMethod METHOD = RequestMethod.GET;
@@ -116,7 +121,7 @@ public class ReporterTest {
     public void TestCreateReportFailsWhenWrongFileLocation(final TestContext context) {
         Reporter reporter = new Reporter();
         String wrongFilePath = String.format("%s/random-location1234", TEST_REPORT_FILE_PATH);
-        Future<Void> hasWrote = reporter.createReportFile(Collections.singletonList(createTestMismatchedResponse()), new GeneralMetrics(), wrongFilePath, vertx);
+        Future<Void> hasWrote = reporter.createReportFile(Collections.singletonList(createTestMismatchedResponse()), Collections.emptyList(), new GeneralMetrics(), wrongFilePath, vertx);
 
         hasWrote.onComplete(context.asyncAssertFailure(throwable ->
             Assert.assertEquals(String.format("java.nio.file.NoSuchFileException: %s/%s", wrongFilePath, REPORT_FILE_NAME), throwable.getMessage())));
@@ -126,7 +131,7 @@ public class ReporterTest {
     public void TestCreateReportSuccessful(final TestContext context) {
         String reportFilePath = String.format("%s/%s", TEST_REPORT_FILE_PATH, REPORT_FILE_NAME);
         Reporter reporter = new Reporter();
-        Future<Void> hasWrote = reporter.createReportFile(Collections.singletonList(createTestMismatchedResponse()), new GeneralMetrics(), TEST_REPORT_FILE_PATH, vertx);
+        Future<Void> hasWrote = reporter.createReportFile(Collections.singletonList(createTestMismatchedResponse()), Collections.emptyList(), new GeneralMetrics(), TEST_REPORT_FILE_PATH, vertx);
 
         hasWrote.onComplete(context.asyncAssertSuccess(res -> vertx.fileSystem().exists(reportFilePath, open -> {
             Assert.assertTrue(open.succeeded());
@@ -144,8 +149,9 @@ public class ReporterTest {
     @Test
     public void TestGetReport() {
         Reporter reporter = new Reporter();
-        StringBuilder builder = reporter.getReport(Collections.singletonList(createTestMismatchedResponse()), new GeneralMetrics());
-        String expected = String.join("\n", GENERAL_REPORT, GET_REPORT, POST_REPORT, DELETE_REPORT, MISMATCHED_RESPONSE_REPORT);
+        OverviewComparison comparison = createTestOverviewComparison();
+        StringBuilder builder = reporter.getReport(Collections.singletonList(createTestMismatchedResponse()), Collections.singletonList(comparison), new GeneralMetrics());
+        String expected = String.join("\n", GENERAL_REPORT, GET_REPORT, POST_REPORT, DELETE_REPORT, MISMATCHED_RESPONSE_REPORT, getExpectedTestComparisonEntry(comparison.getTimestamp().toString()));
         Assert.assertEquals(expected, builder.toString());
     }
 
@@ -186,6 +192,17 @@ public class ReporterTest {
     }
 
     @Test
+    public void TestReporterFormatsCreateOverviewComparisonCorrectly() {
+        Reporter reporter = new Reporter();
+        StringBuilder builder = new StringBuilder();
+        OverviewComparison comparison = createTestOverviewComparison();
+        reporter.createOverviewComparisonEntry(comparison, builder);
+
+        Assert.assertEquals(getExpectedTestComparisonEntry(comparison.getTimestamp().toString()),
+            builder.toString());
+    }
+
+    @Test
     public void TestReporterFormatsSeparatorCorrectly() {
         Reporter reporter = new Reporter();
         String randomHeader = "random-header-1235134@";
@@ -204,5 +221,23 @@ public class ReporterTest {
         operation.setExpected(expected);
 
         return new MismatchedResponse(operation, new ClientException(ERROR, ACTUAL_STATUS_CODE));
+    }
+
+    private OverviewComparison createTestOverviewComparison() {
+        OverviewComparison comparison = new OverviewComparison(HOST, PORT);
+        comparison.getMissingIdsInClient().add(MISSING_SERVER_ID);
+        comparison.getMissingIdsInServer().add(MISSING_CLIENT_ID);
+        return comparison;
+    }
+
+    private String getExpectedTestComparisonEntry(final String timeStamp) {
+        String header = String.format("Overview Comparison For '%s:%d' at %s", HOST, PORT, timeStamp);
+        return header + "\n"
+            + "-".repeat(header.length()) + "\n"
+            + "Missing Expected IDs In Server\n"
+            + String.format("- %s\n", MISSING_CLIENT_ID)
+            + "Unexpected IDs In Server\n"
+            + String.format("- %s\n", MISSING_SERVER_ID);
+
     }
 }

@@ -16,6 +16,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -50,6 +51,25 @@ public class Coordinator {
         memory.readInMessageFiles(messageFilePath);
         readInOperationsFile(operationsFilePath);
         log.traceExit();
+    }
+
+    public Future<Void> checkState() {
+        log.traceEntry();
+        Promise<Void> isCheckSuccessful = Promise.promise();
+        log.info("Checking overview of server");
+        client.GetOverview()
+            .onSuccess(res -> {
+                log.info("Successfully retrieved overview of server");
+                collector.addComparisonCheck(new ArrayList<>(memory.getExpectedMapping().values()), res);
+                isCheckSuccessful.complete();
+            })
+            .onFailure(cause -> {
+                log.info("Failed to check overview of server");
+                log.error(cause.getMessage());
+                isCheckSuccessful.fail(cause.getMessage());
+            });
+
+        return log.traceExit(isCheckSuccessful.future());
     }
 
     public Future<Void> sendPOST(final int messageIndex, final Expected expected) throws ArrayIndexOutOfBoundsException {

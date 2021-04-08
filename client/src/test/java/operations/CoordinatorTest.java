@@ -359,6 +359,22 @@ public class CoordinatorTest extends AbstractClientTest {
         tearDownAPIServer(context);
     }
 
+    @Test
+    public void TestCoordinatorChecksStateSuccessfully(final TestContext context) throws IOException, NullPointerException  {
+        setUpApiServer(context);
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        Async async = context.async();
+        client.runOperationChain(PARALLEL_OPERATION_FILE_NAME)
+            .compose(v -> client.checkState())
+            .onComplete(context.asyncAssertSuccess(v -> {
+                checkCollectorGenericMetrics(0, 3, 0, 0, 0, 0);
+                Assert.assertEquals(1, client.getCollector().getOverviewComparisons().size());
+                async.complete();
+            }));
+        async.awaitSuccess();
+        tearDownAPIServer(context);
+    }
+
     /**
      * EXCEPTION TESTS
      */

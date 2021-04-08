@@ -55,7 +55,7 @@ public class Controller {
                         if (userWantsToContinue.result()) {
                             inFlightCommand.set(false);
                         } else {
-                            reporter.createReportFile(client.getCollector().getMismatchedResponses(), client.getCollector().getGeneral(), reportFileLocation, vertx)
+                            reporter.createReportFile(client.getCollector().getMismatchedResponses(), client.getCollector().getOverviewComparisons(), client.getCollector().getGeneral(), reportFileLocation, vertx)
                                 .onSuccess(v -> createdReport.complete())
                                 .onFailure(createdReport::fail);
                             vertx.cancelTimer(id);
@@ -88,9 +88,11 @@ public class Controller {
                             break;
                         case STATE_CHECK_NUMBER:
                             log.info("Checking state of servers match");
-                            runStateCheck();
-                            userWantsToContinue.complete(true);
-                            vertx.cancelTimer(id);
+                            runStateCheck()
+                                .onComplete(v -> {
+                                    userWantsToContinue.complete(true);
+                                    vertx.cancelTimer(id);
+                                });
                             break;
                         case PRINT_MESSAGES_NUMBER:
                             log.info("Printing messages");
@@ -162,10 +164,10 @@ public class Controller {
         return log.traceExit(operationRes.future());
     }
 
-    private void runStateCheck() {
+    private Future<Void> runStateCheck() {
         log.traceEntry();
         output.println(STATE_CHECK);
-        log.traceExit();
+        return log.traceExit(client.checkState());
     }
 
     private void printPreconfiguredMessages() {

@@ -7,6 +7,8 @@ import io.vertx.ext.web.RoutingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+
 public class GetOverviewHandler extends AbstractServerHandler {
     private final static Logger log = LogManager.getLogger(GetOverviewHandler.class);
 
@@ -18,8 +20,9 @@ public class GetOverviewHandler extends AbstractServerHandler {
             200,
             new ServerOverview(components.controller.getConfiguration().getServerHost(),
                 components.controller.getConfiguration().getServerPort(),
-                components.messageStore.getNumberOfMessages()
-                ).toJson());
+                components.messageStore.getNumberOfMessages(),
+                new ArrayList<>(components.messageStore.getMessages().keySet()))
+                .toJson());
 
         log.info(String.format("%s successfully got overview of server", GetOverviewHandler.class.getSimpleName()));
         log.traceExit();

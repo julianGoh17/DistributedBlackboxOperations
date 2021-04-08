@@ -1,6 +1,7 @@
 package io.julian.client.metrics;
 
 import io.julian.client.model.RequestMethod;
+import io.julian.client.model.operation.OverviewComparison;
 import io.julian.client.model.response.MismatchedResponse;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -21,12 +22,12 @@ public class Reporter {
     private final static Logger log = LogManager.getLogger(Reporter.class.getName());
     private final static String HEADER_SEPARATOR_CHAR = "-";
 
-    public Future<Void> createReportFile(final List<MismatchedResponse> responses, final GeneralMetrics metrics, final String reportFileLocation, final Vertx vertx) {
-        log.traceEntry(() -> responses, () -> metrics, () -> reportFileLocation, () -> vertx);
+    public Future<Void> createReportFile(final List<MismatchedResponse> responses, final List<OverviewComparison> comparisons, final GeneralMetrics metrics, final String reportFileLocation, final Vertx vertx) {
+        log.traceEntry(() -> responses, () -> comparisons, () -> metrics, () -> reportFileLocation, () -> vertx);
         log.info(String.format("%s attempting to create report at location '%s'", Reporter.class.getSimpleName(), reportFileLocation));
         Promise<Void> completedWrite = Promise.promise();
         vertx.fileSystem().writeFile(String.format("%s/%s", reportFileLocation, REPORT_FILE_NAME),
-            Buffer.buffer(getReport(responses, metrics).toString()), res -> {
+            Buffer.buffer(getReport(responses, comparisons, metrics).toString()), res -> {
                 if (res.succeeded()) {
                     log.info(String.format("%s successfully created report", Reporter.class.getSimpleName()));
                     completedWrite.complete();
@@ -54,8 +55,8 @@ public class Reporter {
     }
 
     // Exposed For Testing
-    public StringBuilder getReport(final List<MismatchedResponse> responses, final GeneralMetrics metrics) {
-        log.traceEntry(() -> responses, () -> metrics);
+    public StringBuilder getReport(final List<MismatchedResponse> responses, final List<OverviewComparison> comparisons, final GeneralMetrics metrics) {
+        log.traceEntry(() -> responses, () -> comparisons, () -> metrics);
         final StringBuilder builder = new StringBuilder();
 
         log.info("Getting Report");
@@ -71,6 +72,11 @@ public class Reporter {
         Optional.ofNullable(responses)
             .orElse(Collections.emptyList())
             .forEach(response -> createMismatchedResponseEntry(response, builder));
+        builder.append("\n");
+
+        Optional.ofNullable(comparisons)
+            .orElse(Collections.emptyList())
+            .forEach(response -> createOverviewComparisonEntry(response, builder));
 
         return log.traceExit(builder);
     }
@@ -87,6 +93,27 @@ public class Reporter {
             .append(String.format("Expected Status Code: %d\n", response.getExpectedStatusCode()))
             .append(String.format("Actual Status Code: %d\n", response.getActualStatusCode()))
             .append(String.format("Error: %s\n", response.getError()));
+        log.traceExit();
+    }
+
+    // Exposed For Testing
+    public void createOverviewComparisonEntry(final OverviewComparison comparison, final StringBuilder builder) {
+        log.traceEntry(() -> comparison, () -> builder);
+        log.info(String.format("Creating overview comparison for '%s:%d' at %s", comparison.getHost(), comparison.getPort(), comparison.getTimestamp()));
+        String header = String.format("Overview Comparison For '%s:%d' at %s\n", comparison.getHost(), comparison.getPort(), comparison.getTimestamp());
+        builder
+            .append(header)
+            .append(getHeaderSeparator(header))
+            .append("Missing Expected IDs In Server\n");
+
+        for (final String clientId : comparison.getMissingIdsInServer()) {
+            builder.append(String.format("- %s\n", clientId));
+        }
+
+        builder.append("Unexpected IDs In Server\n");
+        for (final String serverIds : comparison.getMissingIdsInClient()) {
+            builder.append(String.format("- %s\n", serverIds));
+        }
         log.traceExit();
     }
 

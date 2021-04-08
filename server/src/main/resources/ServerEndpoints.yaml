@@ -211,6 +211,10 @@ components:
           type: int
         serverHost:
           type: string
+        messageIds:
+          type: array
+          items:
+            type: integer
     ServerSettings:
       type: object
       properties:
