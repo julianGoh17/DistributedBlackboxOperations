@@ -69,6 +69,20 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+  ###########################
+  # Client Status Endpoints #
+  ###########################
+  /client/overview:
+    get:
+      operationId: getOverview
+      description: Retrieve the overview of the server
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ServerOverview"
   ########################
   # Coordinate Endpoints #
   ########################
@@ -187,6 +201,15 @@ components:
       type: object
       properties:
         label:
+          type: string
+    ServerOverview:
+      type: object
+      properties:
+        numMessages:
+          type: int
+        serverPort:
+          type: int
+        serverHost:
           type: string
     ServerSettings:
       type: object

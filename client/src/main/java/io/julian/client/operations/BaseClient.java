@@ -5,6 +5,7 @@ import io.julian.client.model.MessageWrapper;
 import io.julian.client.model.operation.Expected;
 import io.julian.client.model.response.GetMessageResponse;
 import io.julian.client.model.response.MessageIdResponse;
+import io.julian.server.models.response.ServerOverview;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -16,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 public class BaseClient {
     private static final Logger log = LogManager.getLogger(BaseClient.class.getName());
     private static final String CLIENT_URI = "/client";
+    private static final String OVERVIEW_URI = String.format("%s/overview", CLIENT_URI);
 
     private final WebClient client;
 
@@ -81,6 +83,24 @@ public class BaseClient {
                 } else {
                     log.info(String.format("%s successfully expected failed GET request", BaseClient.class.getSimpleName()));
                     getResponse.complete();
+                }
+            });
+
+        return log.traceExit(getResponse.future());
+    }
+
+    public Future<ServerOverview> GetOverview() {
+        log.traceEntry();
+        Promise<ServerOverview> getResponse = Promise.promise();
+        log.info(String.format("%s attempting to retrieve overview of server '%s:%d'", BaseClient.class.getSimpleName(), Configuration.getServerHost(), Configuration.getServerPort()));
+        client.get(Configuration.getServerPort(), Configuration.getServerHost(), OVERVIEW_URI)
+            .send(res -> {
+                if (res.succeeded()) {
+                    log.info(String.format("%s successfully retrieved overview of server '%s:%d'", BaseClient.class.getSimpleName(), Configuration.getServerHost(), Configuration.getServerPort()));
+                    getResponse.complete(res.result().bodyAsJsonObject().mapTo(ServerOverview.class));
+                } else {
+                    log.info(String.format("%s failed to retrieve overview of server '%s:%d'", BaseClient.class.getSimpleName(), Configuration.getServerHost(), Configuration.getServerPort()));
+                    getResponse.fail(res.cause());
                 }
             });
 

@@ -2,6 +2,7 @@ package operations;
 
 import io.julian.client.model.operation.Expected;
 import io.julian.client.operations.BaseClient;
+import io.julian.server.components.Configuration;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -116,6 +117,35 @@ public class BaseClientTest extends AbstractClientTest {
         baseClient.GETMessage(randomId, new Expected(500))
             .onComplete(context.asyncAssertSuccess(res -> {
                 context.assertNull(res);
+                async.complete();
+            }));
+        async.awaitSuccess();
+    }
+
+    @Test
+    public void TestSuccessfulGetOverview(final TestContext context) {
+        setUpApiServer(context);
+
+        Async async = context.async();
+        baseClient.GetOverview()
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertNotNull(res);
+
+                context.assertEquals(0, res.getNumMessages());
+                context.assertEquals(Configuration.DEFAULT_SERVER_PORT, res.getPort());
+                context.assertEquals(Configuration.DEFAULT_SERVER_HOST, res.getHost());
+                async.complete();
+            }));
+        async.awaitSuccess();
+        tearDownAPIServer(context);
+    }
+
+    @Test
+    public void TestUnsuccessfulGetOverview(final TestContext context) {
+        Async async = context.async();
+        baseClient.GetOverview()
+            .onComplete(context.asyncAssertFailure(cause -> {
+                context.assertEquals("Connection refused: localhost/127.0.0.1:8888", cause.getMessage());
                 async.complete();
             }));
         async.awaitSuccess();

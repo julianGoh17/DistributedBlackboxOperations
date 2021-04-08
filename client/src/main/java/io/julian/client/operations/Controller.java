@@ -16,7 +16,7 @@ import static io.julian.client.io.TerminalOutputHandler.EXIT_NUMBER;
 import static io.julian.client.io.TerminalOutputHandler.OPERATION_CHAIN_NUMBER;
 import static io.julian.client.io.TerminalOutputHandler.PRINT_MESSAGES_NUMBER;
 import static io.julian.client.io.TerminalOutputHandler.PRINT_OPERATION_CHAIN_NUMBER;
-import static io.julian.client.io.TerminalOutputHandler.SEND_COMMAND_LINE_MESSAGE_NUMBER;
+import static io.julian.client.io.TerminalOutputHandler.STATE_CHECK_NUMBER;
 
 public class Controller {
     private final static Logger log = LogManager.getLogger(Controller.class.getName());
@@ -31,7 +31,7 @@ public class Controller {
     public final static String SUPPLY_VALID_OPERATION_CHAIN_MESSAGE = "Please input the name of the operation chain to run";
     public final static String INVALID_OPERATION_CHAIN_MESSAGE = "Invalid operation chain name '%s', please supply a valid one";
     public final static String VALID_OPERATION_CHAIN_MESSAGE = "Running operation chain '%s'";
-    public final static String SENDING_COMMAND_LINE_MESSAGE = "Sending Command Line Message is currently disabled";
+    public final static String STATE_CHECK = "Checking state of servers";
     public final static String TERMINATING_CLIENT_MESSAGE = "Terminating client and generating report";
 
     public Controller(final TerminalInputHandler input, final TerminalOutputHandler output, final Coordinator coordinator, final Vertx vertx) {
@@ -86,10 +86,9 @@ public class Controller {
                                     vertx.cancelTimer(id);
                                 });
                             break;
-                        // TODO: Add ability to send command line message
-                        case SEND_COMMAND_LINE_MESSAGE_NUMBER:
-                            log.info("Sending command line message");
-                            runSendCommandLineMessage();
+                        case STATE_CHECK_NUMBER:
+                            log.info("Checking state of servers match");
+                            runStateCheck();
                             userWantsToContinue.complete(true);
                             vertx.cancelTimer(id);
                             break;
@@ -163,9 +162,9 @@ public class Controller {
         return log.traceExit(operationRes.future());
     }
 
-    private void runSendCommandLineMessage() {
+    private void runStateCheck() {
         log.traceEntry();
-        output.println(SENDING_COMMAND_LINE_MESSAGE);
+        output.println(STATE_CHECK);
         log.traceExit();
     }
 

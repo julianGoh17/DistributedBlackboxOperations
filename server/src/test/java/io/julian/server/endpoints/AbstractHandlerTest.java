@@ -7,6 +7,7 @@ import io.julian.server.endpoints.gates.UnreachableGate;
 import io.julian.server.models.response.ErrorResponse;
 import io.julian.server.models.response.MessageIDResponse;
 import io.julian.server.models.response.MessageResponse;
+import io.julian.server.models.response.ServerOverview;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -27,6 +28,7 @@ import org.junit.runner.RunWith;
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractHandlerTest {
     public static final String CLIENT_URI = "/client";
+    public static final String STATUS_URI = String.format("%s/overview", CLIENT_URI);
     public static final String COORDINATOR_URI = "/coordinate";
 
     public static final Exception PROBABILISTIC_FAILURE_ERROR = new Exception(ProbabilisticFailureGate.FAILURE_MESSAGE);
@@ -146,6 +148,17 @@ public abstract class AbstractHandlerTest {
             });
     }
 
+    protected Future<Void> sendSuccessfulGETOverview(final TestContext context, final WebClient client, final ServerOverview expectedOverview) {
+        Promise<Void> completed = Promise.promise();
+        sendGETOverview(context, client)
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertEquals(200, res.statusCode());
+                context.assertEquals(expectedOverview.toJson().encodePrettily(), res.bodyAsJsonObject().encodePrettily());
+                completed.complete();
+            }));
+        return completed.future();
+    }
+
     protected Future<HttpResponse<Buffer>> sendGETMessage(final TestContext context, final WebClient client, final String messageId) {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
@@ -166,6 +179,14 @@ public abstract class AbstractHandlerTest {
         Promise<HttpResponse<Buffer>> response = Promise.promise();
         client
             .delete(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, String.format("%s/?messageId=%s", CLIENT_URI, messageId))
+            .send(context.asyncAssertSuccess(response::complete));
+        return response.future();
+    }
+
+    protected Future<HttpResponse<Buffer>> sendGETOverview(final TestContext context, final WebClient client) {
+        Promise<HttpResponse<Buffer>> response = Promise.promise();
+        client
+            .get(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, STATUS_URI)
             .send(context.asyncAssertSuccess(response::complete));
         return response.future();
     }

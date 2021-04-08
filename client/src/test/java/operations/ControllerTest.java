@@ -32,7 +32,7 @@ import static io.julian.client.io.TerminalOutputHandler.MESSAGES_HEADER;
 import static io.julian.client.io.TerminalOutputHandler.OPERATION_CHAIN_HEADER;
 import static io.julian.client.metrics.Reporter.REPORT_FILE_NAME;
 import static io.julian.client.operations.Controller.INVALID_OPERATION_CHAIN_MESSAGE;
-import static io.julian.client.operations.Controller.SENDING_COMMAND_LINE_MESSAGE;
+import static io.julian.client.operations.Controller.STATE_CHECK;
 import static io.julian.client.operations.Controller.SUPPLY_VALID_OPERATION_CHAIN_MESSAGE;
 import static io.julian.client.operations.Controller.TERMINATING_CLIENT_MESSAGE;
 import static io.julian.client.operations.Controller.VALID_OPERATION_CHAIN_MESSAGE;
@@ -265,7 +265,7 @@ public class ControllerTest extends AbstractClientTest {
             InOrder order = inOrder(inputReader, outputPrinter);
             testControllerPrintsOperation(order);
             order.verify(inputReader).nextLine();
-            order.verify(outputPrinter).println(SENDING_COMMAND_LINE_MESSAGE);
+            order.verify(outputPrinter).println(STATE_CHECK);
             order.verifyNoMoreInteractions();
             async.complete();
         });

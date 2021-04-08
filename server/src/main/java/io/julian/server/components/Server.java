@@ -7,6 +7,7 @@ import io.julian.server.endpoints.ErrorHandler;
 import io.julian.server.endpoints.ServerComponents;
 import io.julian.server.endpoints.client.DeleteMessageHandler;
 import io.julian.server.endpoints.client.GetMessageHandler;
+import io.julian.server.endpoints.client.GetOverviewHandler;
 import io.julian.server.endpoints.client.PostMessageHandler;
 import io.julian.server.endpoints.control.GetServerSettingsHandler;
 import io.julian.server.endpoints.coordination.CoordinationMessageHandler;
@@ -34,7 +35,7 @@ public class Server {
     private OpenAPI3RouterFactory routerFactory;
     private final MessageStore messages;
     private final static String[] OPERATION_IDS = new String[]{"postMessage", "getMessage", "deleteMessage",
-        "setServerSettings", "getServerSettings", "setLabel", "getLabel", "sendCoordinationMessage"};
+        "setServerSettings", "getServerSettings", "setLabel", "getLabel", "sendCoordinationMessage", "getOverview"};
     private final Configuration configuration = new Configuration();
     private final Controller controller = new Controller(configuration);
     // Will not be null as startServer should be called after loading deployDistributedAlgorithmVerticle
@@ -69,6 +70,7 @@ public class Server {
         PostMessageHandler postMessageHandler = new PostMessageHandler();
         GetMessageHandler getMessageHandler = new GetMessageHandler();
         DeleteMessageHandler deleteMessageHandler = new DeleteMessageHandler();
+        GetOverviewHandler overviewHandler = new GetOverviewHandler();
 
         // Coordination Endpoints
         CoordinationMessageHandler coordinationMessageHandler = new CoordinationMessageHandler();
@@ -91,6 +93,7 @@ public class Server {
         routerFactory.addHandlerByOperationId("postMessage", routingContext -> postMessageHandler.runThroughHandlers(routingContext, components));
         routerFactory.addHandlerByOperationId("getMessage", routingContext -> getMessageHandler.runThroughHandlers(routingContext, components));
         routerFactory.addHandlerByOperationId("deleteMessage", routingContext -> deleteMessageHandler.runThroughHandlers(routingContext, components));
+        routerFactory.addHandlerByOperationId("getOverview", routingContext -> overviewHandler.runThroughHandlers(routingContext, components));
 
         routerFactory.addHandlerByOperationId("setLabel", routingContext -> setLabelHandler.runThroughHandlers(routingContext, components));
         routerFactory.addHandlerByOperationId("getLabel", routingContext -> getLabelHandler.runThroughHandlers(routingContext, components));
