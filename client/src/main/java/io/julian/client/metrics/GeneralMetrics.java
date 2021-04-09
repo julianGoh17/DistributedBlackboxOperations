@@ -51,7 +51,7 @@ public class GeneralMetrics {
 
     public int getSucceeded(final RequestMethod method) {
         log.traceEntry(() -> method);
-        log.info(String.format("Retrieving successes for '%s'", method));
+        log.debug(String.format("Retrieving successes for '%s'", method));
         switch (method) {
             case GET:
                 return log.traceExit(succeededGets.get());
@@ -70,7 +70,7 @@ public class GeneralMetrics {
 
     public int getFailed(final RequestMethod method) {
         log.traceEntry(() -> method);
-        log.info(String.format("Retrieving fails for '%s'", method));
+        log.debug(String.format("Retrieving fails for '%s'", method));
         switch (method) {
             case GET:
                 return log.traceExit(failedGets.get());

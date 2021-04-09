@@ -10,6 +10,7 @@ import io.julian.client.model.operation.Configuration;
 import io.julian.client.model.operation.Expected;
 import io.julian.client.model.operation.Operation;
 import io.julian.client.model.operation.OperationChain;
+import io.julian.client.operations.ClientConfiguration;
 import io.julian.client.operations.Controller;
 import io.julian.client.operations.Coordinator;
 import io.vertx.core.Vertx;
@@ -32,7 +33,7 @@ import static io.julian.client.io.TerminalOutputHandler.MESSAGES_HEADER;
 import static io.julian.client.io.TerminalOutputHandler.OPERATION_CHAIN_HEADER;
 import static io.julian.client.metrics.Reporter.REPORT_FILE_NAME;
 import static io.julian.client.operations.Controller.INVALID_OPERATION_CHAIN_MESSAGE;
-import static io.julian.client.operations.Controller.SENDING_COMMAND_LINE_MESSAGE;
+import static io.julian.client.operations.Controller.STATE_CHECK;
 import static io.julian.client.operations.Controller.SUPPLY_VALID_OPERATION_CHAIN_MESSAGE;
 import static io.julian.client.operations.Controller.TERMINATING_CLIENT_MESSAGE;
 import static io.julian.client.operations.Controller.VALID_OPERATION_CHAIN_MESSAGE;
@@ -62,7 +63,7 @@ public class ControllerTest extends AbstractClientTest {
     public void before() throws IOException  {
         this.vertx = Vertx.vertx();
         this.input = new TerminalInputHandler(inputReader, vertx);
-        this.coordinator = new Coordinator(vertx);
+        this.coordinator = new Coordinator(vertx, new ClientConfiguration());
         this.coordinator.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         this.coordinator.getMemory().setOriginalMessages(Collections.singletonList(message));
 
@@ -265,7 +266,7 @@ public class ControllerTest extends AbstractClientTest {
             InOrder order = inOrder(inputReader, outputPrinter);
             testControllerPrintsOperation(order);
             order.verify(inputReader).nextLine();
-            order.verify(outputPrinter).println(SENDING_COMMAND_LINE_MESSAGE);
+            order.verify(outputPrinter).println(STATE_CHECK);
             order.verifyNoMoreInteractions();
             async.complete();
         });

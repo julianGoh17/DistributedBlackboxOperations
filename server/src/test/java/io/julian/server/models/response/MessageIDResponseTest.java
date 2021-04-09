@@ -20,6 +20,4 @@ public class MessageIDResponseTest {
             .put("messageId", uuid);
         Assert.assertEquals(expectedJson, response.toJson());
     }
-
-
 }

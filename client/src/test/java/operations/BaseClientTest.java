@@ -2,6 +2,9 @@ package operations;
 
 import io.julian.client.model.operation.Expected;
 import io.julian.client.operations.BaseClient;
+import io.julian.client.operations.ClientConfiguration;
+import io.julian.server.components.Configuration;
+import io.julian.server.models.control.ServerConfiguration;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -16,11 +19,12 @@ import org.junit.runner.RunWith;
 public class BaseClientTest extends AbstractClientTest {
     BaseClient baseClient;
     private final Expected expectedSuccess = new Expected(200);
+    protected final static ServerConfiguration SERVER_CONFIGURATION = new ServerConfiguration(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
 
     @Before
     public void before() {
         this.vertx = Vertx.vertx();
-        baseClient = new BaseClient(vertx);
+        baseClient = new BaseClient(vertx, new ClientConfiguration());
     }
 
     @After
@@ -116,6 +120,35 @@ public class BaseClientTest extends AbstractClientTest {
         baseClient.GETMessage(randomId, new Expected(500))
             .onComplete(context.asyncAssertSuccess(res -> {
                 context.assertNull(res);
+                async.complete();
+            }));
+        async.awaitSuccess();
+    }
+
+    @Test
+    public void TestSuccessfulGetOverview(final TestContext context) {
+        setUpApiServer(context);
+
+        Async async = context.async();
+        baseClient.GetOverview(SERVER_CONFIGURATION)
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertNotNull(res);
+
+                context.assertEquals(0, res.getNumMessages());
+                context.assertEquals(Configuration.DEFAULT_SERVER_PORT, res.getPort());
+                context.assertEquals(Configuration.DEFAULT_SERVER_HOST, res.getHost());
+                async.complete();
+            }));
+        async.awaitSuccess();
+        tearDownAPIServer(context);
+    }
+
+    @Test
+    public void TestUnsuccessfulGetOverview(final TestContext context) {
+        Async async = context.async();
+        baseClient.GetOverview(SERVER_CONFIGURATION)
+            .onComplete(context.asyncAssertFailure(cause -> {
+                context.assertEquals("Connection refused: localhost/127.0.0.1:8888", cause.getMessage());
                 async.complete();
             }));
         async.awaitSuccess();

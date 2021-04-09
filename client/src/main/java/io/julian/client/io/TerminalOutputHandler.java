@@ -19,7 +19,7 @@ public class TerminalOutputHandler {
     public final static String AVAILABLE_OPERATIONS = "Available Operations";
 
     public final static int OPERATION_CHAIN_NUMBER = 1;
-    public final static int SEND_COMMAND_LINE_MESSAGE_NUMBER = 2;
+    public final static int STATE_CHECK_NUMBER = 2;
     public final static int PRINT_MESSAGES_NUMBER = 3;
     public final static int PRINT_OPERATION_CHAIN_NUMBER = 4;
     public final static int EXIT_NUMBER = 5;
@@ -32,7 +32,7 @@ public class TerminalOutputHandler {
         log.traceEntry();
         printHeader(AVAILABLE_OPERATIONS);
         printer.println(String.format("%d. Run Operation Chain", OPERATION_CHAIN_NUMBER));
-        printer.println(String.format("%d. Send Command Line Message", SEND_COMMAND_LINE_MESSAGE_NUMBER));
+        printer.println(String.format("%d. Send Command Line Message", STATE_CHECK_NUMBER));
         printer.println(String.format("%d. Print Preconfigured Messages", PRINT_MESSAGES_NUMBER));
         printer.println(String.format("%d. Print Preconfigured Operation Chains", PRINT_OPERATION_CHAIN_NUMBER));
         printer.println(String.format("%d. Exit", EXIT_NUMBER));

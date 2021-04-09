@@ -83,4 +83,9 @@ public class MessageStore {
         log.traceEntry();
         return log.traceExit(messages.size());
     }
+
+    public Map<String, JsonObject> getMessages() {
+        log.traceEntry();
+        return log.traceExit(messages);
+    }
 }
