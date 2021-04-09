@@ -6,12 +6,10 @@ import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Action;
 import io.julian.client.model.operation.Expected;
 import io.julian.client.model.operation.Operation;
-import io.julian.client.model.operation.OverviewComparison;
 import io.julian.server.models.response.ServerOverview;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Collections;
 
 public class MetricsCollectorTest {
