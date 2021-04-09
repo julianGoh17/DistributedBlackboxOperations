@@ -5,6 +5,7 @@ import io.julian.client.model.MessageWrapper;
 import io.julian.client.model.operation.Expected;
 import io.julian.client.model.response.GetMessageResponse;
 import io.julian.client.model.response.MessageIdResponse;
+import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.response.ServerOverview;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -20,16 +21,18 @@ public class BaseClient {
     private static final String OVERVIEW_URI = String.format("%s/overview", CLIENT_URI);
 
     private final WebClient client;
+    private final ClientConfiguration clientConfiguration;
 
-    public BaseClient(final Vertx vertx) {
+    public BaseClient(final Vertx vertx, final ClientConfiguration clientConfiguration) {
         client = WebClient.create(vertx);
+        this.clientConfiguration = clientConfiguration;
     }
 
     public Future<String> POSTMessage(final JsonObject message, final Expected expected) {
         log.traceEntry(() -> message);
         Promise<String> messageID = Promise.promise();
-        log.info(String.format("%s sending POST request '%s:%d'", BaseClient.class.getSimpleName(), Configuration.getServerHost(), Configuration.getServerPort()));
-        client.post(Configuration.getServerPort(), Configuration.getServerHost(), CLIENT_URI)
+        log.info(String.format("%s sending POST request '%s:%d'", BaseClient.class.getSimpleName(), clientConfiguration.getServerHost(), clientConfiguration.getServerPort()));
+        client.post(clientConfiguration.getServerPort(), clientConfiguration.getServerHost(), CLIENT_URI)
             .sendJson(new MessageWrapper(message).toJson(), res -> {
                 int statusCode = res.result() != null ? res.result().statusCode() : 500;
                 if (expected.doesNotMatchExpectedStatusCode(statusCode)) {
@@ -60,8 +63,8 @@ public class BaseClient {
     public Future<JsonObject> GETMessage(final String messageId, final Expected expected) {
         log.traceEntry(() -> messageId);
         Promise<JsonObject> getResponse = Promise.promise();
-        log.info(String.format("%s sending GET request '%s:%d'", BaseClient.class.getSimpleName(), Configuration.getServerHost(), Configuration.getServerPort()));
-        client.get(Configuration.getServerPort(), Configuration.getServerHost(), String.format("%s/?messageId=%s", CLIENT_URI, messageId))
+        log.info(String.format("%s sending GET request '%s:%d'", BaseClient.class.getSimpleName(), clientConfiguration.getServerHost(), clientConfiguration.getServerPort()));
+        client.get(clientConfiguration.getServerPort(), clientConfiguration.getServerHost(), String.format("%s/?messageId=%s", CLIENT_URI, messageId))
             .send(res -> {
                 int statusCode = res.result() != null ? res.result().statusCode() : 500;
                 if (expected.doesNotMatchExpectedStatusCode(statusCode)) {
@@ -89,17 +92,17 @@ public class BaseClient {
         return log.traceExit(getResponse.future());
     }
 
-    public Future<ServerOverview> GetOverview() {
+    public Future<ServerOverview> GetOverview(final ServerConfiguration configuration) {
         log.traceEntry();
         Promise<ServerOverview> getResponse = Promise.promise();
-        log.info(String.format("%s attempting to retrieve overview of server '%s:%d'", BaseClient.class.getSimpleName(), Configuration.getServerHost(), Configuration.getServerPort()));
-        client.get(Configuration.getServerPort(), Configuration.getServerHost(), OVERVIEW_URI)
+        log.info(String.format("%s attempting to retrieve overview of server '%s:%d'", BaseClient.class.getSimpleName(), clientConfiguration.getServerHost(), clientConfiguration.getServerPort()));
+        client.get(clientConfiguration.getServerPort(), clientConfiguration.getServerHost(), OVERVIEW_URI)
             .send(res -> {
                 if (res.succeeded()) {
-                    log.info(String.format("%s successfully retrieved overview of server '%s:%d'", BaseClient.class.getSimpleName(), Configuration.getServerHost(), Configuration.getServerPort()));
+                    log.info(String.format("%s successfully retrieved overview of server '%s:%d'", BaseClient.class.getSimpleName(), clientConfiguration.getServerHost(), clientConfiguration.getServerPort()));
                     getResponse.complete(res.result().bodyAsJsonObject().mapTo(ServerOverview.class));
                 } else {
-                    log.info(String.format("%s failed to retrieve overview of server '%s:%d'", BaseClient.class.getSimpleName(), Configuration.getServerHost(), Configuration.getServerPort()));
+                    log.info(String.format("%s failed to retrieve overview of server '%s:%d'", BaseClient.class.getSimpleName(), clientConfiguration.getServerHost(), clientConfiguration.getServerPort()));
                     getResponse.fail(res.cause());
                 }
             });
@@ -110,8 +113,8 @@ public class BaseClient {
     public Future<String> DELETEMessage(final String messageId, final Expected expected) {
         log.traceEntry(() -> messageId);
         Promise<String> delete = Promise.promise();
-        log.info(String.format("%s sending DELETE request '%s:%d'", BaseClient.class.getSimpleName(), Configuration.getServerHost(), Configuration.getServerPort()));
-        client.delete(Configuration.getServerPort(), Configuration.getServerHost(), String.format("%s/?messageId=%s", CLIENT_URI, messageId))
+        log.info(String.format("%s sending DELETE request '%s:%d'", BaseClient.class.getSimpleName(), clientConfiguration.getServerHost(), clientConfiguration.getServerPort()));
+        client.delete(clientConfiguration.getServerPort(), clientConfiguration.getServerHost(), String.format("%s/?messageId=%s", CLIENT_URI, messageId))
             .send(res -> {
                 int statusCode = res.result() != null ? res.result().statusCode() : 500;
                 if (expected.doesNotMatchExpectedStatusCode(statusCode)) {

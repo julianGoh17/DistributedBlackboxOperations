@@ -5,8 +5,10 @@ import io.julian.client.model.RequestMethod;
 import io.julian.client.model.operation.Expected;
 import io.julian.client.model.operation.Operation;
 import io.julian.client.model.response.MismatchedResponse;
+import io.julian.client.operations.ClientConfiguration;
 import io.julian.client.operations.Coordinator;
 import io.julian.server.components.Configuration;
+import io.julian.server.models.control.ServerConfiguration;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -79,7 +81,7 @@ public class CoordinatorTest extends AbstractClientTest {
 
     @Test
     public void TestCoordinatorPOSTFail(final TestContext context) throws IOException, NullPointerException {
-        client = new Coordinator(vertx);
+        client = createTestCoordinator();
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         Expected expected = new Expected(200);
         Async async = context.async();
@@ -148,7 +150,7 @@ public class CoordinatorTest extends AbstractClientTest {
 
     @Test
     public void TestCoordinatorFailsOnPOSTOperation(final TestContext context) throws IOException, NullPointerException {
-        client = new Coordinator(vertx);
+        client = createTestCoordinator();
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         Async async = context.async();
         client.runOperationChain(SEQUENTIAL_OPERATION_FILE_NAME).onComplete(context.asyncAssertFailure(throwable -> {
@@ -190,7 +192,7 @@ public class CoordinatorTest extends AbstractClientTest {
     @Test
     public void TestCoordinatorFailsOnDELETEOperation(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
-        client = new Coordinator(vertx);
+        client = createTestCoordinator();
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(DELETE_OPERATION_NUMBER).getAction().setMessageNumber(2);
         Async async = context.async();
@@ -215,7 +217,7 @@ public class CoordinatorTest extends AbstractClientTest {
     @Test
     public void TestCoordinatorPassesOperationChain(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
-        client = new Coordinator(vertx);
+        client = createTestCoordinator();
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(DELETE_OPERATION_NUMBER).getAction().setMessageNumber(1);
         Async async = context.async();
@@ -231,7 +233,7 @@ public class CoordinatorTest extends AbstractClientTest {
     @Test
     public void TestCoordinatorFailsOperationChainIfMismatchedStatusCode(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
-        client = new Coordinator(vertx);
+        client = createTestCoordinator();
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(DELETE_OPERATION_NUMBER).getExpected().setStatusCode(1);
         Async async = context.async();
@@ -254,7 +256,7 @@ public class CoordinatorTest extends AbstractClientTest {
     public void TestCoordinatorPassesOperationChainIfStatusCodeMatches(final TestContext context) throws IOException, NullPointerException {
         setUpApiServer(context);
         int nonExistentID = 1;
-        client = new Coordinator(vertx);
+        client = createTestCoordinator();
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(DELETE_OPERATION_NUMBER).getAction().setMessageNumber(nonExistentID);
         client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME).getOperations().get(DELETE_OPERATION_NUMBER).getExpected().setStatusCode(404);
@@ -288,7 +290,7 @@ public class CoordinatorTest extends AbstractClientTest {
 
     @Test
     public void TestCoordinatorCanFailOperationChainInParallel(final TestContext context) throws IOException, NullPointerException  {
-        client = new Coordinator(vertx);
+        client = createTestCoordinator();
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         Async async = context.async();
         client.runOperationChain(PARALLEL_OPERATION_FILE_NAME).onComplete(context.asyncAssertFailure(error -> {
@@ -360,6 +362,22 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
+    public void TestCoordinatorChecksStateOfServerSuccessfully(final TestContext context) throws IOException, NullPointerException  {
+        setUpApiServer(context);
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        Async async = context.async();
+        client.runOperationChain(PARALLEL_OPERATION_FILE_NAME)
+            .compose(v -> client.checkState(new ServerConfiguration(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT)))
+            .onComplete(context.asyncAssertSuccess(v -> {
+                checkCollectorGenericMetrics(0, 3, 0, 0, 0, 0);
+                Assert.assertEquals(1, client.getCollector().getOverviewComparisons().size());
+                async.complete();
+            }));
+        async.awaitSuccess();
+        tearDownAPIServer(context);
+    }
+
+    @Test
     public void TestCoordinatorChecksStateSuccessfully(final TestContext context) throws IOException, NullPointerException  {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
@@ -425,6 +443,12 @@ public class CoordinatorTest extends AbstractClientTest {
 
     protected void setUpApiServer(final TestContext context) {
         super.setUpApiServer(context);
-        client = new Coordinator(vertx);
+        client = createTestCoordinator();
+    }
+
+    protected Coordinator createTestCoordinator() {
+        ClientConfiguration configuration = new ClientConfiguration();
+        configuration.setServerHostsFilePath(ServerFileReaderTest.SERVER_FILE_PATH);
+        return new Coordinator(vertx, configuration);
     }
 }

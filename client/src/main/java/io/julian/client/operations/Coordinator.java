@@ -7,6 +7,8 @@ import io.julian.client.model.operation.Configuration;
 import io.julian.client.model.operation.Expected;
 import io.julian.client.model.operation.Operation;
 import io.julian.client.model.operation.OperationChain;
+import io.julian.server.models.control.ServerConfiguration;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -15,6 +17,7 @@ import lombok.Getter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -26,6 +29,7 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 @Getter
 public class Coordinator {
@@ -37,13 +41,15 @@ public class Coordinator {
     private Map<String, OperationChain> operationChains;
     private final MetricsCollector collector;
     private final Vertx vertx;
+    private final ClientConfiguration configuration;
 
-    public Coordinator(final Vertx vertx) {
+    public Coordinator(final Vertx vertx, final ClientConfiguration clientConfiguration) {
         this.vertx = vertx;
-        client = new BaseClient(vertx);
+        client = new BaseClient(vertx, clientConfiguration);
         memory = new MessageMemory();
         operationChains = new HashMap<>();
         collector = new MetricsCollector();
+        this.configuration = clientConfiguration;
     }
 
     public void initialize(final String messageFilePath, final String operationsFilePath) throws NullPointerException, IOException {
@@ -55,16 +61,41 @@ public class Coordinator {
 
     public Future<Void> checkState() {
         log.traceEntry();
+        log.info("Attempting to check overview of all servers");
+        Promise<Void> res = Promise.promise();
+        try {
+            List<ServerConfiguration> configurations = ServerFileReader.readServerFile(configuration.getServerHostsFilePath());
+            List<Future> checks = configurations.stream().map(this::checkState).collect(Collectors.toList());
+            CompositeFuture.all(checks)
+                .onSuccess(v -> {
+                    log.info("Successfully checked state of all servers");
+                    res.complete();
+                })
+                .onFailure(cause -> {
+                    log.info("Failed to check state of all servers");
+                    log.error(cause.getMessage());
+                    res.fail(cause);
+                });
+        } catch (final FileNotFoundException e) {
+            log.info("Failed to check state of all servers");
+            log.error(e.getMessage());
+            res.fail(e);
+        }
+        return log.traceExit(res.future());
+    }
+
+    public Future<Void> checkState(final ServerConfiguration configuration) {
+        log.traceEntry(() -> configuration);
         Promise<Void> isCheckSuccessful = Promise.promise();
-        log.info("Checking overview of server");
-        client.GetOverview()
+        log.info(String.format("Checking overview of server '%s'", configuration.toString()));
+        client.GetOverview(configuration)
             .onSuccess(res -> {
-                log.info("Successfully retrieved overview of server");
+                log.info(String.format("Successfully retrieved overview of server '%s'", configuration.toString()));
                 collector.addComparisonCheck(new ArrayList<>(memory.getExpectedMapping().values()), res);
                 isCheckSuccessful.complete();
             })
             .onFailure(cause -> {
-                log.info("Failed to check overview of server");
+                log.info(String.format("Failed to retrieve overview of server '%s'", configuration.toString()));
                 log.error(cause.getMessage());
                 isCheckSuccessful.fail(cause.getMessage());
             });

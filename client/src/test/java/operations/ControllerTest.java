@@ -10,6 +10,7 @@ import io.julian.client.model.operation.Configuration;
 import io.julian.client.model.operation.Expected;
 import io.julian.client.model.operation.Operation;
 import io.julian.client.model.operation.OperationChain;
+import io.julian.client.operations.ClientConfiguration;
 import io.julian.client.operations.Controller;
 import io.julian.client.operations.Coordinator;
 import io.vertx.core.Vertx;
@@ -62,7 +63,7 @@ public class ControllerTest extends AbstractClientTest {
     public void before() throws IOException  {
         this.vertx = Vertx.vertx();
         this.input = new TerminalInputHandler(inputReader, vertx);
-        this.coordinator = new Coordinator(vertx);
+        this.coordinator = new Coordinator(vertx, new ClientConfiguration());
         this.coordinator.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
         this.coordinator.getMemory().setOriginalMessages(Collections.singletonList(message));
 
