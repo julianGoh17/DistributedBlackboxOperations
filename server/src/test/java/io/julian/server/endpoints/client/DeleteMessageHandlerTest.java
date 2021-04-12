@@ -4,7 +4,6 @@ import io.julian.server.components.Configuration;
 import io.julian.server.endpoints.control.AbstractServerHandlerTest;
 import io.julian.server.models.ServerStatus;
 import io.julian.server.models.response.ErrorResponse;
-import io.vertx.core.Future;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -42,10 +41,7 @@ public class DeleteMessageHandlerTest extends AbstractServerHandlerTest {
                 return sendSuccessfulGETMessage(context, client, id, TEST_MESSAGE);
             })
             .compose(id -> sendSuccessfulDELETEMessage(context, client, id, true))
-            .compose(id -> {
-                sendSuccessfulGETMessage(context, client, id, TEST_MESSAGE);
-                return Future.succeededFuture();
-            })
+            .compose(id -> sendSuccessfulGETMessage(context, client, id, TEST_MESSAGE))
             .onComplete(context.asyncAssertSuccess(v -> async.complete()));
         async.awaitSuccess();
         tearDownServer(context);
