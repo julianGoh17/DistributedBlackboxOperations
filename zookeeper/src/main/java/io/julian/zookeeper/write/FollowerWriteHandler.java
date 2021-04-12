@@ -77,9 +77,9 @@ public class FollowerWriteHandler extends AbstractHandler  {
             })
             .onFailure(cause -> {
                 log.info(String.format("Could not send '%s' reply for Zxid %s to leader", phase.toValue(), id.toString()));
+                log.error(cause);
                 sendToMetricsCollector(400, message);
                 deadCoordinationMessages.add(message);
-                log.error(cause);
                 reply.fail(cause);
             });
 

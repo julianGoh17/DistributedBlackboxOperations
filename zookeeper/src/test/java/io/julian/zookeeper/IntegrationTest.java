@@ -1,5 +1,6 @@
 package io.julian.zookeeper;
 
+import io.julian.TestMetricsCollector;
 import io.julian.ZookeeperAlgorithm;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.models.HTTPRequest;
@@ -23,6 +24,7 @@ public class IntegrationTest extends AbstractServerBase {
     public void TestServersSelectLeader(final TestContext context) {
         TestServerComponents server1 = setUpZookeeperApiServer(context, DEFAULT_SEVER_CONFIG);
         TestServerComponents server2 = setUpZookeeperApiServer(context, SECOND_SERVER_CONFIG);
+        TestMetricsCollector collector = setUpMetricsCollector(context);
         registerConfigurationInServer(server1, SECOND_SERVER_CONFIG);
         registerConfigurationInServer(server2, DEFAULT_SEVER_CONFIG);
         int epoch = 3;
@@ -45,15 +47,17 @@ public class IntegrationTest extends AbstractServerBase {
                 Assert.assertEquals(counter, algorithm.getState().getCounter());
                 assertNoDeadLetters(context, server);
             });
-
+        collector.testHasExpectedStatusSize(6);
         tearDownServer(context, server1);
         tearDownServer(context, server2);
+        collector.tearDownMetricsCollector(context);
     }
 
     @Test
     public void TestLeaderWriteRequest(final TestContext context) {
         TestServerComponents server1 = setUpZookeeperApiServer(context, DEFAULT_SEVER_CONFIG);
         TestServerComponents server2 = setUpZookeeperApiServer(context, SECOND_SERVER_CONFIG);
+        TestMetricsCollector collector = setUpMetricsCollector(context);
         registerConfigurationInServer(server1, SECOND_SERVER_CONFIG);
         registerConfigurationInServer(server2, DEFAULT_SEVER_CONFIG);
         sendElectionMessage(context);
@@ -71,6 +75,8 @@ public class IntegrationTest extends AbstractServerBase {
                 async.complete();
             }));
         async.awaitSuccess();
+        collector.testHasExpectedStatusSize(8);
+        collector.tearDownMetricsCollector(context);
         tearDownServer(context, server1);
         tearDownServer(context, server2);
     }
@@ -79,6 +85,7 @@ public class IntegrationTest extends AbstractServerBase {
     public void TestFollowerWriteRequestForwardsToLeader(final TestContext context) {
         TestServerComponents server1 = setUpZookeeperApiServer(context, DEFAULT_SEVER_CONFIG);
         TestServerComponents server2 = setUpZookeeperApiServer(context, SECOND_SERVER_CONFIG);
+        TestMetricsCollector collector = setUpMetricsCollector(context);
         registerConfigurationInServer(server1, SECOND_SERVER_CONFIG);
         registerConfigurationInServer(server2, DEFAULT_SEVER_CONFIG);
         sendElectionMessage(context);
@@ -96,6 +103,8 @@ public class IntegrationTest extends AbstractServerBase {
                 async.complete();
             })));
         async.awaitSuccess();
+        collector.testHasExpectedStatusSize(8);
+        collector.tearDownMetricsCollector(context);
         tearDownServer(context, server1);
         tearDownServer(context, server2);
     }
@@ -104,6 +113,7 @@ public class IntegrationTest extends AbstractServerBase {
     public void TestLeaderAddToDeadLetter(final TestContext context) {
         TestServerComponents server1 = setUpZookeeperApiServer(context, DEFAULT_SEVER_CONFIG);
         TestServerComponents server2 = setUpZookeeperApiServer(context, SECOND_SERVER_CONFIG);
+        TestMetricsCollector metricsCollector = setUpMetricsCollector(context);
         registerConfigurationInServer(server1, SECOND_SERVER_CONFIG);
         registerConfigurationInServer(server2, DEFAULT_SEVER_CONFIG);
         sendElectionMessage(context);
@@ -122,12 +132,15 @@ public class IntegrationTest extends AbstractServerBase {
                 async.complete();
             }));
         async.awaitSuccess();
+        metricsCollector.testHasExpectedStatusSize(7);
         tearDownServer(context, leader);
+        metricsCollector.tearDownMetricsCollector(context);
     }
 
     @Test
     public void TestServerRetriesFailedMessages(final TestContext context) {
         TestServerComponents server1 = setUpZookeeperApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestMetricsCollector collector = setUpMetricsCollector(context);
         registerConfigurationInServer(server1, SECOND_SERVER_CONFIG);
         sendElectionMessage(context);
 
@@ -147,6 +160,8 @@ public class IntegrationTest extends AbstractServerBase {
             assertNoDeadLetters(context, server2);
         });
         async.awaitSuccess();
+        collector.testHasExpectedStatusSize(6);
+        collector.tearDownMetricsCollector(context);
         tearDownServer(context, server1);
         tearDownServer(context, server2);
     }
