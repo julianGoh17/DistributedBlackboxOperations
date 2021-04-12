@@ -1,5 +1,6 @@
 package io.julian.zookeeper.write;
 
+import io.julian.TestMetricsCollector;
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.models.HTTPRequest;
@@ -29,15 +30,18 @@ public class LeaderWriteHandlerTest extends AbstractServerBase {
     @Test
     public void TestBroadcastInitialProposalIsSuccessful(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
+        TestMetricsCollector collector = setUpMetricsCollector(context);
         RegistryManager manager = createTestRegistryManager();
         LeaderWriteHandler handler = createWriteHandler(manager);
 
         Async async = context.async();
         handler.broadcastInitialProposal(new ClientMessage(HTTPRequest.POST, new JsonObject(), "id"), new Zxid(0, 1))
-            .onComplete(context.asyncAssertSuccess(res -> async.complete()));
+            .onComplete(context.asyncAssertSuccess(res -> vertx.setTimer(500, v -> async.complete())));
 
         async.awaitSuccess();
+        collector.testHasExpectedStatusSize(1);
         tearDownServer(context, server);
+        collector.tearDownMetricsCollector(context);
     }
 
     @Test

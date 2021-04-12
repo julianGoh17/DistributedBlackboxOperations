@@ -6,6 +6,7 @@ import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
+import io.julian.zookeeper.AbstractHandler;
 import io.julian.zookeeper.models.MessagePhase;
 import io.julian.zookeeper.models.ShortenedExchange;
 import io.julian.zookeeper.models.Zxid;
@@ -20,18 +21,17 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
-public class LeaderWriteHandler {
+public class LeaderWriteHandler extends AbstractHandler {
     private final Logger log = LogManager.getLogger(LeaderWriteHandler.class);
     public static final String TYPE = "state_update";
 
     private final LeaderProposalTracker proposalTracker;
-    private final ServerClient client;
     private final RegistryManager manager;
     private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
     public LeaderWriteHandler(final int majority, final ServerClient client, final RegistryManager manager, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
+        super(client);
         this.proposalTracker = new LeaderProposalTracker(majority);
-        this.client = client;
         this.manager = manager;
         this.deadCoordinationMessages = deadCoordinationMessages;
     }
@@ -65,11 +65,13 @@ public class LeaderWriteHandler {
                 } else {
                     proposalTracker.addCommittedProposalTracker(id);
                 }
+                sendToMetricsCollector(200, broadcastMessage);
                 broadcast.complete();
             })
             .onFailure(cause -> {
                 log.info(String.format("Could not broadcast state update %s to servers", id));
                 deadCoordinationMessages.add(broadcastMessage);
+                sendToMetricsCollector(400, broadcastMessage);
                 log.error(cause);
                 broadcast.fail(cause);
             });

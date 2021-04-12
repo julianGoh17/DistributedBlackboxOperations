@@ -20,5 +20,6 @@ public class GetOverviewHandlerTest extends AbstractServerHandlerTest {
         sendSuccessfulGETOverview(context, client, new ServerOverview(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT, 0, new ArrayList<>()))
             .onComplete(v -> async.complete());
         async.awaitSuccess();
+        tearDownServer(context);
     }
 }

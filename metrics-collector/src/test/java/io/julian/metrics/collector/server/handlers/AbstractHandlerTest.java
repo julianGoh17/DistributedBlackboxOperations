@@ -26,11 +26,9 @@ public abstract class AbstractHandlerTest {
     }
 
     protected TestServerComponents startServer(final TestContext context) {
-        TestServerComponents server = new TestServerComponents();
         Configuration configuration = new Configuration();
         configuration.setReportPath(ReportCreatorTest.REPORT_LOCATION);
-        server.setUpServer(configuration, context, vertx);
-        return server;
+        return startServer(configuration, context);
     }
 
     protected TestServerComponents startServer(final Configuration configuration, final TestContext context) {

@@ -5,6 +5,7 @@ import io.julian.server.api.client.ServerClient;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
+import io.julian.zookeeper.AbstractHandler;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.election.LeadershipElectionHandler;
 import io.julian.zookeeper.models.Zxid;
@@ -20,22 +21,23 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-public class LeaderDiscoveryHandler {
+public class LeaderDiscoveryHandler extends AbstractHandler  {
     public final static String LEADER_STATE_UPDATE_TYPE = "leader_state_update";
+    public final static String LEADER_STATE_UPDATE_MESSAGE_ID = "leaderStateUpdate";
+    public final static String LEADER_STATE_BROADCAST_MESSAGE_ID = "leaderStateBroadcast";
     private final static Logger log = LogManager.getLogger(LeadershipElectionHandler.class);
 
     private final AtomicReference<State> latestState;
     private final AtomicInteger followerResponses = new AtomicInteger();
     private State state;
     private final RegistryManager manager;
-    private final ServerClient client;
 
     private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
     public LeaderDiscoveryHandler(final State state, final RegistryManager manager, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
+        super(client);
         this.state = state;
         this.manager = manager;
-        this.client = client;
         this.latestState = new AtomicReference<>(state);
         this.deadCoordinationMessages = deadCoordinationMessages;
     }
@@ -71,9 +73,13 @@ public class LeaderDiscoveryHandler {
             .collect(Collectors.toList());
 
         CompositeFuture.all(res)
-            .onSuccess(v -> broadcast.complete())
+            .onSuccess(v -> {
+                sendToMetricsCollector(200, message);
+                broadcast.complete();
+            })
             .onFailure(cause -> {
                 log.info("Failed to broadcast to followers");
+                sendToMetricsCollector(400, message);
                 deadCoordinationMessages.add(message);
                 log.error(cause.getMessage());
                 broadcast.fail(cause);
@@ -125,19 +131,14 @@ public class LeaderDiscoveryHandler {
 
     public CoordinationMessage createBroadcastMessage(final String type) {
         log.traceEntry(() -> type);
-        return log.traceExit(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, "", type), null, null));
+        return log.traceExit(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, LEADER_STATE_BROADCAST_MESSAGE_ID, type), null, null));
     }
 
     public CoordinationMessage createStateUpdate() {
         log.traceEntry();
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.UNKNOWN, "", LEADER_STATE_UPDATE_TYPE),
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, LEADER_STATE_UPDATE_MESSAGE_ID, LEADER_STATE_UPDATE_TYPE),
             null,
             new Zxid(state.getLeaderEpoch(), state.getCounter()).toJson()));
-    }
-
-    public ConcurrentLinkedQueue<CoordinationMessage> getDeadCoordinationMessages() {
-        log.traceEntry();
-        return log.traceExit(deadCoordinationMessages);
     }
 }

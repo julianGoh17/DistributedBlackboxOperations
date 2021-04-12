@@ -7,6 +7,7 @@ import io.julian.server.components.Controller;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
+import io.julian.zookeeper.AbstractHandler;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.discovery.DiscoveryHandler;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
@@ -23,7 +24,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class MessageHandler {
+public class MessageHandler extends AbstractHandler {
     public static final String EARLIER_STAGE_ERROR = "Message from earlier stage";
     public static final String LATER_STAGE_ERROR = "Message from later stage";
 
@@ -32,7 +33,6 @@ public class MessageHandler {
     private final CandidateInformationRegistry registry;
     private final Controller controller;
     private final RegistryManager registryManager;
-    private final ServerClient client;
     private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
     private final LeadershipElectionHandler electionHandler;
@@ -42,6 +42,7 @@ public class MessageHandler {
     private boolean hasNotBroadcast = true;
 
     public MessageHandler(final Controller controller, final MessageStore messageStore, final Vertx vertx, final RegistryManager manager, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
+        super(client);
         long candidateNumber = generateCandidateNumber(vertx.deploymentIDs().size());
         this.state = new State(vertx, messageStore);
         this.registry = initializeCandidateInformationRegistry(controller.getConfiguration(), candidateNumber);
@@ -51,7 +52,6 @@ public class MessageHandler {
         this.synchronizeHandler = new SynchronizeHandler(vertx, state, manager, client, registry, controller, deadCoordinationMessages);
         this.controller = controller;
         this.registryManager = manager;
-        this.client = client;
         this.deadCoordinationMessages = deadCoordinationMessages;
     }
 
@@ -96,7 +96,7 @@ public class MessageHandler {
         log.traceEntry(() -> message);
         Promise<Void> res = Promise.promise();
         writeHandler.handleClientMessage(message)
-            .onSuccess(res::complete)
+            .onSuccess(v -> res.complete())
             .onFailure(throwable -> {
                 log.info("Failed to deliver update to followers");
                 log.error(throwable.getMessage());

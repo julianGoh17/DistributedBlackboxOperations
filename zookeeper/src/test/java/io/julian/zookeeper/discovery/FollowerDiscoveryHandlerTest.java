@@ -1,5 +1,6 @@
 package io.julian.zookeeper.discovery;
 
+import io.julian.TestMetricsCollector;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.coordination.CoordinationMessage;
@@ -22,6 +23,7 @@ public class FollowerDiscoveryHandlerTest extends AbstractServerBase {
         FollowerDiscoveryHandler handler = getTestHandler(registry);
         CoordinationMessage message = handler.createCoordinationMessage();
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
+        Assert.assertEquals(FollowerDiscoveryHandler.FOLLOWER_DISCOVERY_MESSAGE_ID, message.getMetadata().getMessageID());
         Assert.assertEquals(DiscoveryHandler.DISCOVERY_TYPE, message.getMetadata().getType());
         Assert.assertNull(message.getMessage());
         Assert.assertEquals(new State(vertx, new MessageStore()).toJson().encodePrettily(), message.getDefinition().encodePrettily());
@@ -30,19 +32,22 @@ public class FollowerDiscoveryHandlerTest extends AbstractServerBase {
     @Test
     public void TestReplyToLeaderIsSuccessful(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestMetricsCollector metricsCollector = setUpMetricsCollector(context);
         CandidateInformationRegistry registry = createTestCandidateInformationRegistry(true);
         FollowerDiscoveryHandler handler = getTestHandler(registry);
 
         Async async = context.async();
         handler.replyToLeader()
-            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
+            .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(1000, v1 -> async.complete())));
         async.awaitSuccess();
         tearDownServer(context, server);
+        metricsCollector.tearDownMetricsCollector(context);
     }
 
     @Test
     public void TestReplyToLeaderFails(final TestContext context) {
         CandidateInformationRegistry registry = createTestCandidateInformationRegistry(true);
+        TestMetricsCollector metricsCollector = setUpMetricsCollector(context);
         FollowerDiscoveryHandler handler = getTestHandler(registry);
 
         Async async = context.async();
@@ -50,9 +55,13 @@ public class FollowerDiscoveryHandlerTest extends AbstractServerBase {
             .onComplete(context.asyncAssertFailure(cause -> {
                 context.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
                 Assert.assertEquals(1, handler.getDeadCoordinationMessages().size());
-                async.complete();
+                vertx.setTimer(1000, v1 -> {
+                    metricsCollector.testHasExpectedStatusSize(1);
+                    async.complete();
+                });
             }));
         async.awaitSuccess();
+        metricsCollector.tearDownMetricsCollector(context);
     }
 
     @Test

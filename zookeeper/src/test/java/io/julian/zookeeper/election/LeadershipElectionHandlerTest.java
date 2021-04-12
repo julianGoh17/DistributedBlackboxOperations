@@ -1,5 +1,6 @@
 package io.julian.zookeeper.election;
 
+import io.julian.TestMetricsCollector;
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.components.Configuration;
 import io.julian.server.components.Controller;
@@ -71,13 +72,15 @@ public class LeadershipElectionHandlerTest extends AbstractServerBase {
     @Test
     public void TestBroadcastIsSuccessful(final TestContext context) {
         TestServerComponents serverComponents = setUpBasicApiServer(context, AbstractServerBase.DEFAULT_SEVER_CONFIG);
-
+        TestMetricsCollector collector = setUpMetricsCollector(context);
         LeadershipElectionHandler handler = createTestHandler();
         Async async = context.async();
         handler.broadcast()
-            .onComplete(context.asyncAssertSuccess(res -> async.complete()));
+            .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> async.complete())));
         async.awaitSuccess();
+        collector.testHasExpectedStatusSize(1);
         tearDownServer(context, serverComponents);
+        collector.tearDownMetricsCollector(context);
     }
 
     @Test
@@ -100,6 +103,7 @@ public class LeadershipElectionHandlerTest extends AbstractServerBase {
         Assert.assertNull(message.getMessage());
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
         Assert.assertEquals("candidate_information", message.getMetadata().getType());
+        Assert.assertEquals(LeadershipElectionHandler.MESSAGE_ID, message.getMetadata().getMessageID());
         Assert.assertEquals(DEFAULT_SEVER_CONFIG.getHost(), message.getDefinition().getString("host"));
         Assert.assertEquals(DEFAULT_SEVER_CONFIG.getPort(), message.getDefinition().getInteger("port").intValue());
         Assert.assertEquals(1L, message.getDefinition().getLong("candidate_number").longValue());

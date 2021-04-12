@@ -5,6 +5,7 @@ import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
+import io.julian.zookeeper.AbstractHandler;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.models.MessagePhase;
 import io.julian.zookeeper.models.ShortenedExchange;
@@ -16,18 +17,17 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class FollowerWriteHandler {
+public class FollowerWriteHandler extends AbstractHandler  {
     private final static Logger log = LogManager.getLogger(FollowerWriteHandler.class);
     private final CandidateInformationRegistry registry;
-    private final ServerClient client;
     private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
     public final static String ACK_TYPE = "state_acknowledgement";
     public final static String FORWARD_TYPE = "forward";
 
     public FollowerWriteHandler(final CandidateInformationRegistry registry, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
+        super(client);
         this.registry = registry;
-        this.client = client;
         this.deadCoordinationMessages = deadCoordinationMessages;
     }
 
@@ -40,11 +40,13 @@ public class FollowerWriteHandler {
             .sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), reply)
             .onSuccess(res -> {
                 log.info(String.format("Successfully forwarded %s to leader", message.getRequest()));
+                sendToMetricsCollector(200, reply);
                 forward.complete();
             })
             .onFailure(cause -> {
                 log.info(String.format("Failed to forwarded %s to leader", message.getRequest()));
                 deadCoordinationMessages.add(reply);
+                sendToMetricsCollector(400, reply);
                 log.error(cause.getMessage());
                 forward.fail(cause);
             });
@@ -70,12 +72,14 @@ public class FollowerWriteHandler {
         client.sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), message)
             .onSuccess(res -> {
                 log.info(String.format("Successfully sent '%s' reply for Zxid %s to leader", phase.toValue(), id.toString()));
+                sendToMetricsCollector(200, message);
                 reply.complete();
             })
             .onFailure(cause -> {
                 log.info(String.format("Could not send '%s' reply for Zxid %s to leader", phase.toValue(), id.toString()));
-                deadCoordinationMessages.add(message);
                 log.error(cause);
+                sendToMetricsCollector(400, message);
+                deadCoordinationMessages.add(message);
                 reply.fail(cause);
             });
 
@@ -85,7 +89,7 @@ public class FollowerWriteHandler {
     public CoordinationMessage createCoordinationMessage(final MessagePhase phase, final Zxid id) {
         log.traceEntry(() -> phase, () -> id);
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.UNKNOWN, null, ACK_TYPE),
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, String.format("%s-%s", phase, id.toString()), ACK_TYPE),
             null,
             new ShortenedExchange(phase, id).toJson()
         ));
