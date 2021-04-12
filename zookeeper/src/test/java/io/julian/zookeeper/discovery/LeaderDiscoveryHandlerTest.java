@@ -1,5 +1,6 @@
 package io.julian.zookeeper.discovery;
 
+import io.julian.TestMetricsCollector;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.coordination.CoordinationMessage;
@@ -86,12 +87,15 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
     @Test
     public void TestBroadcastGatherZXIDSucceeds(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestMetricsCollector collector = setUpMetricsCollector(context);
         LeaderDiscoveryHandler handler = createHandler();
         Async async = context.async();
         handler.broadcastGatherZXID()
-            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
+            .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> async.complete())));
         async.awaitSuccess();
+        collector.testHasExpectedStatusSize(1);
         tearDownServer(context, server);
+        collector.tearDownMetricsCollector(context);
     }
 
     @Test
@@ -111,12 +115,15 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
     @Test
     public void TestBroadcastStateUpdateSucceeds(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestMetricsCollector collector = setUpMetricsCollector(context);
         LeaderDiscoveryHandler handler = createHandler();
         Async async = context.async();
         handler.broadcastLeaderState()
-            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
+            .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> async.complete())));
         async.awaitSuccess();
         tearDownServer(context, server);
+        collector.testHasExpectedStatusSize(1);
+        collector.tearDownMetricsCollector(context);
     }
 
     @Test

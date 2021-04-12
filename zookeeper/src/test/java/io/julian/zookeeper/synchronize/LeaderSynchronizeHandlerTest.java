@@ -1,5 +1,6 @@
 package io.julian.zookeeper.synchronize;
 
+import io.julian.TestMetricsCollector;
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
@@ -31,15 +32,18 @@ public class LeaderSynchronizeHandlerTest extends AbstractServerBase {
     @Test
     public void TestBroadcastStateIsSuccessful(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestMetricsCollector collector = setUpMetricsCollector(context);
         LeaderSynchronizeHandler handler = createTestHandler();
         Async async = context.async();
         handler.broadcastState()
-            .onComplete(context.asyncAssertSuccess(v -> {
+            .onComplete(context.asyncAssertSuccess(v1 -> vertx.setTimer(500, v2 -> {
                 Assert.assertEquals(0, handler.getAcknowledgements());
-                async.complete();
-            }));
+                vertx.setTimer(500, v -> async.complete());
+            })));
         async.awaitSuccess();
+        collector.testHasExpectedStatusSize(1);
         tearDownServer(context, server);
+        collector.tearDownMetricsCollector(context);
     }
 
     @Test

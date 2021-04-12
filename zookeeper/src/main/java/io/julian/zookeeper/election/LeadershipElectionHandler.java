@@ -7,6 +7,7 @@ import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
+import io.julian.zookeeper.AbstractHandler;
 import io.julian.zookeeper.models.CandidateInformation;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -20,7 +21,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
 @Getter
-public class LeadershipElectionHandler {
+public class LeadershipElectionHandler extends AbstractHandler {
     private final Logger log = LogManager.getLogger(LeadershipElectionHandler.class);
     public final static String LEADER_LABEL = "leader";
     public final static String FOLLOWER_LABEL = "follower";
@@ -29,15 +30,14 @@ public class LeadershipElectionHandler {
 
     private final long candidateNumber;
     private final CandidateInformationRegistry candidateRegistry;
-    private final ServerClient client;
     private final RegistryManager registryManager;
     private final Controller controller;
     private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
     public LeadershipElectionHandler(final long candidateNumber, final CandidateInformationRegistry candidateRegistry, final ServerClient client, final RegistryManager registryManager, final Controller controller, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
+        super(client);
         this.candidateNumber = candidateNumber;
         this.candidateRegistry = candidateRegistry;
-        this.client = client;
         this.registryManager = registryManager;
         this.controller = controller;
         this.deadCoordinationMessages = deadCoordinationMessages;
@@ -62,19 +62,24 @@ public class LeadershipElectionHandler {
         final ServerConfiguration currentConfig = controller.getServerConfiguration();
         log.info(String.format("Broadcasting candidate number '%d' to all servers", candidateNumber));
         Promise<Void> res = Promise.promise();
+        final CoordinationMessage message = createCandidateInformationMessage(candidateNumber, currentConfig);
         List<Future> sentRequests = registryManager.getOtherServers()
             .stream()
             .map(config -> {
                 log.info(String.format("Broadcasting server's candidate information to '%s:%d'", config.getHost(), config.getPort()));
-                return client.sendCoordinateMessageToServer(config, createCandidateInformationMessage(candidateNumber, currentConfig));
+                return client.sendCoordinateMessageToServer(config, message);
             })
             .collect(Collectors.toList());
 
         CompositeFuture.all(sentRequests)
-            .onSuccess(v -> res.complete())
+            .onSuccess(v -> {
+                sendToMetricsCollector(200, message);
+                res.complete();
+            })
             .onFailure(cause -> {
                 log.info(String.format("Failed to broadcast candidate number '%d' to all servers", candidateNumber));
-                deadCoordinationMessages.add(createCandidateInformationMessage(candidateNumber, currentConfig));
+                deadCoordinationMessages.add(message);
+                sendToMetricsCollector(400, message);
                 res.fail(cause);
             });
 

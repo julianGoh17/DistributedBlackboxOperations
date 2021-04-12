@@ -6,6 +6,7 @@ import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
+import io.julian.zookeeper.AbstractHandler;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.models.Proposal;
@@ -21,21 +22,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class FollowerSynchronizeHandler {
+public class FollowerSynchronizeHandler extends AbstractHandler {
     public static final String MESSAGE_ID = "followerSynchronizeMessage";
 
     private static final Logger log = LogManager.getLogger(FollowerSynchronizeHandler.class);
     private final Vertx vertx;
     private final State state;
     private final CandidateInformationRegistry registry;
-    private final ServerClient client;
     private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
     public FollowerSynchronizeHandler(final Vertx vertx, final State state, final CandidateInformationRegistry registry, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
+        super(client);
         this.vertx = vertx;
         this.state = state;
         this.registry = registry;
-        this.client = client;
         this.deadCoordinationMessages = deadCoordinationMessages;
     }
 
@@ -51,14 +51,17 @@ public class FollowerSynchronizeHandler {
                     log.info("Failed to synchronize with leader");
                     log.error(res.cause());
                 }
-                client.sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), getCoordinationMessage())
+                final CoordinationMessage message = getCoordinationMessage();
+                client.sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), message)
                     .onSuccess(v -> {
+                        sendToMetricsCollector(200, message);
                         state.setServerStage(Stage.WRITE);
                         reply.complete();
                     })
                     .onFailure(cause -> {
                         log.info("Failed to send synchronize reply to leader");
                         deadCoordinationMessages.add(getCoordinationMessage());
+                        sendToMetricsCollector(400, message);
                         log.error(cause.getMessage());
                         reply.fail(cause);
                     });

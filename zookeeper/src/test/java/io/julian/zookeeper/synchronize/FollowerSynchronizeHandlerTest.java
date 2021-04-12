@@ -1,5 +1,6 @@
 package io.julian.zookeeper.synchronize;
 
+import io.julian.TestMetricsCollector;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
@@ -25,17 +26,20 @@ public class FollowerSynchronizeHandlerTest extends AbstractServerBase {
     @Test
     public void TestReplyToLeaderIsSuccessful(final TestContext context) {
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestMetricsCollector metricsCollector = setUpMetricsCollector(context);
         FollowerSynchronizeHandler handler = createTestHandler();
         State leader = createInitializedState(context);
         Async async = context.async();
         handler.replyToLeader(leader)
-            .onComplete(context.asyncAssertSuccess(v -> {
+            .onComplete(context.asyncAssertSuccess(v1 -> vertx.setTimer(1000, v -> {
                 checkHandlerHasSameState(context, handler.getState(), leader);
                 async.complete();
-            }));
+            })));
         async.awaitSuccess();
         checkMessageStoreIsTheSame(leader.getMessageStore(), handler.getState().getMessageStore());
         tearDownServer(context, server);
+        metricsCollector.testHasExpectedStatusSize(1);
+        metricsCollector.tearDownMetricsCollector(context);
     }
 
     @Test

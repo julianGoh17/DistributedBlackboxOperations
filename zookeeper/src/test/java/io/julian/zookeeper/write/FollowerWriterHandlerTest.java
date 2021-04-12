@@ -1,5 +1,6 @@
 package io.julian.zookeeper.write;
 
+import io.julian.TestMetricsCollector;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
@@ -52,6 +53,7 @@ public class FollowerWriterHandlerTest extends AbstractServerBase {
 
     @Test
     public void TestAcknowledgeCommitAndProposalToLeaderFails(final TestContext context) {
+        TestMetricsCollector collector = setUpMetricsCollector(context);
         FollowerWriteHandler writeHandler = createFollowerWriteHandler();
 
         Async async = context.async(2);
@@ -66,24 +68,28 @@ public class FollowerWriterHandlerTest extends AbstractServerBase {
             .onComplete(context.asyncAssertFailure(res -> {
                 context.assertEquals(CONNECTION_REFUSED_EXCEPTION, res.getMessage());
                 Assert.assertEquals(2, writeHandler.getDeadCoordinationMessages().size());
-                async.countDown();
+                vertx.setTimer(500, v -> async.countDown());
             }));
-
         async.awaitSuccess();
+        collector.testHasExpectedStatusSize(2);
+        collector.tearDownMetricsCollector(context);
     }
 
     @Test
     public void TestForwardRequestToLeaderFails(final TestContext context) {
         FollowerWriteHandler writeHandler = createFollowerWriteHandler();
+        TestMetricsCollector metricsCollector = setUpMetricsCollector(context);
 
         Async async = context.async();
         writeHandler.forwardRequestToLeader(new ClientMessage(HTTPRequest.POST, new JsonObject(), ""))
             .onComplete(context.asyncAssertFailure(cause -> {
                 context.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
                 Assert.assertEquals(1, writeHandler.getDeadCoordinationMessages().size());
-                async.complete();
+                vertx.setTimer(500, v -> async.complete());
             }));
         async.awaitSuccess();
+        metricsCollector.testHasExpectedStatusSize(1);
+        metricsCollector.tearDownMetricsCollector(context);
     }
 
     @Test
