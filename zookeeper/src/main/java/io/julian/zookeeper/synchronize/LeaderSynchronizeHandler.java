@@ -19,7 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class LeaderSynchronizeHandler {
-    private static final Logger log = LogManager.getLogger(LeaderDiscoveryHandler.class);
+    public final static String MESSAGE_ID = "leaderSynchronize";
+    private final static Logger log = LogManager.getLogger(LeaderDiscoveryHandler.class);
 
     private final State state;
     private final RegistryManager manager;
@@ -75,7 +76,7 @@ public class LeaderSynchronizeHandler {
     public CoordinationMessage getCoordinationMessage() {
         log.traceEntry();
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.UNKNOWN, null, SynchronizeHandler.SYNCHRONIZE_TYPE),
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, MESSAGE_ID, SynchronizeHandler.SYNCHRONIZE_TYPE),
             null,
             state.toJson()));
     }

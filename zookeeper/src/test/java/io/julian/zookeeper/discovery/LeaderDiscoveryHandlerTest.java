@@ -96,12 +96,13 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
 
     @Test
     public void TestBroadcastGatherZXIDFails(final TestContext context) {
-        LeaderDiscoveryHandler handler = createHandler();
+        ConcurrentLinkedQueue<CoordinationMessage> deadQueue = new ConcurrentLinkedQueue<>();
+        LeaderDiscoveryHandler handler = createHandler(deadQueue);
         Async async = context.async();
         handler.broadcastGatherZXID()
             .onComplete(context.asyncAssertFailure(cause -> {
                 Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
-                Assert.assertEquals(1, handler.getDeadCoordinationMessages().size());
+                Assert.assertEquals(1, deadQueue.size());
                 async.complete();
             }));
         async.awaitSuccess();
@@ -120,12 +121,13 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
 
     @Test
     public void TestBroadcastStateUpdateFails(final TestContext context) {
-        LeaderDiscoveryHandler handler = createHandler();
+        ConcurrentLinkedQueue<CoordinationMessage> deadQueue = new ConcurrentLinkedQueue<>();
+        LeaderDiscoveryHandler handler = createHandler(deadQueue);
         Async async = context.async();
         handler.broadcastLeaderState()
             .onComplete(context.asyncAssertFailure(cause -> {
                 Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
-                Assert.assertEquals(1, handler.getDeadCoordinationMessages().size());
+                Assert.assertEquals(1, deadQueue.size());
                 async.complete();
             }));
         async.awaitSuccess();
@@ -137,6 +139,7 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
         String type = "random-type";
         CoordinationMessage message = handler.createBroadcastMessage(type);
         Assert.assertEquals(type, message.getMetadata().getType());
+        Assert.assertEquals(LeaderDiscoveryHandler.LEADER_STATE_BROADCAST_MESSAGE_ID, message.getMetadata().getMessageID());
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
         Assert.assertNull(message.getMessage());
         Assert.assertNull(message.getDefinition());
@@ -148,13 +151,18 @@ public class LeaderDiscoveryHandlerTest extends AbstractServerBase {
         LeaderDiscoveryHandler handler = createHandler();
         CoordinationMessage message = handler.createStateUpdate();
         Assert.assertEquals(LeaderDiscoveryHandler.LEADER_STATE_UPDATE_TYPE, message.getMetadata().getType());
+        Assert.assertEquals(LeaderDiscoveryHandler.LEADER_STATE_UPDATE_MESSAGE_ID, message.getMetadata().getMessageID());
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
         Assert.assertEquals(new Zxid(0, 0).toJson().encodePrettily(), message.getDefinition().encodePrettily());
         Assert.assertNull(message.getMessage());
         Assert.assertNotNull(message.toJson().encodePrettily());
     }
 
+    private LeaderDiscoveryHandler createHandler(final ConcurrentLinkedQueue<CoordinationMessage> deadMessages) {
+        return new LeaderDiscoveryHandler(new State(vertx, new MessageStore()), createTestRegistryManager(), createServerClient(), deadMessages);
+    }
+
     private LeaderDiscoveryHandler createHandler() {
-        return new LeaderDiscoveryHandler(new State(vertx, new MessageStore()), createTestRegistryManager(), createServerClient(), new ConcurrentLinkedQueue<>());
+        return createHandler(new ConcurrentLinkedQueue<>());
     }
 }

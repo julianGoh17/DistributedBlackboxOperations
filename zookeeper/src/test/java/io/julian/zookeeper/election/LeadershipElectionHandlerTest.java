@@ -100,6 +100,7 @@ public class LeadershipElectionHandlerTest extends AbstractServerBase {
         Assert.assertNull(message.getMessage());
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
         Assert.assertEquals("candidate_information", message.getMetadata().getType());
+        Assert.assertEquals(LeadershipElectionHandler.MESSAGE_ID, message.getMetadata().getMessageID());
         Assert.assertEquals(DEFAULT_SEVER_CONFIG.getHost(), message.getDefinition().getString("host"));
         Assert.assertEquals(DEFAULT_SEVER_CONFIG.getPort(), message.getDefinition().getInteger("port").intValue());
         Assert.assertEquals(1L, message.getDefinition().getLong("candidate_number").longValue());

@@ -17,6 +17,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Getter
 public class FollowerDiscoveryHandler {
+    public final static String FOLLOWER_DISCOVERY_MESSAGE_ID = "followerDiscoveryID";
     private final static Logger log = LogManager.getLogger(FollowerDiscoveryHandler.class);
     private final State state;
     private final CandidateInformationRegistry registry;
@@ -59,7 +60,7 @@ public class FollowerDiscoveryHandler {
     public CoordinationMessage createCoordinationMessage() {
         log.traceEntry();
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.UNKNOWN, "", DiscoveryHandler.DISCOVERY_TYPE),
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, FOLLOWER_DISCOVERY_MESSAGE_ID, DiscoveryHandler.DISCOVERY_TYPE),
             null,
             state.toJson()));
     }

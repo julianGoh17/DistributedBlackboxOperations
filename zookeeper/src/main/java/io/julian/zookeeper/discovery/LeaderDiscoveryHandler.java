@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
 
 public class LeaderDiscoveryHandler {
     public final static String LEADER_STATE_UPDATE_TYPE = "leader_state_update";
+    public final static String LEADER_STATE_UPDATE_MESSAGE_ID = "leaderStateUpdate";
+    public final static String LEADER_STATE_BROADCAST_MESSAGE_ID = "leaderStateBroadcast";
     private final static Logger log = LogManager.getLogger(LeadershipElectionHandler.class);
 
     private final AtomicReference<State> latestState;
@@ -125,19 +127,14 @@ public class LeaderDiscoveryHandler {
 
     public CoordinationMessage createBroadcastMessage(final String type) {
         log.traceEntry(() -> type);
-        return log.traceExit(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, "", type), null, null));
+        return log.traceExit(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, LEADER_STATE_BROADCAST_MESSAGE_ID, type), null, null));
     }
 
     public CoordinationMessage createStateUpdate() {
         log.traceEntry();
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.UNKNOWN, "", LEADER_STATE_UPDATE_TYPE),
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, LEADER_STATE_UPDATE_MESSAGE_ID, LEADER_STATE_UPDATE_TYPE),
             null,
             new Zxid(state.getLeaderEpoch(), state.getCounter()).toJson()));
-    }
-
-    public ConcurrentLinkedQueue<CoordinationMessage> getDeadCoordinationMessages() {
-        log.traceEntry();
-        return log.traceExit(deadCoordinationMessages);
     }
 }

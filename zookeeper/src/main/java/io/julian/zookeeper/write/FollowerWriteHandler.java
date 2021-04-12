@@ -85,7 +85,7 @@ public class FollowerWriteHandler {
     public CoordinationMessage createCoordinationMessage(final MessagePhase phase, final Zxid id) {
         log.traceEntry(() -> phase, () -> id);
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.UNKNOWN, null, ACK_TYPE),
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, String.format("%s-%s", phase, id.toString()), ACK_TYPE),
             null,
             new ShortenedExchange(phase, id).toJson()
         ));

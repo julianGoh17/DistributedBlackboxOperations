@@ -25,6 +25,7 @@ public class LeadershipElectionHandler {
     public final static String LEADER_LABEL = "leader";
     public final static String FOLLOWER_LABEL = "follower";
     public final static String TYPE = "candidate_information";
+    public final static String MESSAGE_ID = "electionBroadcast";
 
     private final long candidateNumber;
     private final CandidateInformationRegistry candidateRegistry;
@@ -89,7 +90,7 @@ public class LeadershipElectionHandler {
      */
     public CoordinationMessage createCandidateInformationMessage(final long candidateNumber, final ServerConfiguration serverConfig) {
         log.traceEntry(() -> candidateNumber, () -> serverConfig);
-        return log.traceExit(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, null, TYPE),
+        return log.traceExit(new CoordinationMessage(new CoordinationMetadata(HTTPRequest.UNKNOWN, MESSAGE_ID, TYPE),
             null,
             new CandidateInformation(serverConfig.getHost(), serverConfig.getPort(), candidateNumber).toJson()));
     }

@@ -105,6 +105,7 @@ public class FollowerWriterHandlerTest extends AbstractServerBase {
         CoordinationMessage message = writeHandler.createCoordinationMessage(MessagePhase.ACK, ID);
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
         Assert.assertEquals(FollowerWriteHandler.ACK_TYPE, message.getMetadata().getType());
+        Assert.assertEquals("ACK-" + ID.toString(), message.getMetadata().getMessageID());
         Assert.assertEquals(MessagePhase.ACK.toValue(), message.getDefinition().getString(ShortenedExchange.PHASE_KEY));
         Assert.assertEquals(COUNTER, message.getDefinition()
             .getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.COUNTER_KEY).intValue());
@@ -114,6 +115,7 @@ public class FollowerWriterHandlerTest extends AbstractServerBase {
         message = writeHandler.createCoordinationMessage(MessagePhase.COMMIT, ID);
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
         Assert.assertEquals(FollowerWriteHandler.ACK_TYPE, message.getMetadata().getType());
+        Assert.assertEquals("COMMIT-" + ID.toString(), message.getMetadata().getMessageID());
         Assert.assertEquals(MessagePhase.COMMIT.toValue(), message.getDefinition().getString(ShortenedExchange.PHASE_KEY));
         Assert.assertEquals(COUNTER, message.getDefinition()
             .getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.COUNTER_KEY).intValue());

@@ -22,6 +22,7 @@ public class FollowerDiscoveryHandlerTest extends AbstractServerBase {
         FollowerDiscoveryHandler handler = getTestHandler(registry);
         CoordinationMessage message = handler.createCoordinationMessage();
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
+        Assert.assertEquals(FollowerDiscoveryHandler.FOLLOWER_DISCOVERY_MESSAGE_ID, message.getMetadata().getMessageID());
         Assert.assertEquals(DiscoveryHandler.DISCOVERY_TYPE, message.getMetadata().getType());
         Assert.assertNull(message.getMessage());
         Assert.assertEquals(new State(vertx, new MessageStore()).toJson().encodePrettily(), message.getDefinition().encodePrettily());

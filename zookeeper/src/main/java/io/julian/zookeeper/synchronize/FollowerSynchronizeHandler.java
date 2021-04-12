@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class FollowerSynchronizeHandler {
+    public static final String MESSAGE_ID = "followerSynchronizeMessage";
+
     private static final Logger log = LogManager.getLogger(FollowerSynchronizeHandler.class);
     private final Vertx vertx;
     private final State state;
@@ -108,7 +110,7 @@ public class FollowerSynchronizeHandler {
     public CoordinationMessage getCoordinationMessage() {
         log.traceEntry();
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.UNKNOWN, null, SynchronizeHandler.SYNCHRONIZE_TYPE),
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, MESSAGE_ID, SynchronizeHandler.SYNCHRONIZE_TYPE),
             null,
             null));
     }

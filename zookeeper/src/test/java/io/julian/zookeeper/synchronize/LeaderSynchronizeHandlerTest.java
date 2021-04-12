@@ -20,6 +20,7 @@ public class LeaderSynchronizeHandlerTest extends AbstractServerBase {
         LeaderSynchronizeHandler handler = createTestHandler();
         CoordinationMessage message = handler.getCoordinationMessage();
         Assert.assertEquals(HTTPRequest.UNKNOWN, message.getMetadata().getRequest());
+        Assert.assertEquals(LeaderSynchronizeHandler.MESSAGE_ID, message.getMetadata().getMessageID());
         Assert.assertEquals(SynchronizeHandler.SYNCHRONIZE_TYPE, message.getMetadata().getType());
 
         Assert.assertEquals(SynchronizeHandler.SYNCHRONIZE_TYPE, message.getMetadata().getType());
