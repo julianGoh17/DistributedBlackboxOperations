@@ -53,7 +53,7 @@ public class TestServerComponents {
                 deploymentID.set(compositeFuture.resultAt(1));
                 api.requestHandler(server.getRouterFactory().getRouter()).listen(ar -> {
                     context.assertTrue(ar.succeeded());
-                    async.complete();
+                    vertx.setTimer(500, v -> async.complete());
                 });
             }));
 
