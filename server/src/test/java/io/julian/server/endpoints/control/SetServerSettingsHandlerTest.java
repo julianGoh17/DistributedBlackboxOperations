@@ -3,6 +3,7 @@ package io.julian.server.endpoints.control;
 import io.julian.server.components.Controller;
 import io.julian.server.models.ServerStatus;
 import io.julian.server.models.control.ServerSettings;
+import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.web.client.WebClient;
 import org.junit.Test;
@@ -15,7 +16,11 @@ public class SetServerSettingsHandlerTest extends AbstractServerHandlerTest {
         setUpApiServer(context);
 
         WebClient client = WebClient.create(this.vertx);
-        POSTSuccessfulServerSettings(context, client, new ServerSettings(expectedStatus, failureChance), expectedStatus, failureChance);
+        Async async = context.async();
+        POSTSuccessfulServerSettings(context, client, new ServerSettings(expectedStatus, failureChance), expectedStatus, failureChance)
+            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
+        async.awaitSuccess();
+        tearDownServer(context);
     }
 
     @Test
@@ -24,8 +29,12 @@ public class SetServerSettingsHandlerTest extends AbstractServerHandlerTest {
         setUpApiServer(context);
 
         WebClient client = WebClient.create(this.vertx);
+        Async async = context.async();
         POSTSuccessfulServerSettings(context, client, new ServerSettings(expectedStatus, null), expectedStatus,
-            Controller.DEFAULT_MESSAGE_FAILURE_CHANCE);
+            Controller.DEFAULT_MESSAGE_FAILURE_CHANCE)
+            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
+        async.awaitSuccess();
+        tearDownServer(context);
     }
 
     @Test
@@ -36,7 +45,11 @@ public class SetServerSettingsHandlerTest extends AbstractServerHandlerTest {
         setUpApiServer(context);
 
         WebClient client = WebClient.create(this.vertx);
+        Async async = context.async();
         POSTSuccessfulServerSettings(context, client, new ServerSettings(status, expectedFailureChance), ServerStatus.AVAILABLE,
-            expectedFailureChance);
+            expectedFailureChance)
+            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
+        async.awaitSuccess();
+        tearDownServer(context);
     }
 }

@@ -65,6 +65,13 @@ public abstract class AbstractHandlerTest {
         async.awaitSuccess();
     }
 
+    protected void tearDownServer(final TestContext context) {
+        server = null;
+        Async async = context.async();
+        api.close(v -> async.complete());
+        async.awaitSuccess();
+    }
+
     protected JsonObject createPostMessage(final JsonObject message) {
         return new JsonObject()
             .put("message", message);
@@ -94,10 +101,10 @@ public abstract class AbstractHandlerTest {
         return uuid.future();
     }
 
-    protected void sendUnsuccessfulGETMessage(final TestContext context, final WebClient client,
+    protected Future<Void> sendUnsuccessfulGETMessage(final TestContext context, final WebClient client,
                                                final String messageId, final Throwable error,
                                                final int expectedStatusCode) {
-        sendGETMessage(context, client, messageId)
+        return sendGETMessage(context, client, messageId)
             .compose(res -> {
                 context.assertEquals(res.statusCode(), expectedStatusCode);
                 if (error != null) {
@@ -137,9 +144,9 @@ public abstract class AbstractHandlerTest {
         return completed.future();
     }
 
-    protected void sendUnsuccessfulDELETEMessage(final TestContext context, final WebClient client, final String messageId,
+    protected Future<Void> sendUnsuccessfulDELETEMessage(final TestContext context, final WebClient client, final String messageId,
                                                  final int expectedStatusCode, final Exception exception) {
-        sendDELETEMessage(context, client, messageId)
+        return sendDELETEMessage(context, client, messageId)
             .compose(res -> {
                 context.assertEquals(expectedStatusCode, res.statusCode());
                 context.assertEquals(new ErrorResponse(expectedStatusCode, exception).toJson().encodePrettily(),

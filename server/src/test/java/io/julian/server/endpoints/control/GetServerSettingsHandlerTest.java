@@ -14,6 +14,7 @@ public class GetServerSettingsHandlerTest extends AbstractServerHandlerTest {
         WebClient client = WebClient.create(this.vertx);
 
         GETAndAssertServerSettings(context, client, Controller.DEFAULT_SERVER_STATUS, Controller.DEFAULT_MESSAGE_FAILURE_CHANCE);
+        tearDownServer(context);
     }
 
     @Test
@@ -28,5 +29,6 @@ public class GetServerSettingsHandlerTest extends AbstractServerHandlerTest {
         GETAndAssertServerSettings(context, client, Controller.DEFAULT_SERVER_STATUS, Controller.DEFAULT_MESSAGE_FAILURE_CHANCE)
             .compose(v -> POSTSuccessfulServerSettings(context, client, settings, expectedStatus, failureChance))
             .compose(v -> GETAndAssertServerSettings(context, client, expectedStatus, failureChance));
+        tearDownServer(context);
     }
 }

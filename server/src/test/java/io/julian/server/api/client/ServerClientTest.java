@@ -23,8 +23,14 @@ public class ServerClientTest extends AbstractServerHandlerTest {
     public void TestServerClientSuccessfullySendCoordinateMessage(final TestContext context) {
         setUpApiServer(context);
         ServerClient client = new ServerClient(vertx, new Configuration());
+        Async async = context.async();
         client.sendCoordinateMessageToServer(OTHER_SERVER_CONFIGURATION, CoordinationMessage.fromJson(JSON))
-            .onComplete(context.asyncAssertSuccess(context::assertNull));
+            .onComplete(context.asyncAssertSuccess(res -> {
+                context.assertNull(res);
+                async.complete();
+            }));
+        async.awaitSuccess();
+        tearDownServer(context);
     }
 
     @Test
@@ -50,6 +56,7 @@ public class ServerClientTest extends AbstractServerHandlerTest {
                 async.complete();
             }));
         async.awaitSuccess();
+        tearDownServer(context);
     }
 
     @Test
@@ -70,6 +77,7 @@ public class ServerClientTest extends AbstractServerHandlerTest {
                 async.complete();
             }));
         async.awaitSuccess();
+        tearDownServer(context);
     }
 
     @Test

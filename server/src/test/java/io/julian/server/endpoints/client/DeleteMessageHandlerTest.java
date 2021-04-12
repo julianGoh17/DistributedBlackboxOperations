@@ -23,13 +23,11 @@ public class DeleteMessageHandlerTest extends AbstractServerHandlerTest {
         sendSuccessfulPOSTMessage(context, client, TEST_MESSAGE)
             .compose(id -> sendSuccessfulGETMessage(context, client, id, TEST_MESSAGE))
             .compose(id -> sendSuccessfulDELETEMessage(context, client, id, false))
-            .compose(id -> {
-                sendUnsuccessfulGETMessage(context, client, id,
-                    new Exception(String.format("Could not find entry for uuid '%s'", id)), 404);
-                async.complete();
-                return Future.succeededFuture();
-            });
+            .compose(id -> sendUnsuccessfulGETMessage(context, client, id,
+                new Exception(String.format("Could not find entry for uuid '%s'", id)), 404))
+            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
         async.awaitSuccess();
+        tearDownServer(context);
     }
 
     @Test
@@ -46,10 +44,11 @@ public class DeleteMessageHandlerTest extends AbstractServerHandlerTest {
             .compose(id -> sendSuccessfulDELETEMessage(context, client, id, true))
             .compose(id -> {
                 sendSuccessfulGETMessage(context, client, id, TEST_MESSAGE);
-                async.complete();
                 return Future.succeededFuture();
-            });
+            })
+            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
         async.awaitSuccess();
+        tearDownServer(context);
     }
 
     @Test
@@ -58,7 +57,11 @@ public class DeleteMessageHandlerTest extends AbstractServerHandlerTest {
         WebClient client = WebClient.create(this.vertx);
         String invalidID = "invalid-id";
         Exception error = new Exception(String.format(DeleteMessageHandler.ERROR_RESPONSE, invalidID));
-        sendUnsuccessfulDELETEMessage(context, client, invalidID, 404, error);
+        Async async = context.async();
+        sendUnsuccessfulDELETEMessage(context, client, invalidID, 404, error)
+            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
+        async.awaitSuccess();
+        tearDownServer(context);
     }
 
     @Test
@@ -67,7 +70,11 @@ public class DeleteMessageHandlerTest extends AbstractServerHandlerTest {
         WebClient client = WebClient.create(this.vertx);
         server.getController().setStatus(ServerStatus.UNREACHABLE);
 
-        sendUnsuccessfulDELETEMessage(context, client, "invalid-id", 500, UNREACHABLE_ERROR);
+        Async async = context.async();
+        sendUnsuccessfulDELETEMessage(context, client, "invalid-id", 500, UNREACHABLE_ERROR)
+            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
+        async.awaitSuccess();
+        tearDownServer(context);
     }
 
     @Test
@@ -76,8 +83,11 @@ public class DeleteMessageHandlerTest extends AbstractServerHandlerTest {
         WebClient client = WebClient.create(this.vertx);
         server.getController().setStatus(ServerStatus.PROBABILISTIC_FAILURE);
         server.getController().setFailureChance(1);
-        sendUnsuccessfulDELETEMessage(context, client, "invalid-id", 500, PROBABILISTIC_FAILURE_ERROR);
-
+        Async async = context.async();
+        sendUnsuccessfulDELETEMessage(context, client, "invalid-id", 500, PROBABILISTIC_FAILURE_ERROR)
+            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
+        async.awaitSuccess();
+        tearDownServer(context);
     }
 
     @Test
@@ -87,8 +97,12 @@ public class DeleteMessageHandlerTest extends AbstractServerHandlerTest {
         server.getController().setStatus(ServerStatus.PROBABILISTIC_FAILURE);
         server.getController().setFailureChance(0);
 
+        Async async = context.async();
         sendSuccessfulPOSTMessage(context, client, TEST_MESSAGE)
-            .compose(id -> sendSuccessfulDELETEMessage(context, client, id, false));
+            .compose(id -> sendSuccessfulDELETEMessage(context, client, id, false))
+            .onComplete(context.asyncAssertSuccess(v -> async.complete()));
+        async.awaitSuccess();
+        tearDownServer(context);
     }
 
     @Test
@@ -96,6 +110,7 @@ public class DeleteMessageHandlerTest extends AbstractServerHandlerTest {
         setUpApiServer(context);
         WebClient client = WebClient.create(this.vertx);
 
+        Async async = context.async();
         client
             .delete(Configuration.DEFAULT_SERVER_PORT, Configuration.DEFAULT_SERVER_HOST, CLIENT_URI)
             .send(context.asyncAssertSuccess(res -> {
@@ -103,6 +118,9 @@ public class DeleteMessageHandlerTest extends AbstractServerHandlerTest {
                 context.assertEquals(new ErrorResponse(400,
                         new Exception("Error during validation of request. Parameter \"messageId\" inside query not found")).toJson().encodePrettily(),
                     res.bodyAsJsonObject().encodePrettily());
+                async.complete();
             }));
+        async.awaitSuccess();
+        tearDownServer(context);
     }
 }
