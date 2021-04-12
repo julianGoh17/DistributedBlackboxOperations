@@ -39,10 +39,11 @@ public class ReportCreatorTest {
         tracker.updateStatus(MESSAGE);
         String expectedReport = MESSAGE_ID + "\n" +
             "-".repeat(MESSAGE_ID.length()) + "\n" +
-            String.format("%s: 10.50\n", GenericStatistics.AVERAGE_MESSAGE_SIZE_KEY) +
+            String.format("%s: 10.50 bytes\n", GenericStatistics.AVERAGE_MESSAGE_SIZE_KEY) +
             String.format("%s: 1\n", GenericStatistics.TOTAL_MESSAGES_KEY) +
             String.format("%s: 0\n", GenericStatistics.TOTAL_FAILED_MESSAGES_KEY) +
-            String.format("%s: 1\n", GenericStatistics.TOTAL_SUCCEEDED_MESSAGES_KEY);
+            String.format("%s: 1\n", GenericStatistics.TOTAL_SUCCEEDED_MESSAGES_KEY) +
+            "\n";
 
         Assert.assertEquals(expectedReport, creator.createReport(ReportCreator.GENERAL_STATISTIC_FILTER_NAME));
     }

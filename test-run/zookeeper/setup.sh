@@ -39,6 +39,7 @@ do
       - SERVER_CONFIGURATION_LOCATION=$SERVER_LIST_FILE
       - PACKAGE_NAME=io.julian.ZookeeperAlgorithm
       - DOES_PROCESS_REQUEST=false
+      - METRICS_COLLECTOR_HOST=metrics-collector
     volumes: 
       - $BASEDIR/zookeeper/target:/resources/jar 
       - $CWD/settings:/settings"
@@ -56,6 +57,7 @@ DOCKER_COMPOSE_FILE="$DOCKER_COMPOSE_FILE
     environment:
       - SERVER_HOST=metrics-collector
       - SERVER_PORT=$METRICS_COLLECTOR_PORT
+      - REPORT_FILE_PATH=/resources/report
     volumes:
       - $REPORT_FOLDER:/resources/report"
 

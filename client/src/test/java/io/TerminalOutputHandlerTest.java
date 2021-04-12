@@ -67,7 +67,7 @@ public class TerminalOutputHandlerTest {
         order.verify(outputPrinter).println(TerminalOutputHandler.AVAILABLE_OPERATIONS);
         order.verify(outputPrinter).println("*".repeat(TerminalOutputHandler.AVAILABLE_OPERATIONS.length()));
         order.verify(outputPrinter).println("1. Run Operation Chain");
-        order.verify(outputPrinter).println("2. Send Command Line Message");
+        order.verify(outputPrinter).println("2. State Check");
         order.verify(outputPrinter).println("3. Print Preconfigured Messages");
         order.verify(outputPrinter).println("4. Print Preconfigured Operation Chains");
         order.verify(outputPrinter).println("5. Exit");

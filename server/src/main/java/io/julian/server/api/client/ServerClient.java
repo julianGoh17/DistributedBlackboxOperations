@@ -115,7 +115,7 @@ public class ServerClient {
         Promise<Void> res = Promise.promise();
         log.info(String.format("Sending message '%s' for metrics collector to track", message.getMessageId()));
         client
-            .post(configuration.getMetricsCollectorPort(), configuration.getServerHost(), TRACK_URI)
+            .post(configuration.getMetricsCollectorPort(), configuration.getMetricsCollectorHost(), TRACK_URI)
             .sendJsonObject(message.toJson(), ar -> {
                 if (ar.succeeded()) {
                     if (ar.result().statusCode() == 200) {

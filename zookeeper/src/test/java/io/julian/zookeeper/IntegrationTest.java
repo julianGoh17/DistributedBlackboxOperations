@@ -75,7 +75,7 @@ public class IntegrationTest extends AbstractServerBase {
                 async.complete();
             }));
         async.awaitSuccess();
-        collector.testHasExpectedStatusSize(8);
+        collector.testHasExpectedStatusSize(9);
         collector.tearDownMetricsCollector(context);
         tearDownServer(context, server1);
         tearDownServer(context, server2);
@@ -103,7 +103,7 @@ public class IntegrationTest extends AbstractServerBase {
                 async.complete();
             })));
         async.awaitSuccess();
-        collector.testHasExpectedStatusSize(8);
+        collector.testHasExpectedStatusSize(9);
         collector.tearDownMetricsCollector(context);
         tearDownServer(context, server1);
         tearDownServer(context, server2);
