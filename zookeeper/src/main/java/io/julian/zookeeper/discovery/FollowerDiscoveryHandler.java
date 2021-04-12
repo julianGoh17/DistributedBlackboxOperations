@@ -4,6 +4,7 @@ import io.julian.server.api.client.ServerClient;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
+import io.julian.zookeeper.AbstractHandler;
 import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.models.Zxid;
@@ -16,18 +17,17 @@ import org.apache.logging.log4j.Logger;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Getter
-public class FollowerDiscoveryHandler {
+public class FollowerDiscoveryHandler extends AbstractHandler  {
     public final static String FOLLOWER_DISCOVERY_MESSAGE_ID = "followerDiscoveryID";
     private final static Logger log = LogManager.getLogger(FollowerDiscoveryHandler.class);
     private final State state;
     private final CandidateInformationRegistry registry;
-    private final ServerClient client;
     private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
 
     public FollowerDiscoveryHandler(final State state, final CandidateInformationRegistry registry, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
+        super(client);
         this.state = state;
         this.registry = registry;
-        this.client = client;
         this.deadCoordinationMessages = deadCoordinationMessages;
     }
 
@@ -35,15 +35,18 @@ public class FollowerDiscoveryHandler {
         log.traceEntry();
         log.info("Sending leader latest state");
         Promise<Void> post = Promise.promise();
-        client.sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), createCoordinationMessage())
+        final CoordinationMessage message = createCoordinationMessage();
+        client.sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), message)
             .onSuccess(v -> {
                 log.info("Successfully sent leader latest state");
+                sendToMetricsCollector(200, message);
                 post.complete();
             })
             .onFailure(cause -> {
                 log.info("Unsuccessfully sent leader latest state");
                 deadCoordinationMessages.add(createCoordinationMessage());
                 log.error(cause);
+                sendToMetricsCollector(400, message);
                 post.fail(cause);
             });
         return log.traceExit(post.future());

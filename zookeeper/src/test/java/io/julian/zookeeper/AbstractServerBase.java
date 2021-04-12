@@ -1,5 +1,6 @@
 package io.julian.zookeeper;
 
+import io.julian.TestMetricsCollector;
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Configuration;
@@ -19,6 +20,8 @@ public abstract class AbstractServerBase {
 
     public static final ServerConfiguration DEFAULT_SEVER_CONFIG = new ServerConfiguration(Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
     public static final ServerConfiguration SECOND_SERVER_CONFIG = new ServerConfiguration(Configuration.DEFAULT_SERVER_HOST, 9998);
+    public static final ServerConfiguration METRICS_COLLECTOR_CONFIG = new ServerConfiguration(Configuration.DEFAULT_METRICS_COLLECTOR_HOST, Configuration.DEFAULT_METRICS_COLLECTOR_PORT);
+
     public static final String CONNECTION_REFUSED_EXCEPTION = String.format("Connection refused: %s/127.0.0.1:%d", Configuration.DEFAULT_SERVER_HOST, Configuration.DEFAULT_SERVER_PORT);
 
     @Before
@@ -68,5 +71,11 @@ public abstract class AbstractServerBase {
 
     protected TestClient createTestClient() {
         return new TestClient(this.vertx);
+    }
+
+    protected TestMetricsCollector setUpMetricsCollector(final TestContext context) {
+        TestMetricsCollector metricsCollector = new TestMetricsCollector();
+        metricsCollector.setUpMetricsCollector(METRICS_COLLECTOR_CONFIG, context, vertx);
+        return metricsCollector;
     }
 }
