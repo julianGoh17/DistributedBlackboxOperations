@@ -81,7 +81,7 @@ public class LeaderWriteHandler extends AbstractHandler {
 
     public CoordinationMessage createCoordinationMessage(final MessagePhase phase, final ClientMessage message, final Zxid id) {
         log.traceEntry(() -> phase, () -> message, () -> id);
-        final String messageID = Optional.ofNullable(message).map(ClientMessage::getMessageId).orElse(null);
+        final String messageID = Optional.ofNullable(message).map(ClientMessage::getMessageId).orElse(String.format("new-message-%s", id));
 
         return log.traceExit(new CoordinationMessage(
             new CoordinationMetadata(HTTPRequest.UNKNOWN, messageID, TYPE),

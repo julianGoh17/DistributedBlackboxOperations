@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Configuration status="info">
     <Appenders>
-        <RollingFile name="FILE" append="false" filePattern="/resources/logs/client-logs">
+        <RollingFile name="FILE" append="false" filePattern="/resources/logs/client-logs/-%d{MM-dd-yyyy}.log">
             <PatternLayout pattern="%d %-5p %C{1}.%M: (%F:%L) - %m%n"/>
             <Policies>
                 <TimeBasedTriggeringPolicy />

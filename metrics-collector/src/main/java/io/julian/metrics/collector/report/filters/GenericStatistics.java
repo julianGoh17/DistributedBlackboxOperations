@@ -19,10 +19,11 @@ public class GenericStatistics {
         ReportStringBuilder builder = new ReportStringBuilder();
 
         final int totalMessages = messageStatus.getFailedMessages() + messageStatus.getSuccessfulMessages();
-        builder.appendLine(String.format("%s: %.2f", AVERAGE_MESSAGE_SIZE_KEY, messageStatus.getTotalMessageSize() / totalMessages));
+        builder.appendLine(String.format("%s: %.2f bytes", AVERAGE_MESSAGE_SIZE_KEY, messageStatus.getTotalMessageSize() / totalMessages));
         builder.appendLine(String.format("%s: %d", TOTAL_MESSAGES_KEY, totalMessages));
         builder.appendLine(String.format("%s: %d", TOTAL_FAILED_MESSAGES_KEY, messageStatus.getFailedMessages()));
         builder.appendLine(String.format("%s: %d", TOTAL_SUCCEEDED_MESSAGES_KEY, messageStatus.getSuccessfulMessages()));
+        builder.appendLine("");
 
         return log.traceExit(builder.toString());
     }

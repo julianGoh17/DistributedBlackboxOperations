@@ -13,10 +13,11 @@ public class GenericStatisticsTest {
         MessageStatus status = new MessageStatus();
         status.addTrackedMessage(new TrackedMessage(200, MESSAGE_ID, 40.431f));
 
-        String expectedEntry = String.format("%s: 40.43\n", GenericStatistics.AVERAGE_MESSAGE_SIZE_KEY) +
+        String expectedEntry = String.format("%s: 40.43 bytes\n", GenericStatistics.AVERAGE_MESSAGE_SIZE_KEY) +
             String.format("%s: 1\n", GenericStatistics.TOTAL_MESSAGES_KEY) +
             String.format("%s: 0\n", GenericStatistics.TOTAL_FAILED_MESSAGES_KEY) +
-            String.format("%s: 1\n", GenericStatistics.TOTAL_SUCCEEDED_MESSAGES_KEY);
+            String.format("%s: 1\n", GenericStatistics.TOTAL_SUCCEEDED_MESSAGES_KEY) +
+            "\n";
 
         GenericStatistics statistics = new GenericStatistics();
         Assert.assertEquals(expectedEntry, statistics.toReportEntry(status));

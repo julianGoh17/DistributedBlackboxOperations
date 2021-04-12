@@ -75,13 +75,13 @@ public class IntegrationTest extends AbstractServerBase {
                 async.complete();
             }));
         async.awaitSuccess();
-        collector.testHasExpectedStatusSize(8);
+        collector.testHasExpectedStatusSize(9);
         collector.tearDownMetricsCollector(context);
         tearDownServer(context, server1);
         tearDownServer(context, server2);
     }
 
-    @Test(timeout = 300000)
+    @Test
     public void TestFollowerWriteRequestForwardsToLeader(final TestContext context) {
         TestServerComponents server1 = setUpZookeeperApiServer(context, DEFAULT_SEVER_CONFIG);
         TestServerComponents server2 = setUpZookeeperApiServer(context, SECOND_SERVER_CONFIG);
@@ -103,7 +103,7 @@ public class IntegrationTest extends AbstractServerBase {
                 async.complete();
             })));
         async.awaitSuccess();
-        collector.testHasExpectedStatusSize(8);
+        collector.testHasExpectedStatusSize(9);
         collector.tearDownMetricsCollector(context);
         tearDownServer(context, server1);
         tearDownServer(context, server2);
@@ -155,9 +155,9 @@ public class IntegrationTest extends AbstractServerBase {
                 labels.stream().filter(label -> label.equals(LeadershipElectionHandler.LEADER_LABEL)).count());
             Assert.assertEquals(1,
                 labels.stream().filter(label -> label.equals(LeadershipElectionHandler.FOLLOWER_LABEL)).count());
-            async.complete();
             assertNoDeadLetters(context, server1);
             assertNoDeadLetters(context, server2);
+            async.complete();
         });
         async.awaitSuccess();
         collector.testHasExpectedStatusSize(6);
