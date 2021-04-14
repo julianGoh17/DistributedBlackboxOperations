@@ -1,5 +1,6 @@
 package io.julian.gossip.models;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,7 +17,8 @@ public class UpdateResponse {
     private String messageId;
     private Boolean doesContainId;
 
-    public UpdateResponse(final String messageId, final Boolean doesContainId) {
+    public UpdateResponse(@JsonProperty(MESSAGE_ID_KEY) final String messageId,
+                          @JsonProperty(DOES_CONTAIN_ID_KEY) final Boolean doesContainId) {
         this.messageId = messageId;
         this.doesContainId = doesContainId;
     }

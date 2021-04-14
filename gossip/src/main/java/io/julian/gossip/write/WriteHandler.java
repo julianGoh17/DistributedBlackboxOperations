@@ -25,27 +25,33 @@ public class WriteHandler extends AbstractHandler {
     private final State state;
     private final RegistryManager registry;
     private final GossipConfiguration configuration;
+    private final ServerConfiguration serverConfiguration;
 
     public final static String UPDATE_REQUEST_TYPE = "updateRequest";
     // TODO: Add retry verticle
-    public WriteHandler(final ServerClient client, final State state, final RegistryManager registry, final GossipConfiguration configuration) {
+    public WriteHandler(final ServerClient client, final State state, final RegistryManager registry, final GossipConfiguration configuration, final ServerConfiguration serverConfiguration) {
         super(client);
         this.state = state;
         this.registry = registry;
         this.configuration = configuration;
+        this.serverConfiguration = serverConfiguration;
     }
 
     public Future<Void> sendMessage(final UpdateResponse response) {
         log.traceEntry(() -> response);
-        if (!response.getDoesContainId() || (response.getDoesContainId() && !shouldGoInactive())) {
-            if (state.getMessages().hasUUID(response.getMessageId())) {
-                log.info(String.format("Propagating '%s' to another server", response.getMessageId()));
-                return log.traceExit(sendMessage(response.getMessageId(), state.getMessages().getMessage(response.getMessageId())));
-            }
-            log.info(String.format("Server doesn't contain '%s', will skip propagation of message", response.getMessageId()));
-            return log.traceExit(Future.succeededFuture());
+        if (!response.getDoesContainId() || !shouldBecomeInactive()) {
+            return log.traceExit(sendMessageIfInServer(response));
         }
         log.info(String.format("Server has chosen to go inactive for '%s'", response.getMessageId()));
+        return log.traceExit(Future.succeededFuture());
+    }
+
+    public Future<Void> sendMessageIfInServer(final UpdateResponse response) {
+        if (state.getMessages().hasUUID(response.getMessageId())) {
+            log.info(String.format("Propagating '%s' to another server", response.getMessageId()));
+            return log.traceExit(sendMessage(response.getMessageId(), state.getMessages().getMessage(response.getMessageId())));
+        }
+        log.info(String.format("Server doesn't contain '%s', will skip propagation of message", response.getMessageId()));
         return log.traceExit(Future.succeededFuture());
     }
 
@@ -86,7 +92,7 @@ public class WriteHandler extends AbstractHandler {
         return log.traceExit(new CoordinationMessage(
             new CoordinationMetadata(HTTPRequest.POST, messageId, UPDATE_REQUEST_TYPE),
             message,
-            null));
+            serverConfiguration.toJson()));
     }
 
     public ServerConfiguration getNextServer() {
@@ -95,7 +101,7 @@ public class WriteHandler extends AbstractHandler {
         return log.traceExit(registry.getOtherServers().get(random.nextInt(registry.getOtherServers().size())));
     }
 
-    public boolean shouldGoInactive() {
+    public boolean shouldBecomeInactive() {
         log.traceEntry();
         Random random = new Random();
         return log.traceExit(random.nextFloat() < configuration.getInactiveProbability());

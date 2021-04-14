@@ -1,5 +1,6 @@
 package io.julian.server.models.control;
 
+import io.vertx.core.json.JsonObject;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -7,6 +8,10 @@ public class ServerConfigurationTest {
     private final static String HOST = "host";
     private final static int PORT = 9999;
     private final static String LABEL = "label";
+    private final static JsonObject JSON = new JsonObject()
+        .put("host", HOST)
+        .put("port", PORT)
+        .put("label", LABEL);
 
     @Test
     public void TestOtherServerConfigurationGetterAndSetter() {
@@ -30,6 +35,24 @@ public class ServerConfigurationTest {
         Assert.assertEquals(newHost, config.getHost());
         Assert.assertEquals(newPort, config.getPort());
         Assert.assertEquals(newLabel, config.getLabel());
+    }
+
+    @Test
+    public void TestMapJsonMethods() {
+        ServerConfiguration config = new ServerConfiguration(HOST, PORT, LABEL);
+        Assert.assertEquals(JSON.encodePrettily(), config.toJson().encodePrettily());
+
+        config = JSON.mapTo(ServerConfiguration.class);
+        Assert.assertEquals(HOST, config.getHost());
+        Assert.assertEquals(PORT, config.getPort());
+        Assert.assertEquals(LABEL, config.getLabel());
+
+        JsonObject noLabel = JSON.copy();
+        noLabel.remove(ServerConfiguration.LABEL_KEY);
+        config = noLabel.mapTo(ServerConfiguration.class);
+        Assert.assertEquals(HOST, config.getHost());
+        Assert.assertEquals(PORT, config.getPort());
+        Assert.assertNull(config.getLabel());
     }
 
     @Test

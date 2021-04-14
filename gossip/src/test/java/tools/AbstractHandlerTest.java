@@ -1,8 +1,10 @@
 package tools;
 
+import io.julian.gossip.components.State;
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Configuration;
+import io.julian.server.components.MessageStore;
 import io.julian.server.models.control.ServerConfiguration;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
@@ -61,5 +63,13 @@ public abstract class AbstractHandlerTest {
         TestMetricsCollector metricsCollector = new TestMetricsCollector();
         metricsCollector.setUpMetricsCollector(METRICS_COLLECTOR_CONFIG, context, vertx);
         return metricsCollector;
+    }
+
+    protected State createState() {
+        return createState(new MessageStore());
+    }
+
+    protected State createState(final MessageStore store) {
+        return new State(store);
     }
 }

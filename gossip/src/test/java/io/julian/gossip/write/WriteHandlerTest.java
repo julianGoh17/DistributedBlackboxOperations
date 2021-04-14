@@ -26,10 +26,10 @@ public class WriteHandlerTest extends AbstractHandlerTest {
         GossipConfiguration configuration = new GossipConfiguration();
         configuration.setInactiveProbability(1);
         WriteHandler handler = createWriteHandler(configuration);
-        Assert.assertTrue(handler.shouldGoInactive());
+        Assert.assertTrue(handler.shouldBecomeInactive());
 
         configuration.setInactiveProbability(0);
-        Assert.assertFalse(handler.shouldGoInactive());
+        Assert.assertFalse(handler.shouldBecomeInactive());
     }
 
     @Test
@@ -40,6 +40,7 @@ public class WriteHandlerTest extends AbstractHandlerTest {
         Assert.assertEquals(WriteHandler.UPDATE_REQUEST_TYPE, message.getMetadata().getType());
         Assert.assertEquals(MESSAGE_ID, message.getMetadata().getMessageID());
         Assert.assertEquals(JSON.encodePrettily(), message.getMessage().encodePrettily());
+        Assert.assertEquals(DEFAULT_SEVER_CONFIG.toJson().encodePrettily(), message.getDefinition().encodePrettily());
     }
 
     @Test
@@ -138,7 +139,7 @@ public class WriteHandlerTest extends AbstractHandlerTest {
         WriteHandler handler = createWriteHandler(state, configuration);
 
         Async async = context.async();
-        handler.sendMessage(new UpdateResponse(MESSAGE_ID, false))
+        handler.sendMessage(new UpdateResponse(MESSAGE_ID, true))
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(0);
                 async.complete();
@@ -147,14 +148,6 @@ public class WriteHandlerTest extends AbstractHandlerTest {
 
         collector.tearDownMetricsCollector(context);
         tearDownServer(context, components);
-    }
-
-    private State createState() {
-        return createState(new MessageStore());
-    }
-
-    private State createState(final MessageStore store) {
-        return new State(store);
     }
 
     private WriteHandler createWriteHandler() {
@@ -170,6 +163,6 @@ public class WriteHandlerTest extends AbstractHandlerTest {
     }
 
     private WriteHandler createWriteHandler(final State state, final GossipConfiguration configuration) {
-        return new WriteHandler(createServerClient(), state, createTestRegistryManager(), configuration);
+        return new WriteHandler(createServerClient(), state, createTestRegistryManager(), configuration, DEFAULT_SEVER_CONFIG);
     }
 }
