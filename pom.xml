@@ -27,10 +27,11 @@
 
     <modules>
         <module>server</module>
+        <module>zookeeper</module>
         <module>client</module>
         <module>test</module>
-        <module>zookeeper</module>
         <module>metrics-collector</module>
+        <module>gossip</module>
     </modules>
 
     <dependencyManagement>
