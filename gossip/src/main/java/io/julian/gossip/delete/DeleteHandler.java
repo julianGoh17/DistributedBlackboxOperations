@@ -19,7 +19,7 @@ public class DeleteHandler extends AbstractHandler {
     private final static Logger log = LogManager.getLogger(DeleteHandler.class);
     private final ServerConfiguration serverConfiguration;
 
-    public final static String TYPE = "deleteRequest";
+    public final static String DELETE_UPDATE_TYPE = "deleteRequest";
 
     public DeleteHandler(final ServerClient client, final State state, final RegistryManager registry, final GossipConfiguration configuration, final ServerConfiguration serverConfiguration) {
         super(client, state, registry, configuration);
@@ -36,34 +36,39 @@ public class DeleteHandler extends AbstractHandler {
         return log.traceExit(Future.succeededFuture());
     }
 
+    public Future<Void> forwardDelete(final String messageId) {
+        log.traceEntry(() -> messageId);
+        state.deleteMessageIfInDatabase(messageId);
+        if (!state.isInactiveDeleteId(messageId)) {
+            log.info(String.format("Propagating delete '%s' to another server", messageId));
+            return log.traceExit(sendMessage(getCoordinationMessage(messageId)));
+        }
+        log.info(String.format("'%s' is an inactive key, will skip propagation of delete message", messageId));
+        return log.traceExit(Future.succeededFuture());
+    }
+
     public Future<Void> dealWithClientMessage(final ClientMessage message) {
         log.traceEntry(() -> message);
         state.deleteMessageIfInDatabase(message.getMessageId());
         return log.traceExit(sendMessage(getCoordinationMessage(message.getMessageId())));
     }
 
-    public Future<Void> forwardDelete(final String messageId) {
-        log.traceEntry(() -> messageId);
-        state.deleteMessageIfInDatabase(messageId);
-        return log.traceExit(sendMessage(getCoordinationMessage(messageId)));
-    }
-
     private Future<Void> sendMessage(final CoordinationMessage message) {
         log.traceEntry(() -> message);
         final ServerConfiguration toServer = getNextServer();
-        log.info(String.format("Attempting to forward '%s' of '%s' to '%s'", TYPE, message.getMetadata(), toServer));
+        log.info(String.format("Attempting to forward '%s' of '%s' to '%s'", DELETE_UPDATE_TYPE, message.getMetadata(), toServer));
 
         return log.traceExit(sendResponseToServer(
             toServer,
             message,
-            String.format("Successfully forwarded '%s' of '%s' to '%s'", TYPE, message.getMetadata(), toServer),
-            String.format("Failed to forward '%s' of '%s' to '%s'", TYPE, message.getMetadata(), toServer)));
+            String.format("Successfully forwarded '%s' of '%s' to '%s'", DELETE_UPDATE_TYPE, message.getMetadata(), toServer),
+            String.format("Failed to forward '%s' of '%s' to '%s'", DELETE_UPDATE_TYPE, message.getMetadata(), toServer)));
     }
 
     public CoordinationMessage getCoordinationMessage(final String messageId) {
         log.traceEntry();
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.DELETE, messageId, TYPE),
+            new CoordinationMetadata(HTTPRequest.DELETE, messageId, DELETE_UPDATE_TYPE),
             null,
             serverConfiguration.toJson()));
     }

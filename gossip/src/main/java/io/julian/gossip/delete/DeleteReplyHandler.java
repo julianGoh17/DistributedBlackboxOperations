@@ -17,7 +17,7 @@ import org.apache.logging.log4j.Logger;
 public class DeleteReplyHandler extends AbstractHandler {
     private final static Logger log = LogManager.getLogger(DeleteReplyHandler.class);
 
-    public final static String TYPE = "deleteReply";
+    public final static String DELETE_REPLY_TYPE = "deleteReply";
 
     public DeleteReplyHandler(final ServerClient client, final State state, final RegistryManager registry, final GossipConfiguration configuration) {
         super(client, state, registry, configuration);
@@ -44,7 +44,7 @@ public class DeleteReplyHandler extends AbstractHandler {
     public CoordinationMessage getCoordinationMessage(final String messageId, final boolean hasProcessedId) {
         log.traceEntry(() -> messageId, () -> hasProcessedId);
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.DELETE, String.format("%s-delete-reply", messageId), TYPE),
+            new CoordinationMetadata(HTTPRequest.DELETE, String.format("%s-delete-reply", messageId), DELETE_REPLY_TYPE),
             null,
             new UpdateResponse(messageId, hasProcessedId).toJson()
         ));

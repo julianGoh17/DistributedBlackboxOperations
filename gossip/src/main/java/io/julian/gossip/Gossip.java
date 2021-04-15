@@ -67,4 +67,9 @@ public class Gossip extends DistributedAlgorithm {
         log.traceEntry();
         return log.traceExit(this.configuration);
     }
+
+    public State getState() {
+        log.traceEntry();
+        return log.traceExit(state);
+    }
 }

@@ -30,7 +30,7 @@ public class WriteHandler extends AbstractHandler {
     public Future<Void> sendPostIfNotInactive(final UpdateResponse response) {
         log.traceEntry(() -> response);
         if (!response.getHasProcessedId() || !shouldBecomeInactive()) {
-            return log.traceExit(sendMessageIfInServer(response.getMessageId()));
+            return log.traceExit(forwardPost(response.getMessageId()));
         }
         state.addInactivePostId(response.getMessageId());
         log.info(String.format("Server has chosen to go inactive for post '%s'", response.getMessageId()));
@@ -39,23 +39,18 @@ public class WriteHandler extends AbstractHandler {
 
     public Future<Void> forwardPost(final String messageId) {
         log.traceEntry(() -> messageId);
-        return log.traceExit(sendMessageIfInServer(messageId));
+        if (state.getMessages().hasUUID(messageId) && !state.isInactivePostId(messageId)) {
+            log.info(String.format("Propagating post '%s' to another server", messageId));
+            return log.traceExit(sendMessage(messageId, state.getMessages().getMessage(messageId)));
+        }
+        log.info(String.format("'%s' is an inactive key, will skip propagation of post message", messageId));
+        return log.traceExit(Future.succeededFuture());
     }
 
     public Future<Void> dealWithClientMessage(final ClientMessage message) {
         log.traceEntry(() -> message);
         state.addMessageIfNotInDatabase(message.getMessageId(), message.getMessage());
         return log.traceExit(sendMessage(message.getMessageId(), message.getMessage()));
-    }
-
-    private Future<Void> sendMessageIfInServer(final String messageId) {
-        log.traceEntry(() -> messageId);
-        if (state.getMessages().hasUUID(messageId) && !state.isInactivePostId(messageId)) {
-            log.info(String.format("Propagating '%s' to another server", messageId));
-            return log.traceExit(sendMessage(messageId, state.getMessages().getMessage(messageId)));
-        }
-        log.info(String.format("'%s' is an inactive key, will skip propagation of message", messageId));
-        return log.traceExit(Future.succeededFuture());
     }
 
     public Future<Void> sendMessage(final String messageId, final JsonObject message) {

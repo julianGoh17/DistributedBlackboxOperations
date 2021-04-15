@@ -26,7 +26,7 @@ public class DeleteReplyHandlerTest extends AbstractHandlerTest {
         CoordinationMessage message = handler.getCoordinationMessage(DELETE_ID, HAS_PROCESSED);
 
         Assert.assertEquals(HTTPRequest.DELETE, message.getMetadata().getRequest());
-        Assert.assertEquals(DeleteReplyHandler.TYPE, message.getMetadata().getType());
+        Assert.assertEquals(DeleteReplyHandler.DELETE_REPLY_TYPE, message.getMetadata().getType());
         Assert.assertEquals(DELETE_ID + "-delete-reply", message.getMetadata().getMessageID());
         Assert.assertEquals(new UpdateResponse(DELETE_ID, HAS_PROCESSED).toJson().encodePrettily(), message.getDefinition().encodePrettily());
     }

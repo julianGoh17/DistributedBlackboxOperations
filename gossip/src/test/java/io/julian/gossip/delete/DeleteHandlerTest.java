@@ -27,7 +27,7 @@ public class DeleteHandlerTest extends AbstractHandlerTest {
         CoordinationMessage message = deleteHandler.getCoordinationMessage(DELETE_ID);
         Assert.assertEquals(HTTPRequest.DELETE, message.getMetadata().getRequest());
         Assert.assertEquals(DELETE_ID, message.getMetadata().getMessageID());
-        Assert.assertEquals(DeleteHandler.TYPE, message.getMetadata().getType());
+        Assert.assertEquals(DeleteHandler.DELETE_UPDATE_TYPE, message.getMetadata().getType());
         Assert.assertEquals(DEFAULT_SEVER_CONFIG.toJson().encodePrettily(), message.getDefinition().encodePrettily());
         Assert.assertNull(message.getMessage());
     }
@@ -77,6 +77,34 @@ public class DeleteHandlerTest extends AbstractHandlerTest {
                 collector.testHasExpectedStatusSize(0);
                 async.complete();
             })));
+
+        async.awaitSuccess();
+        tearDownServer(context, server);
+        collector.tearDownMetricsCollector(context);
+    }
+
+    @Test
+    public void TestForwardDeleteDoesNotDoAnythingIfInactive(final TestContext context) {
+        TestMetricsCollector collector = setUpMetricsCollector(context);
+        TestServerComponents server = setUpBasicApiServer(context);
+
+        ConcurrentLinkedQueue<CoordinationMessage> deadLetter = new ConcurrentLinkedQueue<>();
+        MessageStore messageStore = new MessageStore();
+        State state = createState(messageStore, deadLetter);
+        state.addInactiveDeleteId(DELETE_ID);
+        GossipConfiguration configuration = new GossipConfiguration();
+        configuration.setInactiveProbability(1f);
+        DeleteHandler deleteHandler = getDeleteHandler(state, configuration);
+
+        Async async = context.async();
+        deleteHandler.forwardDelete(DELETE_ID)
+            .onComplete(context.asyncAssertSuccess(v -> {
+                Assert.assertEquals(0, messageStore.getNumberOfMessages());
+                Assert.assertEquals(0, deadLetter.size());
+                Assert.assertEquals(1, state.getInactiveDeleteIds().size());
+                collector.testHasExpectedStatusSize(0);
+                async.complete();
+            }));
 
         async.awaitSuccess();
         tearDownServer(context, server);
