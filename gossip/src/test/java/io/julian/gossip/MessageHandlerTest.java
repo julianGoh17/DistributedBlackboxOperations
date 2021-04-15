@@ -19,8 +19,6 @@ import tools.AbstractHandlerTest;
 import tools.TestMetricsCollector;
 import tools.TestServerComponents;
 
-import java.util.concurrent.ConcurrentLinkedQueue;
-
 public class MessageHandlerTest extends AbstractHandlerTest {
     private final static String MESSAGE_ID = "id";
     @Test
@@ -70,11 +68,27 @@ public class MessageHandlerTest extends AbstractHandlerTest {
         collector.tearDownMetricsCollector(context);
     }
 
-    private MessageHandler createTestMessageHandler() {
-        return createTestMessageHandler(createState());
+    @Test
+    public void TestMessageHandlerDealsWithClientMessage(final TestContext context) {
+        TestMetricsCollector collector = setUpMetricsCollector(context);
+        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        MessageStore messages = new MessageStore();
+        MessageHandler handler = createTestMessageHandler(createState(messages));
+        ClientMessage message = new ClientMessage(HTTPRequest.POST, new JsonObject(), MESSAGE_ID);
+
+        Async async = context.async();
+        handler.handleClientMessage(message)
+            .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
+                collector.testHasExpectedStatusSize(1);
+                Assert.assertEquals(1, messages.getNumberOfMessages());
+                async.complete();
+            })));
+        async.awaitSuccess();
+        tearDownServer(context, server);
+        collector.tearDownMetricsCollector(context);
     }
 
     private MessageHandler createTestMessageHandler(final State state) {
-        return new MessageHandler(createServerClient(), state, createTestRegistryManager(), new GossipConfiguration(), DEFAULT_SEVER_CONFIG, new ConcurrentLinkedQueue<>());
+        return new MessageHandler(createServerClient(), state, createTestRegistryManager(), new GossipConfiguration(), DEFAULT_SEVER_CONFIG);
     }
 }
