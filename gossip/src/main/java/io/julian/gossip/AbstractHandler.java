@@ -7,6 +7,8 @@ import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -50,6 +52,25 @@ public abstract class AbstractHandler {
                 log.error(cause.getMessage());
             });
         log.traceExit();
+    }
+
+    protected Future<Void> sendResponseToServer(final ServerConfiguration toServer, final CoordinationMessage sentMessage, final String successLog, final String failLog) {
+        log.traceEntry(() -> toServer, () -> sentMessage, () -> successLog, () -> failLog);
+        Promise<Void> res = Promise.promise();
+        client.sendCoordinateMessageToServer(toServer, sentMessage)
+            .onSuccess(v -> {
+                log.info(successLog);
+                dealWithSucceededMessage(sentMessage);
+                res.complete();
+            })
+            .onFailure(cause -> {
+                log.info(failLog);
+                log.error(cause);
+                dealWithFailedMessage(sentMessage);
+                res.fail(cause);
+            });
+
+        return log.traceExit(res.future());
     }
 
     protected ServerConfiguration getNextServer() {

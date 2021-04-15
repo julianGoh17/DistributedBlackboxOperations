@@ -2,6 +2,7 @@ package io.julian.gossip.delete;
 
 import io.julian.gossip.components.GossipConfiguration;
 import io.julian.gossip.components.State;
+import io.julian.gossip.models.UpdateResponse;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
@@ -46,6 +47,60 @@ public class DeleteHandlerTest extends AbstractHandlerTest {
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(1000, v1 -> {
                 Assert.assertEquals(0, messageStore.getNumberOfMessages());
                 Assert.assertEquals(0, deadLetter.size());
+                collector.testHasExpectedStatusSize(1);
+                async.complete();
+            })));
+
+        async.awaitSuccess();
+        tearDownServer(context, server);
+        collector.tearDownMetricsCollector(context);
+    }
+
+    @Test
+    public void TestSendDeleteIfNotInactiveGoesInactive(final TestContext context) {
+        TestMetricsCollector collector = setUpMetricsCollector(context);
+        TestServerComponents server = setUpBasicApiServer(context);
+
+        ConcurrentLinkedQueue<CoordinationMessage> deadLetter = new ConcurrentLinkedQueue<>();
+        MessageStore messageStore = new MessageStore();
+        State state = createState(messageStore, deadLetter);
+        GossipConfiguration configuration = new GossipConfiguration();
+        configuration.setInactiveProbability(1f);
+        DeleteHandler deleteHandler = getDeleteHandler(state, configuration);
+
+        Async async = context.async();
+        deleteHandler.sendDeleteIfNotInactive(new UpdateResponse(DELETE_ID, true))
+            .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(1000, v1 -> {
+                Assert.assertEquals(0, messageStore.getNumberOfMessages());
+                Assert.assertEquals(0, deadLetter.size());
+                Assert.assertEquals(1, state.getInactiveDeleteIds().size());
+                collector.testHasExpectedStatusSize(0);
+                async.complete();
+            })));
+
+        async.awaitSuccess();
+        tearDownServer(context, server);
+        collector.tearDownMetricsCollector(context);
+    }
+
+    @Test
+    public void TestSendDeleteIfNotInactiveDoesNotGoInactive(final TestContext context) {
+        TestMetricsCollector collector = setUpMetricsCollector(context);
+        TestServerComponents server = setUpBasicApiServer(context);
+
+        ConcurrentLinkedQueue<CoordinationMessage> deadLetter = new ConcurrentLinkedQueue<>();
+        MessageStore messageStore = new MessageStore();
+        State state = createState(messageStore, deadLetter);
+        GossipConfiguration configuration = new GossipConfiguration();
+        configuration.setInactiveProbability(0f);
+        DeleteHandler deleteHandler = getDeleteHandler(state, configuration);
+
+        Async async = context.async();
+        deleteHandler.sendDeleteIfNotInactive(new UpdateResponse(DELETE_ID, true))
+            .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(1000, v1 -> {
+                Assert.assertEquals(0, messageStore.getNumberOfMessages());
+                Assert.assertEquals(0, deadLetter.size());
+                Assert.assertEquals(0, state.getInactiveDeleteIds().size());
                 collector.testHasExpectedStatusSize(1);
                 async.complete();
             })));
@@ -124,5 +179,9 @@ public class DeleteHandlerTest extends AbstractHandlerTest {
 
     private DeleteHandler getDeleteHandler(final State state) {
         return new DeleteHandler(createServerClient(), state, createTestRegistryManager(), new GossipConfiguration(), DEFAULT_SEVER_CONFIG);
+    }
+
+    private DeleteHandler getDeleteHandler(final State state, final GossipConfiguration configuration) {
+        return new DeleteHandler(createServerClient(), state, createTestRegistryManager(), configuration, DEFAULT_SEVER_CONFIG);
     }
 }

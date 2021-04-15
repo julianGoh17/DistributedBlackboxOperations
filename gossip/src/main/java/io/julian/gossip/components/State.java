@@ -17,13 +17,15 @@ public class State {
     private final static Logger log = LogManager.getLogger(State.class);
     private final MessageStore messages;
     private final ConcurrentLinkedQueue<CoordinationMessage> deadLetters;
-    private final ConcurrentHashSet<String> inactiveIds;
+    private final ConcurrentHashSet<String> inactivePostIds;
+    private final ConcurrentHashSet<String> inactiveDeleteIds;
     private final ConcurrentHashSet<String> deletedIds;
 
     public State(final MessageStore messages, final ConcurrentLinkedQueue<CoordinationMessage> deadLetters) {
         this.messages = messages;
         this.deadLetters = deadLetters;
-        this.inactiveIds = new ConcurrentHashSet<>();
+        this.inactivePostIds = new ConcurrentHashSet<>();
+        this.inactiveDeleteIds = new ConcurrentHashSet<>();
         this.deletedIds = new ConcurrentHashSet<>();
     }
 
@@ -102,19 +104,36 @@ public class State {
         return log.traceExit(deletedIds);
     }
 
-    public void addInactiveId(final String id) {
+    public void addInactivePostId(final String id) {
         log.traceEntry(() -> id);
-        inactiveIds.add(id);
+        inactivePostIds.add(id);
         log.traceExit();
     }
 
-    public boolean isInactiveId(final String id) {
+    public boolean isInactivePostId(final String id) {
         log.traceEntry(() -> id);
-        return log.traceExit(inactiveIds.contains(id));
+        return log.traceExit(inactivePostIds.contains(id));
     }
 
-    public ConcurrentHashSet<String> getInactiveIds() {
+    public ConcurrentHashSet<String> getInactivePostIds() {
         log.traceEntry();
-        return log.traceExit(inactiveIds);
+        return log.traceExit(inactivePostIds);
     }
+
+    public void addInactiveDeleteId(final String id) {
+        log.traceEntry(() -> id);
+        inactiveDeleteIds.add(id);
+        log.traceExit();
+    }
+
+    public boolean isInactiveDeleteId(final String id) {
+        log.traceEntry(() -> id);
+        return log.traceExit(inactiveDeleteIds.contains(id));
+    }
+
+    public ConcurrentHashSet<String> getInactiveDeleteIds() {
+        log.traceEntry();
+        return log.traceExit(inactiveDeleteIds);
+    }
+
 }

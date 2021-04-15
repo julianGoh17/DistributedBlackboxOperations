@@ -3,6 +3,7 @@ package io.julian.gossip.delete;
 import io.julian.gossip.AbstractHandler;
 import io.julian.gossip.components.GossipConfiguration;
 import io.julian.gossip.components.State;
+import io.julian.gossip.models.UpdateResponse;
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.models.HTTPRequest;
@@ -11,7 +12,6 @@ import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -24,6 +24,16 @@ public class DeleteHandler extends AbstractHandler {
     public DeleteHandler(final ServerClient client, final State state, final RegistryManager registry, final GossipConfiguration configuration, final ServerConfiguration serverConfiguration) {
         super(client, state, registry, configuration);
         this.serverConfiguration = serverConfiguration;
+    }
+
+    public Future<Void> sendDeleteIfNotInactive(final UpdateResponse response) {
+        log.traceEntry(() -> response);
+        if (!response.getHasProcessedId() || !shouldBecomeInactive()) {
+            return log.traceExit(forwardDelete(response.getMessageId()));
+        }
+        state.addInactiveDeleteId(response.getMessageId());
+        log.info(String.format("Server has chosen to go inactive for delete '%s'", response.getMessageId()));
+        return log.traceExit(Future.succeededFuture());
     }
 
     public Future<Void> dealWithClientMessage(final ClientMessage message) {
@@ -40,24 +50,14 @@ public class DeleteHandler extends AbstractHandler {
 
     private Future<Void> sendMessage(final CoordinationMessage message) {
         log.traceEntry(() -> message);
-        Promise<Void> delete = Promise.promise();
         final ServerConfiguration toServer = getNextServer();
         log.info(String.format("Attempting to forward '%s' of '%s' to '%s'", TYPE, message.getMetadata(), toServer));
 
-        client.sendCoordinateMessageToServer(toServer, message)
-            .onSuccess(v -> {
-                log.info(String.format("Successfully forwarded '%s' of '%s' to '%s'", TYPE, message.getMetadata(), toServer));
-                dealWithSucceededMessage(message);
-                delete.complete();
-            })
-            .onFailure(cause -> {
-                log.info(String.format("Failed to forward '%s' of '%s' to '%s'", TYPE, message.getMetadata(), toServer));
-                log.error(cause);
-                dealWithFailedMessage(message);
-                delete.fail(cause);
-            });
-
-        return log.traceExit(delete.future());
+        return log.traceExit(sendResponseToServer(
+            toServer,
+            message,
+            String.format("Successfully forwarded '%s' of '%s' to '%s'", TYPE, message.getMetadata(), toServer),
+            String.format("Failed to forward '%s' of '%s' to '%s'", TYPE, message.getMetadata(), toServer)));
     }
 
     public CoordinationMessage getCoordinationMessage(final String messageId) {

@@ -34,7 +34,7 @@ public class MessageHandler {
                     .compose(v -> writeHandler.forwardPost(messageID)));
             case WriteReplyHandler.WRITE_REPLY_TYPE:
                 UpdateResponse response = message.getDefinition().mapTo(UpdateResponse.class);
-                return log.traceExit(writeHandler.sendMessageIfNotInactive(response));
+                return log.traceExit(writeHandler.sendPostIfNotInactive(response));
         }
         return log.traceExit(Future.succeededFuture());
     }

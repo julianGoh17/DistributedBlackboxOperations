@@ -12,7 +12,6 @@ import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,13 +27,13 @@ public class WriteHandler extends AbstractHandler {
         this.serverConfiguration = serverConfiguration;
     }
 
-    public Future<Void> sendMessageIfNotInactive(final UpdateResponse response) {
+    public Future<Void> sendPostIfNotInactive(final UpdateResponse response) {
         log.traceEntry(() -> response);
-        if (!response.getDoesContainId() || !shouldBecomeInactive()) {
+        if (!response.getHasProcessedId() || !shouldBecomeInactive()) {
             return log.traceExit(sendMessageIfInServer(response.getMessageId()));
         }
-        state.addInactiveId(response.getMessageId());
-        log.info(String.format("Server has chosen to go inactive for '%s'", response.getMessageId()));
+        state.addInactivePostId(response.getMessageId());
+        log.info(String.format("Server has chosen to go inactive for post '%s'", response.getMessageId()));
         return log.traceExit(Future.succeededFuture());
     }
 
@@ -51,7 +50,7 @@ public class WriteHandler extends AbstractHandler {
 
     private Future<Void> sendMessageIfInServer(final String messageId) {
         log.traceEntry(() -> messageId);
-        if (state.getMessages().hasUUID(messageId) && !state.isInactiveId(messageId)) {
+        if (state.getMessages().hasUUID(messageId) && !state.isInactivePostId(messageId)) {
             log.info(String.format("Propagating '%s' to another server", messageId));
             return log.traceExit(sendMessage(messageId, state.getMessages().getMessage(messageId)));
         }
@@ -61,24 +60,15 @@ public class WriteHandler extends AbstractHandler {
 
     public Future<Void> sendMessage(final String messageId, final JsonObject message) {
         log.traceEntry(() -> messageId, () -> message);
-        Promise<Void> post = Promise.promise();
         ServerConfiguration toServer = getNextServer();
         log.info(String.format("Attempting to send '%s' to '%s'", messageId, toServer));
         CoordinationMessage sentMessage = getCoordinationMessage(message, messageId);
-        client.sendCoordinateMessageToServer(toServer, sentMessage)
-            .onSuccess(v -> {
-                log.info(String.format("Successfully sent '%s' to '%s'", messageId, toServer));
-                dealWithSucceededMessage(sentMessage);
-                post.complete();
-            })
-            .onFailure(cause -> {
-                log.info(String.format("Failed to send '%s' to '%s'", messageId, toServer));
-                log.error(cause.getMessage());
-                dealWithFailedMessage(sentMessage);
-                post.fail(cause);
-            });
 
-        return log.traceExit(post.future());
+        return log.traceExit(sendResponseToServer(
+            toServer,
+            sentMessage,
+            String.format("Successfully sent '%s' to '%s'", messageId, toServer),
+            String.format("Failed to send '%s' to '%s'", messageId, toServer)));
     }
 
     public CoordinationMessage getCoordinationMessage(final JsonObject message, final String messageId) {

@@ -83,29 +83,49 @@ public class StateTest {
     }
 
     @Test
-    public void TestAddInactiveId() {
+    public void TestAddInactivePostId() {
         State state = new State(new MessageStore(),  new ConcurrentLinkedQueue<>());
-        Assert.assertEquals(0, state.getInactiveIds().size());
+        Assert.assertEquals(0, state.getInactivePostIds().size());
 
-        state.addInactiveId(MESSAGE_ID);
-        Assert.assertEquals(1, state.getInactiveIds().size());
-        state.addInactiveId(MESSAGE_ID);
-        Assert.assertEquals(1, state.getInactiveIds().size());
+        state.addInactivePostId(MESSAGE_ID);
+        Assert.assertEquals(1, state.getInactivePostIds().size());
+        state.addInactivePostId(MESSAGE_ID);
+        Assert.assertEquals(1, state.getInactivePostIds().size());
     }
 
     @Test
-    public void TestIsInactiveId() {
+    public void TestIsInactivePostId() {
         State state = new State(new MessageStore(),  new ConcurrentLinkedQueue<>());
 
-        Assert.assertFalse(state.isInactiveId(MESSAGE_ID));
-        state.addInactiveId(MESSAGE_ID);
-        Assert.assertTrue(state.isInactiveId(MESSAGE_ID));
+        Assert.assertFalse(state.isInactivePostId(MESSAGE_ID));
+        state.addInactivePostId(MESSAGE_ID);
+        Assert.assertTrue(state.isInactivePostId(MESSAGE_ID));
+    }
+
+    @Test
+    public void TestAddInactiveDeleteId() {
+        State state = new State(new MessageStore(),  new ConcurrentLinkedQueue<>());
+        Assert.assertEquals(0, state.getInactiveDeleteIds().size());
+
+        state.addInactiveDeleteId(MESSAGE_ID);
+        Assert.assertEquals(1, state.getInactiveDeleteIds().size());
+        state.addInactiveDeleteId(MESSAGE_ID);
+        Assert.assertEquals(1, state.getInactiveDeleteIds().size());
+    }
+
+    @Test
+    public void TestIsInactiveDeleteId() {
+        State state = new State(new MessageStore(),  new ConcurrentLinkedQueue<>());
+
+        Assert.assertFalse(state.isInactiveDeleteId(MESSAGE_ID));
+        state.addInactiveDeleteId(MESSAGE_ID);
+        Assert.assertTrue(state.isInactiveDeleteId(MESSAGE_ID));
     }
 
     @Test
     public void TestAddDeletedId() {
         State state = new State(new MessageStore(),  new ConcurrentLinkedQueue<>());
-        Assert.assertEquals(0, state.getInactiveIds().size());
+        Assert.assertEquals(0, state.getInactivePostIds().size());
 
         state.addDeletedId(MESSAGE_ID);
         Assert.assertEquals(1, state.getDeletedIds().size());
