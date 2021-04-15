@@ -1,4 +1,4 @@
-package io.julian.zookeeper;
+package tools;
 
 import io.vertx.core.Future;
 import io.vertx.core.Promise;

@@ -1,5 +1,8 @@
 package io.julian.server.models.control;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import io.vertx.core.json.JsonObject;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.logging.log4j.LogManager;
@@ -15,7 +18,14 @@ public class ServerConfiguration {
     private int port;
     private String label;
 
-    public ServerConfiguration(final String host, final int port, final String label) {
+    public final static String HOST_KEY = "host";
+    public final static String PORT_KEY = "port";
+    public final static String LABEL_KEY = "label";
+
+    @JsonCreator
+    public ServerConfiguration(@JsonProperty(HOST_KEY) final String host,
+                               @JsonProperty(PORT_KEY) final int port,
+                               @JsonProperty(LABEL_KEY) final String label) {
         this.host = host;
         this.port = port;
         this.label = label;
@@ -55,5 +65,12 @@ public class ServerConfiguration {
         log.traceEntry(() -> otherServer);
         return log.traceExit(otherServer.getHost().equals(host) &&
             otherServer.getPort() == port);
+    }
+
+    public JsonObject toJson() {
+        log.traceEntry();
+        return log.traceExit(new JsonObject().put(HOST_KEY, host)
+            .put(PORT_KEY, port)
+            .put(LABEL_KEY, label));
     }
 }
