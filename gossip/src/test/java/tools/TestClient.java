@@ -30,4 +30,18 @@ public class TestClient {
             });
         return response.future();
     }
+
+    public Future<HttpResponse<Buffer>> DELETE_MESSAGE(final String host, final int port, final String messageId) {
+        Promise<HttpResponse<Buffer>> response = Promise.promise();
+        client
+            .delete(port, host, String.format("%s/?messageId=%s", CLIENT_URI, messageId))
+            .send(res -> {
+                if (res.succeeded()) {
+                    response.complete(res.result());
+                } else {
+                    response.fail(res.cause());
+                }
+            });
+        return response.future();
+    }
 }

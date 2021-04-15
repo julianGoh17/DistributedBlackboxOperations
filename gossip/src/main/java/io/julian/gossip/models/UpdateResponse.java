@@ -12,21 +12,21 @@ import org.apache.logging.log4j.Logger;
 public class UpdateResponse {
     private final static Logger log = LogManager.getLogger(UpdateResponse.class);
     public final static String MESSAGE_ID_KEY = "messageId";
-    public final static String DOES_CONTAIN_ID_KEY = "doesContainId";
+    public final static String HAS_PROCESSED_ID_KEY = "hasProcessedId";
 
     private String messageId;
-    private Boolean doesContainId;
+    private Boolean hasProcessedId;
 
     public UpdateResponse(@JsonProperty(MESSAGE_ID_KEY) final String messageId,
-                          @JsonProperty(DOES_CONTAIN_ID_KEY) final Boolean doesContainId) {
+                          @JsonProperty(HAS_PROCESSED_ID_KEY) final Boolean hasProcessedId) {
         this.messageId = messageId;
-        this.doesContainId = doesContainId;
+        this.hasProcessedId = hasProcessedId;
     }
 
     public JsonObject toJson() {
         log.traceEntry();
         return log.traceExit(new JsonObject()
             .put(MESSAGE_ID_KEY, messageId)
-            .put(DOES_CONTAIN_ID_KEY, doesContainId));
+            .put(HAS_PROCESSED_ID_KEY, hasProcessedId));
     }
 }

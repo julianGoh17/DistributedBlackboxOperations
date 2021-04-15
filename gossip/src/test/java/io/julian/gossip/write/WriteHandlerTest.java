@@ -47,7 +47,7 @@ public class WriteHandlerTest extends AbstractHandlerTest {
 
     @Test
     public void TestSuccessfullySendsClientMessageToServer(final TestContext context) {
-        TestServerComponents components = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents components = setUpBasicApiServer(context);
         TestMetricsCollector collector = setUpMetricsCollector(context);
         MessageStore messages = new MessageStore();
         ConcurrentLinkedQueue<CoordinationMessage> deadLetters = new ConcurrentLinkedQueue<>();
@@ -55,7 +55,7 @@ public class WriteHandlerTest extends AbstractHandlerTest {
         WriteHandler handler = createWriteHandler(state);
 
         Async async = context.async();
-        handler.sendMessage(MESSAGE)
+        handler.dealWithClientMessage(MESSAGE)
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(1);
                 Assert.assertEquals(1, messages.getNumberOfMessages());
@@ -77,7 +77,7 @@ public class WriteHandlerTest extends AbstractHandlerTest {
         WriteHandler handler = createWriteHandler(state);
 
         Async async = context.async();
-        handler.sendMessage(MESSAGE)
+        handler.dealWithClientMessage(MESSAGE)
             .onComplete(context.asyncAssertFailure(cause -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(1);
                 Assert.assertEquals(1, messages.getNumberOfMessages());
@@ -92,7 +92,7 @@ public class WriteHandlerTest extends AbstractHandlerTest {
 
     @Test
     public void TestSuccessfullyPropagatesMessagesToServer(final TestContext context) {
-        TestServerComponents components = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents components = setUpBasicApiServer(context);
         TestMetricsCollector collector = setUpMetricsCollector(context);
         MessageStore messages = new MessageStore();
         messages.putMessage(MESSAGE_ID, JSON);
@@ -102,11 +102,11 @@ public class WriteHandlerTest extends AbstractHandlerTest {
         WriteHandler handler = createWriteHandler(state, configuration);
 
         Async async = context.async();
-        handler.sendMessageIfNotInactive(new UpdateResponse(MESSAGE_ID, true))
+        handler.sendPostIfNotInactive(new UpdateResponse(MESSAGE_ID, true))
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(1);
                 Assert.assertEquals(1, messages.getNumberOfMessages());
-                Assert.assertEquals(0, state.getInactiveKeys().size());
+                Assert.assertEquals(0, state.getInactivePostIds().size());
                 async.complete();
             })));
         async.awaitSuccess();
@@ -117,7 +117,7 @@ public class WriteHandlerTest extends AbstractHandlerTest {
 
     @Test
     public void TestDoesNotPropagatesMessageIfInactiveToServer(final TestContext context) {
-        TestServerComponents components = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents components = setUpBasicApiServer(context);
         TestMetricsCollector collector = setUpMetricsCollector(context);
         GossipConfiguration configuration = new GossipConfiguration();
         configuration.setInactiveProbability(1);
@@ -125,10 +125,10 @@ public class WriteHandlerTest extends AbstractHandlerTest {
         WriteHandler handler = createWriteHandler(state, configuration);
 
         Async async = context.async();
-        handler.sendMessageIfNotInactive(new UpdateResponse(MESSAGE_ID, true))
+        handler.sendPostIfNotInactive(new UpdateResponse(MESSAGE_ID, true))
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(0);
-                Assert.assertEquals(1, state.getInactiveKeys().size());
+                Assert.assertEquals(1, state.getInactivePostIds().size());
                 async.complete();
             })));
         async.awaitSuccess();
@@ -139,7 +139,7 @@ public class WriteHandlerTest extends AbstractHandlerTest {
 
     @Test
     public void TestDoesNotPropagatesMessageIfDoesNotContainIDToServer(final TestContext context) {
-        TestServerComponents components = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents components = setUpBasicApiServer(context);
         TestMetricsCollector collector = setUpMetricsCollector(context);
         GossipConfiguration configuration = new GossipConfiguration();
         configuration.setInactiveProbability(0);
@@ -147,10 +147,10 @@ public class WriteHandlerTest extends AbstractHandlerTest {
         WriteHandler handler = createWriteHandler(state, configuration);
 
         Async async = context.async();
-        handler.sendMessageIfNotInactive(new UpdateResponse(MESSAGE_ID, true))
+        handler.sendPostIfNotInactive(new UpdateResponse(MESSAGE_ID, true))
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(0);
-                Assert.assertEquals(0, state.getInactiveKeys().size());
+                Assert.assertEquals(0, state.getInactivePostIds().size());
                 async.complete();
             })));
         async.awaitSuccess();

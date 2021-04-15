@@ -2,6 +2,8 @@ package io.julian.gossip;
 
 import io.julian.gossip.components.GossipConfiguration;
 import io.julian.gossip.components.State;
+import io.julian.gossip.delete.DeleteHandler;
+import io.julian.gossip.delete.DeleteReplyHandler;
 import io.julian.gossip.models.UpdateResponse;
 import io.julian.gossip.write.WriteHandler;
 import io.julian.gossip.write.WriteReplyHandler;
@@ -21,10 +23,11 @@ import tools.TestServerComponents;
 
 public class MessageHandlerTest extends AbstractHandlerTest {
     private final static String MESSAGE_ID = "id";
+
     @Test
-    public void TestMessageHandlerRepliesAndSendsMessage(final TestContext context) {
+    public void TestMessageHandlerRepliesAndSendsMessagePost(final TestContext context) {
         TestMetricsCollector collector = setUpMetricsCollector(context);
-        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context);
         MessageStore messages = new MessageStore();
         MessageHandler handler = createTestMessageHandler(createState(messages));
         ClientMessage message = new ClientMessage(HTTPRequest.POST, new JsonObject(), MESSAGE_ID);
@@ -46,9 +49,9 @@ public class MessageHandlerTest extends AbstractHandlerTest {
     }
 
     @Test
-    public void TestMessageHandlerReplies(final TestContext context) {
+    public void TestMessageHandlerRepliesPost(final TestContext context) {
         TestMetricsCollector collector = setUpMetricsCollector(context);
-        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context);
         MessageStore messages = new MessageStore();
         messages.putMessage(MESSAGE_ID, new JsonObject());
         MessageHandler handler = createTestMessageHandler(createState(messages));
@@ -69,9 +72,9 @@ public class MessageHandlerTest extends AbstractHandlerTest {
     }
 
     @Test
-    public void TestMessageHandlerDealsWithClientMessage(final TestContext context) {
+    public void TestMessageHandlerDealsWithClientMessagePost(final TestContext context) {
         TestMetricsCollector collector = setUpMetricsCollector(context);
-        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context);
         MessageStore messages = new MessageStore();
         MessageHandler handler = createTestMessageHandler(createState(messages));
         ClientMessage message = new ClientMessage(HTTPRequest.POST, new JsonObject(), MESSAGE_ID);
@@ -81,6 +84,75 @@ public class MessageHandlerTest extends AbstractHandlerTest {
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(1);
                 Assert.assertEquals(1, messages.getNumberOfMessages());
+                async.complete();
+            })));
+        async.awaitSuccess();
+        tearDownServer(context, server);
+        collector.tearDownMetricsCollector(context);
+    }
+
+    @Test
+    public void TestMessageHandlerRepliesAndSendsMessageDeleete(final TestContext context) {
+        TestMetricsCollector collector = setUpMetricsCollector(context);
+        TestServerComponents server = setUpBasicApiServer(context);
+        MessageStore messages = new MessageStore();
+        messages.putMessage(MESSAGE_ID, new JsonObject());
+        MessageHandler handler = createTestMessageHandler(createState(messages));
+        ClientMessage message = new ClientMessage(HTTPRequest.DELETE, new JsonObject(), MESSAGE_ID);
+        CoordinationMessage response = new CoordinationMessage(
+            new CoordinationMetadata(HTTPRequest.POST, "id", DeleteHandler.DELETE_UPDATE_TYPE),
+            message.toJson(),
+            DEFAULT_SEVER_CONFIG.toJson());
+
+        Async async = context.async();
+        handler.handleCoordinationMessage(response)
+            .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
+                collector.testHasExpectedStatusSize(2);
+                Assert.assertEquals(0, messages.getNumberOfMessages());
+                async.complete();
+            })));
+        async.awaitSuccess();
+        tearDownServer(context, server);
+        collector.tearDownMetricsCollector(context);
+    }
+
+    @Test
+    public void TestMessageHandlerRepliesDelete(final TestContext context) {
+        TestMetricsCollector collector = setUpMetricsCollector(context);
+        TestServerComponents server = setUpBasicApiServer(context);
+        MessageStore messages = new MessageStore();
+        MessageHandler handler = createTestMessageHandler(createState(messages));
+        CoordinationMessage message = new CoordinationMessage(
+            new CoordinationMetadata(HTTPRequest.DELETE, MESSAGE_ID, DeleteReplyHandler.DELETE_REPLY_TYPE),
+            null,
+            new UpdateResponse(MESSAGE_ID, false).toJson());
+
+        Async async = context.async();
+        handler.handleCoordinationMessage(message)
+            .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(1000, v1 -> {
+                collector.testHasExpectedStatusSize(1);
+                Assert.assertEquals(0, messages.getNumberOfMessages());
+                async.complete();
+            })));
+        async.awaitSuccess();
+        tearDownServer(context, server);
+        collector.tearDownMetricsCollector(context);
+    }
+
+    @Test
+    public void TestMessageHandlerDealsWithClientMessageDelete(final TestContext context) {
+        TestMetricsCollector collector = setUpMetricsCollector(context);
+        TestServerComponents server = setUpBasicApiServer(context);
+        MessageStore messages = new MessageStore();
+        messages.putMessage(MESSAGE_ID, new JsonObject());
+        MessageHandler handler = createTestMessageHandler(createState(messages));
+        ClientMessage message = new ClientMessage(HTTPRequest.DELETE, new JsonObject(), MESSAGE_ID);
+
+        Async async = context.async();
+        handler.handleClientMessage(message)
+            .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
+                collector.testHasExpectedStatusSize(1);
+                Assert.assertEquals(0, messages.getNumberOfMessages());
                 async.complete();
             })));
         async.awaitSuccess();

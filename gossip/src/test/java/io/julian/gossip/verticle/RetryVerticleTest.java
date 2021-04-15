@@ -51,7 +51,7 @@ public class RetryVerticleTest extends AbstractHandlerTest {
 
     @Test
     public void TestRetryVerticleCoordinationMessageIsSuccessful(final TestContext context) {
-        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context);
         ConcurrentLinkedQueue<CoordinationMessage> deadLetters = new ConcurrentLinkedQueue<>();
         MessageStore messages = new MessageStore();
         messages.putMessage(MESSAGE_ID, new JsonObject());

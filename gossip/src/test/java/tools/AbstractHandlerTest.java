@@ -42,9 +42,9 @@ public abstract class AbstractHandlerTest {
         return components;
     }
 
-    protected TestServerComponents setUpBasicApiServer(final TestContext context, final ServerConfiguration configuration) {
+    protected TestServerComponents setUpBasicApiServer(final TestContext context) {
         TestServerComponents components = new TestServerComponents();
-        components.setUpBasicServer(context, vertx, configuration);
+        components.setUpBasicServer(context, vertx, AbstractHandlerTest.DEFAULT_SEVER_CONFIG);
         return components;
     }
 
