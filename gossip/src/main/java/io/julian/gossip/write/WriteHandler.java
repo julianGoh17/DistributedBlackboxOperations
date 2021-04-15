@@ -22,16 +22,13 @@ import java.util.Random;
 
 public class WriteHandler extends AbstractHandler {
     private final static Logger log = LogManager.getLogger(WriteHandler.class);
-    private final State state;
     private final RegistryManager registry;
     private final GossipConfiguration configuration;
     private final ServerConfiguration serverConfiguration;
 
     public final static String UPDATE_REQUEST_TYPE = "updateRequest";
-    // TODO: Add retry verticle
     public WriteHandler(final ServerClient client, final State state, final RegistryManager registry, final GossipConfiguration configuration, final ServerConfiguration serverConfiguration) {
-        super(client);
-        this.state = state;
+        super(client, state);
         this.registry = registry;
         this.configuration = configuration;
         this.serverConfiguration = serverConfiguration;
@@ -81,6 +78,7 @@ public class WriteHandler extends AbstractHandler {
                 log.info(String.format("Failed to send '%s' to '%s'", messageId, toServer));
                 log.error(cause.getMessage());
                 sendToMetricsCollector(400, sentMessage);
+                state.addToDeadLetters(sentMessage);
                 post.fail(cause);
             });
 

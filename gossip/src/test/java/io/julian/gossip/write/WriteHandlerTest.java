@@ -16,6 +16,8 @@ import tools.AbstractHandlerTest;
 import tools.TestMetricsCollector;
 import tools.TestServerComponents;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class WriteHandlerTest extends AbstractHandlerTest {
     private final static String MESSAGE_ID = "random-id_123";
     private final static JsonObject JSON = new JsonObject().put("random", "key");
@@ -48,7 +50,8 @@ public class WriteHandlerTest extends AbstractHandlerTest {
         TestServerComponents components = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
         TestMetricsCollector collector = setUpMetricsCollector(context);
         MessageStore messages = new MessageStore();
-        State state = createState(messages);
+        ConcurrentLinkedQueue<CoordinationMessage> deadLetters = new ConcurrentLinkedQueue<>();
+        State state = createState(messages, deadLetters);
         WriteHandler handler = createWriteHandler(state);
 
         Async async = context.async();
@@ -56,6 +59,7 @@ public class WriteHandlerTest extends AbstractHandlerTest {
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(1);
                 Assert.assertEquals(1, messages.getNumberOfMessages());
+                Assert.assertEquals(0, deadLetters.size());
                 async.complete();
             })));
         async.awaitSuccess();
@@ -68,7 +72,8 @@ public class WriteHandlerTest extends AbstractHandlerTest {
     public void TestSuccessfullyFailsToSendClientMessageToServer(final TestContext context) {
         TestMetricsCollector collector = setUpMetricsCollector(context);
         MessageStore messages = new MessageStore();
-        State state = createState(messages);
+        ConcurrentLinkedQueue<CoordinationMessage> deadLetters = new ConcurrentLinkedQueue<>();
+        State state = createState(messages, deadLetters);
         WriteHandler handler = createWriteHandler(state);
 
         Async async = context.async();
@@ -76,6 +81,7 @@ public class WriteHandlerTest extends AbstractHandlerTest {
             .onComplete(context.asyncAssertFailure(cause -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(1);
                 Assert.assertEquals(1, messages.getNumberOfMessages());
+                Assert.assertEquals(1, deadLetters.size());
                 Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
                 async.complete();
             })));

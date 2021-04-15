@@ -6,12 +6,15 @@ import io.julian.server.api.client.ServerClient;
 import io.julian.server.components.Configuration;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.control.ServerConfiguration;
+import io.julian.server.models.coordination.CoordinationMessage;
 import io.vertx.core.Vertx;
 import io.vertx.ext.unit.TestContext;
 import io.vertx.ext.unit.junit.VertxUnitRunner;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 @RunWith(VertxUnitRunner.class)
 public abstract class AbstractHandlerTest {
@@ -66,10 +69,18 @@ public abstract class AbstractHandlerTest {
     }
 
     protected State createState() {
-        return createState(new MessageStore());
+        return createState(new MessageStore(), new ConcurrentLinkedQueue<>());
     }
 
-    protected State createState(final MessageStore store) {
-        return new State(store);
+    protected State createState(final MessageStore messageStore) {
+        return createState(messageStore, new ConcurrentLinkedQueue<>());
+    }
+
+    protected State createState(final ConcurrentLinkedQueue<CoordinationMessage> deadLetters) {
+        return createState(new MessageStore(), deadLetters);
+    }
+
+    protected State createState(final MessageStore store, final ConcurrentLinkedQueue<CoordinationMessage> deadLetters) {
+        return new State(store, deadLetters);
     }
 }

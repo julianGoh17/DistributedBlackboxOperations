@@ -1,6 +1,7 @@
 package io.julian.gossip.write;
 
 import io.julian.gossip.AbstractHandler;
+import io.julian.gossip.components.State;
 import io.julian.gossip.models.UpdateResponse;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.models.HTTPRequest;
@@ -15,11 +16,10 @@ import org.apache.logging.log4j.Logger;
 
 public class WriteReplyHandler extends AbstractHandler {
     private final static Logger log = LogManager.getLogger(WriteReplyHandler.class);
-
     public final static String WRITE_REPLY_TYPE = "writeReply";
 
-    public WriteReplyHandler(final ServerClient client) {
-        super(client);
+    public WriteReplyHandler(final ServerClient client, final State state) {
+        super(client, state);
     }
 
     public Future<Void> handleReply(final ClientMessage message, final ServerConfiguration toServer) {
@@ -39,6 +39,7 @@ public class WriteReplyHandler extends AbstractHandler {
             .onFailure(cause -> {
                 log.info(String.format("Failed to reply to '%s' about '%s'", toServer.toString(), message.getMessageId()));
                 log.error(cause);
+                state.addToDeadLetters(sentMessage);
                 sendToMetricsCollector(400, sentMessage);
                 reply.fail(cause);
             });

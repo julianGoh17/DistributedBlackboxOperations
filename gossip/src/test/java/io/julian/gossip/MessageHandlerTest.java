@@ -19,6 +19,8 @@ import tools.AbstractHandlerTest;
 import tools.TestMetricsCollector;
 import tools.TestServerComponents;
 
+import java.util.concurrent.ConcurrentLinkedQueue;
+
 public class MessageHandlerTest extends AbstractHandlerTest {
     private final static String MESSAGE_ID = "id";
     @Test
@@ -69,10 +71,10 @@ public class MessageHandlerTest extends AbstractHandlerTest {
     }
 
     private MessageHandler createTestMessageHandler() {
-        return createTestMessageHandler(new State(new MessageStore()));
+        return createTestMessageHandler(createState());
     }
 
     private MessageHandler createTestMessageHandler(final State state) {
-        return new MessageHandler(createServerClient(), state, createTestRegistryManager(), new GossipConfiguration(), DEFAULT_SEVER_CONFIG);
+        return new MessageHandler(createServerClient(), state, createTestRegistryManager(), new GossipConfiguration(), DEFAULT_SEVER_CONFIG, new ConcurrentLinkedQueue<>());
     }
 }

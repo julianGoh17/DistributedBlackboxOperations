@@ -1,5 +1,6 @@
 package io.julian.gossip.write;
 
+import io.julian.gossip.components.State;
 import io.julian.gossip.models.UpdateResponse;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
@@ -12,6 +13,8 @@ import org.junit.Test;
 import tools.AbstractHandlerTest;
 import tools.TestMetricsCollector;
 import tools.TestServerComponents;
+
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class WriteReplyHandlerTest extends AbstractHandlerTest {
     private final static String MESSAGE_ID = "message";
@@ -33,10 +36,12 @@ public class WriteReplyHandlerTest extends AbstractHandlerTest {
         TestMetricsCollector collector = setUpMetricsCollector(context);
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
 
-        WriteReplyHandler replyHandler = createWriteReplyHandler();
+        ConcurrentLinkedQueue<CoordinationMessage> deadLetters = new ConcurrentLinkedQueue<>();
+        WriteReplyHandler replyHandler = createWriteReplyHandler(createState(deadLetters));
         Async async = context.async();
         replyHandler.handleReply(MESSAGE, DEFAULT_SEVER_CONFIG)
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
+                Assert.assertEquals(0, deadLetters.size());
                 collector.testHasExpectedStatusSize(1);
                 async.complete();
             })));
@@ -49,11 +54,13 @@ public class WriteReplyHandlerTest extends AbstractHandlerTest {
     public void TestHandleReplyFailsToSendNoMessageResponse(final TestContext context) {
         TestMetricsCollector collector = setUpMetricsCollector(context);
 
-        WriteReplyHandler replyHandler = createWriteReplyHandler();
+        ConcurrentLinkedQueue<CoordinationMessage> deadLetters = new ConcurrentLinkedQueue<>();
+        WriteReplyHandler replyHandler = createWriteReplyHandler(createState(deadLetters));
         Async async = context.async();
         replyHandler.handleReply(MESSAGE, DEFAULT_SEVER_CONFIG)
             .onComplete(context.asyncAssertFailure(cause -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(1);
+                Assert.assertEquals(1, deadLetters.size());
                 Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
                 async.complete();
             })));
@@ -62,6 +69,10 @@ public class WriteReplyHandlerTest extends AbstractHandlerTest {
     }
 
     private WriteReplyHandler createWriteReplyHandler() {
-        return new WriteReplyHandler(createServerClient());
+        return createWriteReplyHandler(createState());
+    }
+
+    private WriteReplyHandler createWriteReplyHandler(final State state) {
+        return new WriteReplyHandler(createServerClient(), state);
     }
 }
