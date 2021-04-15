@@ -28,13 +28,13 @@ public class MessageHandler {
         log.traceEntry(() -> message);
         switch (message.getMetadata().getType()) {
             case WriteHandler.UPDATE_REQUEST_TYPE:
-                ClientMessage clientMessage = ClientMessage.fromJson(message.getMessage());
                 ServerConfiguration toServer = message.getDefinition().mapTo(ServerConfiguration.class);
-                return log.traceExit(writeReplyHandler.handleReply(clientMessage, toServer)
-                    .compose(v -> writeHandler.sendMessage(clientMessage)));
+                String messageID = message.getMetadata().getMessageID();
+                return log.traceExit(writeReplyHandler.handleReply(messageID, message.getMessage(), toServer)
+                    .compose(v -> writeHandler.sendMessage(messageID)));
             case WriteReplyHandler.WRITE_REPLY_TYPE:
                 UpdateResponse response = message.getDefinition().mapTo(UpdateResponse.class);
-                return log.traceExit(writeHandler.sendMessage(response));
+                return log.traceExit(writeHandler.sendMessageIfNotInactive(response));
         }
         return log.traceExit(Future.succeededFuture());
     }

@@ -6,7 +6,6 @@ import io.julian.gossip.components.State;
 import io.julian.gossip.models.UpdateResponse;
 import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
-import io.julian.server.api.exceptions.SameIDException;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.control.ServerConfiguration;
@@ -34,31 +33,34 @@ public class WriteHandler extends AbstractHandler {
         this.serverConfiguration = serverConfiguration;
     }
 
-    public Future<Void> sendMessage(final UpdateResponse response) {
+    public Future<Void> sendMessageIfNotInactive(final UpdateResponse response) {
         log.traceEntry(() -> response);
         if (!response.getDoesContainId() || !shouldBecomeInactive()) {
-            return log.traceExit(sendMessageIfInServer(response));
+            return log.traceExit(sendMessageIfInServer(response.getMessageId()));
         }
+        state.addInactiveKey(response.getMessageId());
         log.info(String.format("Server has chosen to go inactive for '%s'", response.getMessageId()));
         return log.traceExit(Future.succeededFuture());
     }
 
-    public Future<Void> sendMessageIfInServer(final UpdateResponse response) {
-        if (state.getMessages().hasUUID(response.getMessageId())) {
-            log.info(String.format("Propagating '%s' to another server", response.getMessageId()));
-            return log.traceExit(sendMessage(response.getMessageId(), state.getMessages().getMessage(response.getMessageId())));
+    public Future<Void> sendMessage(final String messageId) {
+        log.traceEntry(() -> messageId);
+        return log.traceExit(sendMessageIfInServer(messageId));
+    }
+
+    public Future<Void> sendMessageIfInServer(final String messageId) {
+        log.traceEntry(() -> messageId);
+        if (state.getMessages().hasUUID(messageId) && !state.isAnInactiveKey(messageId)) {
+            log.info(String.format("Propagating '%s' to another server", messageId));
+            return log.traceExit(sendMessage(messageId, state.getMessages().getMessage(messageId)));
         }
-        log.info(String.format("Server doesn't contain '%s', will skip propagation of message", response.getMessageId()));
+        log.info(String.format("'%s' is an inactive key, will skip propagation of message", messageId));
         return log.traceExit(Future.succeededFuture());
     }
 
     public Future<Void> sendMessage(final ClientMessage message) {
         log.traceEntry(() -> message);
-        try {
-            state.getMessages().addMessageToServer(message.getMessageId(), message.getMessage());
-        } catch (final SameIDException e) {
-            log.info(String.format("Skipping adding '%s' message to server", message.getMessageId()));
-        }
+        state.addMessageIfNotInDatabase(message.getMessageId(), message.getMessage());
         return log.traceExit(sendMessage(message.getMessageId(), message.getMessage()));
     }
 

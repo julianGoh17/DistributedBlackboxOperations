@@ -2,8 +2,8 @@ package io.julian.gossip.write;
 
 import io.julian.gossip.components.State;
 import io.julian.gossip.models.UpdateResponse;
+import io.julian.server.components.MessageStore;
 import io.julian.server.models.HTTPRequest;
-import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
@@ -19,7 +19,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class WriteReplyHandlerTest extends AbstractHandlerTest {
     private final static String MESSAGE_ID = "message";
     private final static boolean HAS_MESSAGE = true;
-    private final static ClientMessage MESSAGE = new ClientMessage(HTTPRequest.POST, new JsonObject().put("random", "key"), MESSAGE_ID);
 
     @Test
     public void TestGetCoordinationMessage() {
@@ -36,12 +35,36 @@ public class WriteReplyHandlerTest extends AbstractHandlerTest {
         TestMetricsCollector collector = setUpMetricsCollector(context);
         TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
 
+        MessageStore messages = new MessageStore();
         ConcurrentLinkedQueue<CoordinationMessage> deadLetters = new ConcurrentLinkedQueue<>();
-        WriteReplyHandler replyHandler = createWriteReplyHandler(createState(deadLetters));
+        WriteReplyHandler replyHandler = createWriteReplyHandler(createState(messages, deadLetters));
         Async async = context.async();
-        replyHandler.handleReply(MESSAGE, DEFAULT_SEVER_CONFIG)
+        replyHandler.handleReply(MESSAGE_ID, new JsonObject(), DEFAULT_SEVER_CONFIG)
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
                 Assert.assertEquals(0, deadLetters.size());
+                Assert.assertEquals(1, messages.getNumberOfMessages());
+                collector.testHasExpectedStatusSize(1);
+                async.complete();
+            })));
+        async.awaitSuccess();
+        tearDownServer(context, server);
+        collector.tearDownMetricsCollector(context);
+    }
+
+    @Test
+    public void TestHandleReplySuccessfullyRepliesAndDoesNotAddIfAlreadyAdded(final TestContext context) {
+        TestMetricsCollector collector = setUpMetricsCollector(context);
+        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+
+        MessageStore messages = new MessageStore();
+        messages.putMessage(MESSAGE_ID, new JsonObject());
+        ConcurrentLinkedQueue<CoordinationMessage> deadLetters = new ConcurrentLinkedQueue<>();
+        WriteReplyHandler replyHandler = createWriteReplyHandler(createState(messages, deadLetters));
+        Async async = context.async();
+        replyHandler.handleReply(MESSAGE_ID, new JsonObject(), DEFAULT_SEVER_CONFIG)
+            .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
+                Assert.assertEquals(0, deadLetters.size());
+                Assert.assertEquals(1, messages.getNumberOfMessages());
                 collector.testHasExpectedStatusSize(1);
                 async.complete();
             })));
@@ -57,7 +80,7 @@ public class WriteReplyHandlerTest extends AbstractHandlerTest {
         ConcurrentLinkedQueue<CoordinationMessage> deadLetters = new ConcurrentLinkedQueue<>();
         WriteReplyHandler replyHandler = createWriteReplyHandler(createState(deadLetters));
         Async async = context.async();
-        replyHandler.handleReply(MESSAGE, DEFAULT_SEVER_CONFIG)
+        replyHandler.handleReply(MESSAGE_ID, new JsonObject(), DEFAULT_SEVER_CONFIG)
             .onComplete(context.asyncAssertFailure(cause -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(1);
                 Assert.assertEquals(1, deadLetters.size());

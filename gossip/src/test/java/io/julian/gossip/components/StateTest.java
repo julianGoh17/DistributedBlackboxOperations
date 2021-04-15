@@ -42,4 +42,38 @@ public class StateTest {
 
         Assert.assertEquals(1, deadLetters.size());
     }
+
+    @Test
+    public void TestAddMessageIfNotInDatabase() {
+        MessageStore messages = new MessageStore();
+        State state = new State(messages,  new ConcurrentLinkedQueue<>());
+        Assert.assertEquals(0, state.getMessages().getNumberOfMessages());
+
+        state.addMessageIfNotInDatabase(MESSAGE_ID, MESSAGE);
+        Assert.assertEquals(1, state.getMessages().getNumberOfMessages());
+        state.addMessageIfNotInDatabase(MESSAGE_ID, MESSAGE);
+        Assert.assertEquals(1, state.getMessages().getNumberOfMessages());
+    }
+
+    @Test
+    public void TestAddMessageInActiveKey() {
+        MessageStore messages = new MessageStore();
+        State state = new State(messages,  new ConcurrentLinkedQueue<>());
+        Assert.assertEquals(0, state.getInactiveKeys().size());
+
+        state.addInactiveKey(MESSAGE_ID);
+        Assert.assertEquals(1, state.getInactiveKeys().size());
+        state.addInactiveKey(MESSAGE_ID);
+        Assert.assertEquals(1, state.getInactiveKeys().size());
+    }
+
+    @Test
+    public void TestIsAnInactiveKey() {
+        MessageStore messages = new MessageStore();
+        State state = new State(messages,  new ConcurrentLinkedQueue<>());
+
+        Assert.assertFalse(state.isAnInactiveKey(MESSAGE_ID));
+        state.addInactiveKey(MESSAGE_ID);
+        Assert.assertTrue(state.isAnInactiveKey(MESSAGE_ID));
+    }
 }

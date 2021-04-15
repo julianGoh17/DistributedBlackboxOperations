@@ -20,7 +20,7 @@ public class TestServerComponents {
     public ServerConfiguration configuration;
     public AtomicReference<String> deploymentID = new AtomicReference<>();
 
-    public static final String GOSSIP_TEST_JAR_PATH = String.format("%s/../zookeeper/target/gossip-1.0-SNAPSHOT-jar-with-dependencies.jar", System.getProperty("user.dir"));
+    public static final String GOSSIP_TEST_JAR_PATH = String.format("%s/target/gossip-1.0-SNAPSHOT-jar-with-dependencies.jar", System.getProperty("user.dir"));
     public static final String GOSSIP_PACKAGE_NAME = "io.julian.gossip.Gossip";
 
     public static final String BASIC_SERVER_TEST_JAR_PATH = String.format("%s/../test/target/test-1.0-SNAPSHOT-jar-with-dependencies.jar", System.getProperty("user.dir"));
@@ -39,7 +39,6 @@ public class TestServerComponents {
         Async async = context.async();
         server.getConfiguration().setServerPort(configuration.getPort());
         server.getConfiguration().setServerHost(configuration.getHost());
-        server.getConfiguration().setDoesProcessRequest(false);
         api = vertx.createHttpServer(new HttpServerOptions()
             .setPort(configuration.getPort())
             .setHost(configuration.getHost()));

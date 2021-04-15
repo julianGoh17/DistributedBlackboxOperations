@@ -19,11 +19,13 @@ public class Gossip extends DistributedAlgorithm {
     private final State state;
     private final MessageHandler handler;
     private final RetryVerticle retryVerticle;
+    private final GossipConfiguration configuration;
 
     public Gossip(final Controller controller, final MessageStore messageStore, final Vertx vertx) {
         super(controller, messageStore, vertx);
+        this.configuration = new GossipConfiguration();
         this.state = new State(messageStore, getDeadCoordinationQueue());
-        this.handler = new MessageHandler(getClient(), this.state, getRegistryManager(), new GossipConfiguration(), getController().getServerConfiguration());
+        this.handler = new MessageHandler(getClient(), this.state, getRegistryManager(), configuration, getController().getServerConfiguration());
         this.retryVerticle = new RetryVerticle(handler, vertx, getDeadCoordinationQueue());
         deployRetryVerticle();
     }
@@ -59,5 +61,10 @@ public class Gossip extends DistributedAlgorithm {
             }
         });
         return log.traceExit(deployment.future());
+    }
+
+    public GossipConfiguration getGossipConfiguration() {
+        log.traceEntry();
+        return log.traceExit(this.configuration);
     }
 }

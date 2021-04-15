@@ -44,4 +44,8 @@ public class TestMetricsCollector {
     public void testHasExpectedStatusSize(final int expectedSize) {
         Assert.assertEquals(expectedSize, server.getTracker().getStatuses().size());
     }
+
+    public void testHasExpectedStatusSizeGreaterThan(final int expectedSize) {
+        Assert.assertTrue(server.getTracker().getStatuses().size() >= expectedSize);
+    }
 }

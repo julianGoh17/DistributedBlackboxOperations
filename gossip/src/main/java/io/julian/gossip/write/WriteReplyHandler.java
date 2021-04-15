@@ -5,12 +5,12 @@ import io.julian.gossip.components.State;
 import io.julian.gossip.models.UpdateResponse;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.models.HTTPRequest;
-import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
+import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,22 +22,26 @@ public class WriteReplyHandler extends AbstractHandler {
         super(client, state);
     }
 
-    public Future<Void> handleReply(final ClientMessage message, final ServerConfiguration toServer) {
-        log.traceEntry(() -> message, () -> toServer);
+    public Future<Void> handleReply(final String messageId, final JsonObject message, final ServerConfiguration toServer) {
+        log.traceEntry(() -> messageId, () -> message, () -> toServer);
         Promise<Void> reply = Promise.promise();
 
         boolean hasMessage = true;
-        log.info(String.format("Attempting to reply to '%s' about '%s'", toServer.toString(), message.getMessageId()));
+        if (!state.getMessages().hasUUID(messageId)) {
+            state.addMessageIfNotInDatabase(messageId, message);
+            hasMessage = false;
+        }
+        log.info(String.format("Attempting to reply to '%s' about '%s'", toServer.toString(), messageId));
 
-        CoordinationMessage sentMessage = getCoordinationMessage(message.getMessageId(), hasMessage);
+        CoordinationMessage sentMessage = getCoordinationMessage(messageId, hasMessage);
         client.sendCoordinateMessageToServer(toServer, sentMessage)
             .onSuccess(v -> {
-                log.info(String.format("Successfully replied to '%s' about '%s'", toServer.toString(), message.getMessageId()));
+                log.info(String.format("Successfully replied to '%s' about '%s'", toServer.toString(), messageId));
                 sendToMetricsCollector(200, sentMessage);
                 reply.complete();
             })
             .onFailure(cause -> {
-                log.info(String.format("Failed to reply to '%s' about '%s'", toServer.toString(), message.getMessageId()));
+                log.info(String.format("Failed to reply to '%s' about '%s'", toServer.toString(), messageId));
                 log.error(cause);
                 state.addToDeadLetters(sentMessage);
                 sendToMetricsCollector(400, sentMessage);

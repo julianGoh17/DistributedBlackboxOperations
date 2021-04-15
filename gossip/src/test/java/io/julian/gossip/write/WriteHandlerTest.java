@@ -102,10 +102,11 @@ public class WriteHandlerTest extends AbstractHandlerTest {
         WriteHandler handler = createWriteHandler(state, configuration);
 
         Async async = context.async();
-        handler.sendMessage(new UpdateResponse(MESSAGE_ID, true))
+        handler.sendMessageIfNotInactive(new UpdateResponse(MESSAGE_ID, true))
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(1);
                 Assert.assertEquals(1, messages.getNumberOfMessages());
+                Assert.assertEquals(0, state.getInactiveKeys().size());
                 async.complete();
             })));
         async.awaitSuccess();
@@ -124,9 +125,10 @@ public class WriteHandlerTest extends AbstractHandlerTest {
         WriteHandler handler = createWriteHandler(state, configuration);
 
         Async async = context.async();
-        handler.sendMessage(new UpdateResponse(MESSAGE_ID, true))
+        handler.sendMessageIfNotInactive(new UpdateResponse(MESSAGE_ID, true))
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(0);
+                Assert.assertEquals(1, state.getInactiveKeys().size());
                 async.complete();
             })));
         async.awaitSuccess();
@@ -145,9 +147,10 @@ public class WriteHandlerTest extends AbstractHandlerTest {
         WriteHandler handler = createWriteHandler(state, configuration);
 
         Async async = context.async();
-        handler.sendMessage(new UpdateResponse(MESSAGE_ID, true))
+        handler.sendMessageIfNotInactive(new UpdateResponse(MESSAGE_ID, true))
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(0);
+                Assert.assertEquals(0, state.getInactiveKeys().size());
                 async.complete();
             })));
         async.awaitSuccess();
