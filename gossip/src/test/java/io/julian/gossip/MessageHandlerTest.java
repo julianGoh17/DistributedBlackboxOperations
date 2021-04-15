@@ -24,7 +24,7 @@ public class MessageHandlerTest extends AbstractHandlerTest {
     @Test
     public void TestMessageHandlerRepliesAndSendsMessage(final TestContext context) {
         TestMetricsCollector collector = setUpMetricsCollector(context);
-        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context);
         MessageStore messages = new MessageStore();
         MessageHandler handler = createTestMessageHandler(createState(messages));
         ClientMessage message = new ClientMessage(HTTPRequest.POST, new JsonObject(), MESSAGE_ID);
@@ -48,7 +48,7 @@ public class MessageHandlerTest extends AbstractHandlerTest {
     @Test
     public void TestMessageHandlerReplies(final TestContext context) {
         TestMetricsCollector collector = setUpMetricsCollector(context);
-        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context);
         MessageStore messages = new MessageStore();
         messages.putMessage(MESSAGE_ID, new JsonObject());
         MessageHandler handler = createTestMessageHandler(createState(messages));
@@ -71,7 +71,7 @@ public class MessageHandlerTest extends AbstractHandlerTest {
     @Test
     public void TestMessageHandlerDealsWithClientMessage(final TestContext context) {
         TestMetricsCollector collector = setUpMetricsCollector(context);
-        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context);
         MessageStore messages = new MessageStore();
         MessageHandler handler = createTestMessageHandler(createState(messages));
         ClientMessage message = new ClientMessage(HTTPRequest.POST, new JsonObject(), MESSAGE_ID);

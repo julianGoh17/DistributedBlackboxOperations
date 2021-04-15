@@ -21,7 +21,7 @@ public class MessageHandler {
 
     public MessageHandler(final ServerClient client, final State state, final RegistryManager registry, final GossipConfiguration configuration, final ServerConfiguration serverConfiguration) {
         this.writeHandler = new WriteHandler(client, state, registry, configuration, serverConfiguration);
-        this.writeReplyHandler = new WriteReplyHandler(client, state);
+        this.writeReplyHandler = new WriteReplyHandler(client, state, registry, configuration);
     }
 
     public Future<Void> handleCoordinationMessage(final CoordinationMessage message) {
@@ -31,7 +31,7 @@ public class MessageHandler {
                 ServerConfiguration toServer = message.getDefinition().mapTo(ServerConfiguration.class);
                 String messageID = message.getMetadata().getMessageID();
                 return log.traceExit(writeReplyHandler.handleReply(messageID, message.getMessage(), toServer)
-                    .compose(v -> writeHandler.sendMessage(messageID)));
+                    .compose(v -> writeHandler.forwardPost(messageID)));
             case WriteReplyHandler.WRITE_REPLY_TYPE:
                 UpdateResponse response = message.getDefinition().mapTo(UpdateResponse.class);
                 return log.traceExit(writeHandler.sendMessageIfNotInactive(response));
@@ -41,6 +41,6 @@ public class MessageHandler {
 
     public Future<Void> handleClientMessage(final ClientMessage message) {
         log.traceEntry(() -> message);
-        return log.traceExit(this.writeHandler.sendMessage(message));
+        return log.traceExit(this.writeHandler.dealWithClientMessage(message));
     }
 }

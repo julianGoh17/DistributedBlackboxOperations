@@ -1,8 +1,10 @@
 package io.julian.gossip.write;
 
 import io.julian.gossip.AbstractHandler;
+import io.julian.gossip.components.GossipConfiguration;
 import io.julian.gossip.components.State;
 import io.julian.gossip.models.UpdateResponse;
+import io.julian.server.api.client.RegistryManager;
 import io.julian.server.api.client.ServerClient;
 import io.julian.server.models.HTTPRequest;
 import io.julian.server.models.control.ServerConfiguration;
@@ -18,8 +20,8 @@ public class WriteReplyHandler extends AbstractHandler {
     private final static Logger log = LogManager.getLogger(WriteReplyHandler.class);
     public final static String WRITE_REPLY_TYPE = "writeReply";
 
-    public WriteReplyHandler(final ServerClient client, final State state) {
-        super(client, state);
+    public WriteReplyHandler(final ServerClient client, final State state, final RegistryManager registry, final GossipConfiguration configuration) {
+        super(client, state, registry, configuration);
     }
 
     public Future<Void> handleReply(final String messageId, final JsonObject message, final ServerConfiguration toServer) {
@@ -37,14 +39,13 @@ public class WriteReplyHandler extends AbstractHandler {
         client.sendCoordinateMessageToServer(toServer, sentMessage)
             .onSuccess(v -> {
                 log.info(String.format("Successfully replied to '%s' about '%s'", toServer.toString(), messageId));
-                sendToMetricsCollector(200, sentMessage);
+                dealWithSucceededMessage(sentMessage);
                 reply.complete();
             })
             .onFailure(cause -> {
                 log.info(String.format("Failed to reply to '%s' about '%s'", toServer.toString(), messageId));
                 log.error(cause);
-                state.addToDeadLetters(sentMessage);
-                sendToMetricsCollector(400, sentMessage);
+                dealWithFailedMessage(sentMessage);
                 reply.fail(cause);
             });
 

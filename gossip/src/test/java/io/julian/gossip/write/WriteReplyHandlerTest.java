@@ -1,5 +1,6 @@
 package io.julian.gossip.write;
 
+import io.julian.gossip.components.GossipConfiguration;
 import io.julian.gossip.components.State;
 import io.julian.gossip.models.UpdateResponse;
 import io.julian.server.components.MessageStore;
@@ -33,7 +34,7 @@ public class WriteReplyHandlerTest extends AbstractHandlerTest {
     @Test
     public void TestHandleReplySuccessfullySendNoMessageResponse(final TestContext context) {
         TestMetricsCollector collector = setUpMetricsCollector(context);
-        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context);
 
         MessageStore messages = new MessageStore();
         ConcurrentLinkedQueue<CoordinationMessage> deadLetters = new ConcurrentLinkedQueue<>();
@@ -54,7 +55,7 @@ public class WriteReplyHandlerTest extends AbstractHandlerTest {
     @Test
     public void TestHandleReplySuccessfullyRepliesAndDoesNotAddIfAlreadyAdded(final TestContext context) {
         TestMetricsCollector collector = setUpMetricsCollector(context);
-        TestServerComponents server = setUpBasicApiServer(context, DEFAULT_SEVER_CONFIG);
+        TestServerComponents server = setUpBasicApiServer(context);
 
         MessageStore messages = new MessageStore();
         messages.putMessage(MESSAGE_ID, new JsonObject());
@@ -96,6 +97,6 @@ public class WriteReplyHandlerTest extends AbstractHandlerTest {
     }
 
     private WriteReplyHandler createWriteReplyHandler(final State state) {
-        return new WriteReplyHandler(createServerClient(), state);
+        return new WriteReplyHandler(createServerClient(), state, createTestRegistryManager(), new GossipConfiguration());
     }
 }
