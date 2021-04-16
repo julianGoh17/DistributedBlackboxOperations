@@ -6,11 +6,13 @@ import io.julian.server.api.exceptions.SameIDException;
 import io.julian.server.components.MessageStore;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.vertx.core.impl.ConcurrentHashSet;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class State {
@@ -29,7 +31,7 @@ public class State {
         this.deletedIds = new ConcurrentHashSet<>();
     }
 
-    public MessageStore getMessages() {
+    public MessageStore getMessageStore() {
         log.traceEntry();
         return log.traceExit(messages);
     }
@@ -73,19 +75,17 @@ public class State {
     /*
      * Exposed for testing
      */
-    public JsonArray getMessageArray() {
+    public List<MessageUpdate> getMessages() {
         log.traceEntry();
-        final JsonArray array = new JsonArray();
+        final List<MessageUpdate> array = new ArrayList<>();
         messages.getMessages()
-            .forEach((id, message) -> array.add(new MessageUpdate(id, message).toJson()));
+            .forEach((id, message) -> array.add(new MessageUpdate(id, message)));
         return log.traceExit(array);
     }
 
-    public JsonArray getDeletedArray() {
+    public Set<String> getDeletedArray() {
         log.traceEntry();
-        final JsonArray array = new JsonArray();
-        deletedIds.forEach(array::add);
-        return log.traceExit(array);
+        return log.traceExit(deletedIds);
     }
 
     public void addDeletedId(final String id) {

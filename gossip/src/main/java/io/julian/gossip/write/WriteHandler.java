@@ -39,9 +39,9 @@ public class WriteHandler extends AbstractHandler {
 
     public Future<Void> forwardPost(final String messageId) {
         log.traceEntry(() -> messageId);
-        if (state.getMessages().hasUUID(messageId) && !state.isInactivePostId(messageId)) {
+        if (state.getMessageStore().hasUUID(messageId) && !state.isInactivePostId(messageId)) {
             log.info(String.format("Propagating post '%s' to another server", messageId));
-            return log.traceExit(sendMessage(messageId, state.getMessages().getMessage(messageId)));
+            return log.traceExit(sendMessage(messageId, state.getMessageStore().getMessage(messageId)));
         }
         log.info(String.format("'%s' is an inactive key, will skip propagation of post message", messageId));
         return log.traceExit(Future.succeededFuture());
