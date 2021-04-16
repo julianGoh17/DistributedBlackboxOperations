@@ -70,4 +70,9 @@ public class MessageHandler {
         }
         return log.traceExit(this.writeHandler.dealWithClientMessage(message));
     }
+
+    public Future<Void> broadcastState() {
+        log.traceEntry();
+        return log.traceExit(synchronizeHandler.broadcastSynchronizeUpdate());
+    }
 }

@@ -100,7 +100,7 @@ public class MessageHandlerTest extends AbstractHandlerTest {
     }
 
     @Test
-    public void TestMessageHandlerRepliesAndSendsMessageDeleete(final TestContext context) {
+    public void TestMessageHandlerRepliesAndSendsMessageDelete(final TestContext context) {
         TestMetricsCollector collector = setUpMetricsCollector(context);
         TestServerComponents server = setUpBasicApiServer(context);
         MessageStore messages = new MessageStore();
@@ -116,7 +116,7 @@ public class MessageHandlerTest extends AbstractHandlerTest {
         handler.handleCoordinationMessage(response)
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(2);
-                Assert.assertEquals(0, messages.getNumberOfMessages());
+                Assert.assertEquals(1, messages.getNumberOfMessages());
                 async.complete();
             })));
         async.awaitSuccess();
@@ -161,6 +161,23 @@ public class MessageHandlerTest extends AbstractHandlerTest {
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
                 collector.testHasExpectedStatusSize(1);
                 Assert.assertEquals(0, messages.getNumberOfMessages());
+                async.complete();
+            })));
+        async.awaitSuccess();
+        tearDownServer(context, server);
+        collector.tearDownMetricsCollector(context);
+    }
+
+    @Test
+    public void TestMessageHandlerBroadcastSynchronize(final TestContext context) {
+        TestMetricsCollector collector = setUpMetricsCollector(context);
+        TestServerComponents server = setUpBasicApiServer(context);
+        MessageHandler handler = createTestMessageHandler(createState());
+
+        Async async = context.async();
+        handler.broadcastState()
+            .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(500, v1 -> {
+                collector.testHasExpectedStatusSize(1);
                 async.complete();
             })));
         async.awaitSuccess();
