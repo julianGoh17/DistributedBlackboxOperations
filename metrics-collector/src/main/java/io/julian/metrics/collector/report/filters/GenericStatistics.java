@@ -12,6 +12,7 @@ public class GenericStatistics {
     public final static String TOTAL_MESSAGES_KEY = "Total Messages";
     public final static String TOTAL_FAILED_MESSAGES_KEY = "Total Failed Messages";
     public final static String TOTAL_SUCCEEDED_MESSAGES_KEY = "Total Succeeded Messages";
+    public final static String TOTAL_TIME_KEY = "Total Time";
 
     public String toReportEntry(final MessageStatus messageStatus) {
         log.traceEntry(() -> messageStatus);
@@ -23,6 +24,7 @@ public class GenericStatistics {
         builder.appendLine(String.format("%s: %d", TOTAL_MESSAGES_KEY, totalMessages));
         builder.appendLine(String.format("%s: %d", TOTAL_FAILED_MESSAGES_KEY, messageStatus.getFailedMessages()));
         builder.appendLine(String.format("%s: %d", TOTAL_SUCCEEDED_MESSAGES_KEY, messageStatus.getSuccessfulMessages()));
+        builder.appendLine(String.format("%s: %s", TOTAL_TIME_KEY, messageStatus.getTimeDifference()));
         builder.appendLine("");
 
         return log.traceExit(builder.toString());

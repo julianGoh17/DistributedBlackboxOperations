@@ -43,6 +43,7 @@ public class ReportCreatorTest {
             String.format("%s: 1\n", GenericStatistics.TOTAL_MESSAGES_KEY) +
             String.format("%s: 0\n", GenericStatistics.TOTAL_FAILED_MESSAGES_KEY) +
             String.format("%s: 1\n", GenericStatistics.TOTAL_SUCCEEDED_MESSAGES_KEY) +
+            String.format("%s: 0 minutes:0 seconds\n", GenericStatistics.TOTAL_TIME_KEY) +
             "\n";
 
         Assert.assertEquals(expectedReport, creator.createReport(ReportCreator.GENERAL_STATISTIC_FILTER_NAME));
