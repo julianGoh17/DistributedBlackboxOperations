@@ -16,6 +16,7 @@ public class RetryVerticle extends AbstractVerticle {
     public static final String STOP_POSTFIX = "stop";
     public static final double BASE_TIMEOUT = 2;
     public static final double SECONDS_MODIFIER = 1000;
+    public static final long BROADCAST_INTERVAL = 120 * (long) SECONDS_MODIFIER;
 
     private static final Logger log = LogManager.getLogger(RetryVerticle.class);
     private final MessageHandler handler;
@@ -67,12 +68,26 @@ public class RetryVerticle extends AbstractVerticle {
         log.traceExit();
     }
 
+    public void broadcastState() {
+        log.traceEntry();
+        log.info("Starting broadcast loop");
+        vertx.setPeriodic(BROADCAST_INTERVAL, id -> {
+            if (isRunning.get()) {
+                broadcastState();
+            } else {
+                vertx.cancelTimer(id);
+            }
+        });
+        log.traceExit();
+    }
+
     @Override
     public void start() {
         log.traceEntry();
         log.info(String.format("Retry Verticle '%s-%d' has started", VERTICLE_ADDRESS, verticleNumber));
         vertx.eventBus().consumer(formatAddress(STOP_POSTFIX), v -> stopRetrying());
         retryCoordinationMessages();
+        broadcastState();
         log.traceExit();
     }
 

@@ -27,7 +27,7 @@ public class WriteReplyHandler extends AbstractHandler {
         log.traceEntry(() -> messageId, () -> message, () -> toServer);
 
         boolean hasMessage = true;
-        if (!state.getMessages().hasUUID(messageId)) {
+        if (!state.getMessageStore().hasUUID(messageId)) {
             state.addMessageIfNotInDatabase(messageId, message);
             hasMessage = false;
         }

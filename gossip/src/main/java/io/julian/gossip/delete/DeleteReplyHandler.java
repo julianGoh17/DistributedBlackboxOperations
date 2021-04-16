@@ -27,7 +27,7 @@ public class DeleteReplyHandler extends AbstractHandler {
         log.traceEntry(() -> messageId, () -> toServer);
 
         boolean hasProcessed = true;
-        if (state.getMessages().hasUUID(messageId)) {
+        if (state.getMessageStore().hasUUID(messageId)) {
             state.deleteMessageIfInDatabase(messageId);
             hasProcessed = false;
         }

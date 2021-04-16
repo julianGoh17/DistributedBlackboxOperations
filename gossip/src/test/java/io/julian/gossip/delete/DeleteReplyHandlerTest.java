@@ -44,7 +44,7 @@ public class DeleteReplyHandlerTest extends AbstractHandlerTest {
         handler.handleReply(DELETE_ID, DEFAULT_SEVER_CONFIG)
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(1000, v1 -> {
                 metricsCollector.testHasExpectedStatusSize(1);
-                Assert.assertEquals(0, state.getMessages().getNumberOfMessages());
+                Assert.assertEquals(0, state.getMessageStore().getNumberOfMessages());
                 Assert.assertEquals(0, deadLetter.size());
                 async.complete();
             })));
@@ -65,7 +65,7 @@ public class DeleteReplyHandlerTest extends AbstractHandlerTest {
         handler.handleReply(DELETE_ID, DEFAULT_SEVER_CONFIG)
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(1000, v1 -> {
                 metricsCollector.testHasExpectedStatusSize(1);
-                Assert.assertEquals(0, state.getMessages().getNumberOfMessages());
+                Assert.assertEquals(0, state.getMessageStore().getNumberOfMessages());
                 Assert.assertEquals(0, deadLetter.size());
                 async.complete();
             })));
@@ -86,7 +86,7 @@ public class DeleteReplyHandlerTest extends AbstractHandlerTest {
             .onComplete(context.asyncAssertFailure(cause -> vertx.setTimer(1000, v1 -> {
                 metricsCollector.testHasExpectedStatusSize(1);
                 Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
-                Assert.assertEquals(0, state.getMessages().getNumberOfMessages());
+                Assert.assertEquals(0, state.getMessageStore().getNumberOfMessages());
                 Assert.assertEquals(1, deadLetter.size());
                 async.complete();
             })));

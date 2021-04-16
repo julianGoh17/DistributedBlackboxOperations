@@ -104,7 +104,7 @@ public class RetryVerticleTest extends AbstractHandlerTest {
     }
 
     private MessageHandler createHandler(final State state) {
-        return new MessageHandler(createServerClient(), state, createTestRegistryManager(), new GossipConfiguration(), DEFAULT_SEVER_CONFIG);
+        return new MessageHandler(createServerClient(), state, createTestRegistryManager(), new GossipConfiguration(), DEFAULT_SEVER_CONFIG, vertx);
     }
 
     private void deployVerticle(final TestContext context, final RetryVerticle verticle) {
