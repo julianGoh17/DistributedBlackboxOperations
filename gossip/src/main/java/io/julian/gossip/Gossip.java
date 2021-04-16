@@ -25,7 +25,7 @@ public class Gossip extends DistributedAlgorithm {
         super(controller, messageStore, vertx);
         this.configuration = new GossipConfiguration();
         this.state = new State(messageStore, getDeadCoordinationQueue());
-        this.handler = new MessageHandler(getClient(), this.state, getRegistryManager(), configuration, getController().getServerConfiguration());
+        this.handler = new MessageHandler(getClient(), this.state, getRegistryManager(), configuration, getController().getServerConfiguration(), vertx);
         this.retryVerticle = new RetryVerticle(handler, vertx, getDeadCoordinationQueue());
         deployRetryVerticle();
     }

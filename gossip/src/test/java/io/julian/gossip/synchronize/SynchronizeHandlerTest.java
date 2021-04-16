@@ -17,8 +17,11 @@ import tools.AbstractHandlerTest;
 import tools.TestMetricsCollector;
 import tools.TestServerComponents;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SynchronizeHandlerTest extends AbstractHandlerTest {
@@ -94,7 +97,7 @@ public class SynchronizeHandlerTest extends AbstractHandlerTest {
 
         Async async = context.async();
 
-        handler.sendSynchronizeUpdateTo(handler.getCoordinateMessage(), DEFAULT_SEVER_CONFIG)
+        handler.broadcastSynchronizeUpdate()
             .onComplete(context.asyncAssertSuccess(v -> vertx.setTimer(1000, v1 -> {
                 collector.testHasExpectedStatusSize(1);
                 Assert.assertEquals(0, deadLetters.size());
@@ -119,7 +122,7 @@ public class SynchronizeHandlerTest extends AbstractHandlerTest {
 
         Async async = context.async();
 
-        handler.sendSynchronizeUpdateTo(handler.getCoordinateMessage(), DEFAULT_SEVER_CONFIG)
+        handler.broadcastSynchronizeUpdate()
             .onComplete(context.asyncAssertFailure(cause -> vertx.setTimer(1000, v1 -> {
                 Assert.assertEquals(CONNECTION_REFUSED_EXCEPTION, cause.getMessage());
                 collector.testHasExpectedStatusSize(1);
@@ -132,12 +135,35 @@ public class SynchronizeHandlerTest extends AbstractHandlerTest {
         tearDownServer(context, server);
     }
 
+    @Test
+    public void TestSynchronizeState(final TestContext context) {
+        State state = createDefaultState();
+        SynchronizeHandler handler = getSynchronizeHandler(state);
+
+        Async async = context.async();
+        List<MessageUpdate> messages = new ArrayList<>();
+        messages.add(new MessageUpdate(STORED_ID, JSON));
+        messages.add(new MessageUpdate(DELETED_ID, JSON));
+        Set<String> deletedIds = new HashSet<>();
+        deletedIds.add(DELETED_ID);
+
+        handler.synchronizeState(new SynchronizeUpdate(messages, deletedIds))
+            .onComplete(context.asyncAssertSuccess(v -> {
+                Assert.assertEquals(1, state.getMessageStore().getNumberOfMessages());
+                Assert.assertEquals(JSON, state.getMessageStore().getMessage(STORED_ID));
+                Assert.assertFalse(state.getMessageStore().hasUUID(DELETED_ID));
+                Assert.assertTrue(state.isDeletedId(DELETED_ID));
+                async.complete();
+            }));
+        async.awaitSuccess();
+    }
+
     private SynchronizeHandler getSynchronizeHandler(final State state) {
         return getSynchronizeHandler(state, createTestRegistryManager());
     }
 
     private SynchronizeHandler getSynchronizeHandler(final State state, final RegistryManager manager) {
-        return new SynchronizeHandler(createServerClient(), state, manager, new GossipConfiguration());
+        return new SynchronizeHandler(createServerClient(), state, manager, new GossipConfiguration(), vertx);
     }
 
     private State createDefaultState() {

@@ -4,7 +4,9 @@ import io.julian.gossip.components.GossipConfiguration;
 import io.julian.gossip.components.State;
 import io.julian.gossip.delete.DeleteHandler;
 import io.julian.gossip.delete.DeleteReplyHandler;
+import io.julian.gossip.models.SynchronizeUpdate;
 import io.julian.gossip.models.UpdateResponse;
+import io.julian.gossip.synchronize.SynchronizeHandler;
 import io.julian.gossip.write.WriteHandler;
 import io.julian.gossip.write.WriteReplyHandler;
 import io.julian.server.api.client.RegistryManager;
@@ -14,6 +16,7 @@ import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.control.ServerConfiguration;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.vertx.core.Future;
+import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,12 +26,14 @@ public class MessageHandler {
     private final WriteReplyHandler writeReplyHandler;
     private final DeleteHandler deleteHandler;
     private final DeleteReplyHandler deleteReplyHandler;
+    private final SynchronizeHandler synchronizeHandler;
 
-    public MessageHandler(final ServerClient client, final State state, final RegistryManager registry, final GossipConfiguration configuration, final ServerConfiguration serverConfiguration) {
+    public MessageHandler(final ServerClient client, final State state, final RegistryManager registry, final GossipConfiguration configuration, final ServerConfiguration serverConfiguration, final Vertx vertx) {
         this.writeHandler = new WriteHandler(client, state, registry, configuration, serverConfiguration);
         this.writeReplyHandler = new WriteReplyHandler(client, state, registry, configuration);
         this.deleteHandler = new DeleteHandler(client, state, registry, configuration, serverConfiguration);
         this.deleteReplyHandler = new DeleteReplyHandler(client, state, registry, configuration);
+        this.synchronizeHandler = new SynchronizeHandler(client, state, registry, configuration, vertx);
     }
 
     public Future<Void> handleCoordinationMessage(final CoordinationMessage message) {
@@ -50,6 +55,10 @@ public class MessageHandler {
             case DeleteReplyHandler.DELETE_REPLY_TYPE:
                 UpdateResponse deleteResponse = message.getDefinition().mapTo(UpdateResponse.class);
                 return log.traceExit(deleteHandler.sendDeleteIfNotInactive(deleteResponse));
+            case SynchronizeHandler
+                    .SYNCHRONIZE_TYPE:
+                SynchronizeUpdate synchronizeUpdate = SynchronizeUpdate.fromJson(message.getDefinition());
+                return log.traceExit(synchronizeHandler.synchronizeState(synchronizeUpdate));
         }
         return log.traceExit(Future.succeededFuture());
     }
