@@ -1,6 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
-
+BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+TEST_RUN_DIR="$BASEDIR/../test-run"
 ENTRY_NAME=${1}
 if [ -z "${ENTRY_NAME}" ]; then
     echo "Usage: use this script to kick off all processing scripts"
@@ -8,5 +9,6 @@ if [ -z "${ENTRY_NAME}" ]; then
     exit 0
 fi
 
-python3 average-messages.py "$ENTRY_NAME"
-python3 state-disparity.py "$ENTRY_NAME"
+"$TEST_RUN_DIR/create-report.sh"
+python3 "${BASEDIR}/average-messages.py" "$ENTRY_NAME"
+python3 "${BASEDIR}/state-disparity.py" "$ENTRY_NAME"
