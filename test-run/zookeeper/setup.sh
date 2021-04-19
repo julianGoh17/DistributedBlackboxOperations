@@ -5,14 +5,15 @@ services:"
 COUNTER=1
 CWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 BASEDIR="$CWD/../.."
+SETTINGS_FOLDER="../settings"
 REPORT_FOLDER="$BASEDIR/generated/report"
 JAR_NAME="zookeeper-1.0-SNAPSHOT-jar-with-dependencies.jar"
-SERVER_LIST_FILE="settings/server-list.txt"
+SERVER_LIST_FILE="$SETTINGS_FOLDER/server-list.txt"
 SERVER_LIST_CONTENTS=""
 METRICS_COLLECTOR_PORT="9090"
 
-GREP_FOR_CADVISOR_PORT=$(cat "$CWD/settings/server-ports.txt" | grep 8080)
-GREP_FOR_METRICS_COLLECTOR_PORT=$(cat "$CWD/settings/server-ports.txt" | grep $METRICS_COLLECTOR_PORT)
+GREP_FOR_CADVISOR_PORT=$(cat "$CWD/$SETTINGS_FOLDER/server-ports.txt" | grep 8080)
+GREP_FOR_METRICS_COLLECTOR_PORT=$(cat "$CWD/$SETTINGS_FOLDER/server-ports.txt" | grep $METRICS_COLLECTOR_PORT)
 
 if [ -n "$GREP_FOR_CADVISOR_PORT" ]; then
   echo "Server ports can't contain 8080 as cAdvisor is created on that port"
@@ -42,11 +43,11 @@ do
       - METRICS_COLLECTOR_HOST=metrics-collector
     volumes: 
       - $BASEDIR/zookeeper/target:/resources/jar 
-      - $CWD/settings:/settings"
+      - $CWD/$SETTINGS_FOLDER:/settings"
   SERVER_LIST_CONTENTS="${SERVER_LIST_CONTENTS}server$COUNTER:$PORT
 "
   COUNTER=$((COUNTER+1))
-done < "$CWD/settings/server-ports.txt"
+done < "$CWD/$SETTINGS_FOLDER/server-ports.txt"
 
 DOCKER_COMPOSE_FILE="$DOCKER_COMPOSE_FILE
   metrics-collector:
