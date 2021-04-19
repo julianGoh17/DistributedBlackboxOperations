@@ -378,6 +378,35 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
+    public void TestCoordinatorSendsLoopedPostFails(final TestContext context) throws IOException, NullPointerException  {
+        client = createTestCoordinator();
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        Async async = context.async();
+        client.sendLoopedPost(1, 1)
+            .onComplete(context.asyncAssertFailure(cause -> {
+                Assert.assertEquals(new Expected(200).generateMismatchedException(500, CONNECTION_REFUSED_EXCEPTION).getMessage(), cause.getMessage());
+                checkCollectorGenericMetrics(0, 0, 0, 0, 0, 0);
+                Assert.assertEquals(0, client.getMemory().getExpectedMapping().size());
+                async.complete();
+            }));
+        async.awaitSuccess();
+    }
+
+    @Test
+    public void TestCoordinatorSendsLoopedPostSucceeds(final TestContext context) throws IOException, NullPointerException  {
+        setUpApiServer(context);
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        Async async = context.async();
+        client.sendLoopedPost(1, 1)
+            .onComplete(context.asyncAssertSuccess(cause -> {
+                checkCollectorGenericMetrics(0, 0, 0, 0, 0, 0);
+                Assert.assertEquals(1, client.getMemory().getExpectedMapping().size());
+                async.complete();
+            }));
+        async.awaitSuccess();
+    }
+
+    @Test
     public void TestCoordinatorChecksStateSuccessfully(final TestContext context) throws IOException, NullPointerException  {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
