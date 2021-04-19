@@ -56,7 +56,9 @@ public class Coordinator {
 
     public void initialize(final String messageFilePath, final String operationsFilePath) throws NullPointerException, IOException {
         log.traceEntry(() -> messageFilePath, () -> operationsFilePath);
-        memory.readInMessageFiles(messageFilePath);
+        if (configuration.doesUseMessages()) {
+            memory.readInMessageFiles(messageFilePath);
+        }
         readInOperationsFile(operationsFilePath);
         log.traceExit();
     }
