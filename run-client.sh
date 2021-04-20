@@ -27,4 +27,5 @@ docker run -it \
     -v "$SERVERS_FOLDER":${SERVERS_PATH} \
     --env SERVER_HOSTS_FILE_PATH="$SERVERS_PATH/server-list.txt" \
     --env SERVER_PORT="${SERVER_PORT}" \
+    --env DOES_USE_MESSAGES="false" \
     "${CLIENT_IMAGE}:${IMAGE_TAG}"
