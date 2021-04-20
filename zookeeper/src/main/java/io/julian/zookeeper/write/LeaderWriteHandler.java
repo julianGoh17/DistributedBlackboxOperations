@@ -17,7 +17,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 
@@ -65,13 +64,13 @@ public class LeaderWriteHandler extends AbstractHandler {
                 } else {
                     proposalTracker.addCommittedProposalTracker(id);
                 }
-                sendToMetricsCollector(200, broadcastMessage);
+                for (int i = 0; i < manager.getOtherServers().size(); i += 1) sendToMetricsCollector(200, broadcastMessage);
                 broadcast.complete();
             })
             .onFailure(cause -> {
                 log.info(String.format("Could not broadcast state update %s to servers", id));
                 deadCoordinationMessages.add(broadcastMessage);
-                sendToMetricsCollector(400, broadcastMessage);
+                for (int i = 0; i < manager.getOtherServers().size(); i += 1) sendToMetricsCollector(400, broadcastMessage);
                 log.error(cause);
                 broadcast.fail(cause);
             });
@@ -81,10 +80,9 @@ public class LeaderWriteHandler extends AbstractHandler {
 
     public CoordinationMessage createCoordinationMessage(final MessagePhase phase, final ClientMessage message, final Zxid id) {
         log.traceEntry(() -> phase, () -> message, () -> id);
-        final String messageID = Optional.ofNullable(message).map(ClientMessage::getMessageId).orElse(String.format("new-message-%s", id));
 
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.UNKNOWN, messageID, TYPE),
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, id.toString(), TYPE),
             message != null ? message.toJson() : null,
             new ShortenedExchange(phase, id).toJson()));
     }

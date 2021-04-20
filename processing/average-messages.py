@@ -2,7 +2,6 @@ import os
 import sys
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-print("Arg 1: Name of entry")
 entry = sys.argv[1]
 if entry == "":
     print("Please pass in non-empty entry")
