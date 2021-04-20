@@ -62,6 +62,19 @@ public class CoordinatorTest extends AbstractClientTest {
         tearDownAPIServer(context);
     }
 
+    @Test
+    public void TestCoordinatorCanInitializeWithoutMessages(final TestContext context) throws Exception {
+        setUpApiServer(context);
+        client.getConfiguration().setDoesUseMessages(false);
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        Assert.assertEquals(0, client.getMemory().getOriginalMessages().size());
+        Assert.assertEquals(2, client.getOperationChains().size());
+        Assert.assertNotNull(client.getOperationChains().get(SEQUENTIAL_OPERATION_FILE_NAME));
+        Assert.assertNotNull(client.getOperationChains().get(PARALLEL_OPERATION_FILE_NAME));
+        Assert.assertNotNull(client.getClient());
+        tearDownAPIServer(context);
+    }
+
     /**
      * HTTP METHODS
      */
@@ -378,6 +391,35 @@ public class CoordinatorTest extends AbstractClientTest {
     }
 
     @Test
+    public void TestCoordinatorSendsLoopedPostFails(final TestContext context) throws IOException, NullPointerException  {
+        client = createTestCoordinator();
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        Async async = context.async();
+        client.sendLoopedPost(1, 1)
+            .onComplete(context.asyncAssertFailure(cause -> {
+                Assert.assertEquals(new Expected(200).generateMismatchedException(500, CONNECTION_REFUSED_EXCEPTION).getMessage(), cause.getMessage());
+                checkCollectorGenericMetrics(0, 0, 0, 0, 0, 0);
+                Assert.assertEquals(0, client.getMemory().getExpectedMapping().size());
+                async.complete();
+            }));
+        async.awaitSuccess();
+    }
+
+    @Test
+    public void TestCoordinatorSendsLoopedPostSucceeds(final TestContext context) throws IOException, NullPointerException  {
+        setUpApiServer(context);
+        client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
+        Async async = context.async();
+        client.sendLoopedPost(1, 1)
+            .onComplete(context.asyncAssertSuccess(cause -> {
+                checkCollectorGenericMetrics(0, 0, 0, 0, 0, 0);
+                Assert.assertEquals(1, client.getMemory().getExpectedMapping().size());
+                async.complete();
+            }));
+        async.awaitSuccess();
+    }
+
+    @Test
     public void TestCoordinatorChecksStateSuccessfully(final TestContext context) throws IOException, NullPointerException  {
         setUpApiServer(context);
         client.initialize(TEST_MESSAGE_FILES_PATH, TEST_OPERATION_FILES_PATH);
@@ -387,6 +429,8 @@ public class CoordinatorTest extends AbstractClientTest {
             .onComplete(context.asyncAssertSuccess(v -> {
                 checkCollectorGenericMetrics(0, 3, 0, 0, 0, 0);
                 Assert.assertEquals(1, client.getCollector().getOverviewComparisons().size());
+                Assert.assertEquals("localhost", client.getCollector().getOverviewComparisons().get(0).getHost());
+                Assert.assertEquals(8888, client.getCollector().getOverviewComparisons().get(0).getPort());
                 async.complete();
             }));
         async.awaitSuccess();

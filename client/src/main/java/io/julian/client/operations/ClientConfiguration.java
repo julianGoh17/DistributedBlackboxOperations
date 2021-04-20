@@ -33,6 +33,10 @@ public class ClientConfiguration {
     public static final int DEFAULT_SERVER_PORT = io.julian.server.components.Configuration.DEFAULT_SERVER_PORT;
     private final int port;
 
+    public static final String DOES_USE_MESSAGES_ENV = "DOES_USE_MESSAGES";
+    public static final boolean DEFAULT_DOES_USE_MESSAGES = true;
+    private boolean doesUseMessages;
+
     public ClientConfiguration() {
         this.messagePath = getOrDefault(MESSAGE_FILE_PATH_ENV, DEFAULT_MESSAGE_FILE_PATH);
         this.operationsFilePath = getOrDefault(OPERATIONS_FILE_PATH_ENV, DEFAULT_OPERATIONS_MESSAGE_FILE_PATH);
@@ -40,6 +44,7 @@ public class ClientConfiguration {
         this.serverHostsFilePath = getOrDefault(SERVER_HOSTS_FILE_PATH_ENV, DEFAULT_SERVER_HOSTS_FILE_PATH_ENV);
         this.host = getOrDefault(SERVER_HOST_ENV, DEFAULT_SERVER_HOST);
         this.port = getOrDefault(SERVER_PORT_ENV, DEFAULT_SERVER_PORT);
+        this.doesUseMessages = getOrDefault(DOES_USE_MESSAGES_ENV, DEFAULT_DOES_USE_MESSAGES);
     }
 
     public String getMessageFilePath() {
@@ -72,6 +77,17 @@ public class ClientConfiguration {
         return log.traceExit(port);
     }
 
+    public boolean doesUseMessages() {
+        log.traceEntry();
+        return log.traceExit(doesUseMessages);
+    }
+
+    public void setDoesUseMessages(final boolean doesUseMessages) {
+        log.traceEntry(() -> doesUseMessages);
+        this.doesUseMessages = doesUseMessages;
+        log.traceExit();
+    }
+
     public static String getOrDefault(final String key, final String defaultVal) {
         log.traceEntry(() -> key, () -> defaultVal);
         return log.traceExit(Optional.ofNullable(System.getenv(key))
@@ -85,5 +101,13 @@ public class ClientConfiguration {
         } catch (NumberFormatException e) {
             return log.traceExit(defaultVal);
         }
+    }
+
+    public static boolean getOrDefault(final String key, final boolean defaultVal) {
+        log.traceEntry(() -> key, () -> defaultVal);
+        if (System.getenv(key) == null || System.getenv(key).isEmpty()) {
+            return log.traceExit(defaultVal);
+        }
+        return log.traceExit(Boolean.parseBoolean(System.getenv(key)));
     }
 }

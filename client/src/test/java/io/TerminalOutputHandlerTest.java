@@ -70,7 +70,8 @@ public class TerminalOutputHandlerTest {
         order.verify(outputPrinter).println("2. State Check");
         order.verify(outputPrinter).println("3. Print Preconfigured Messages");
         order.verify(outputPrinter).println("4. Print Preconfigured Operation Chains");
-        order.verify(outputPrinter).println("5. Exit");
+        order.verify(outputPrinter).println("5. Looped Post");
+        order.verify(outputPrinter).println("6. Exit");
         order.verifyNoMoreInteractions();
     }
 }

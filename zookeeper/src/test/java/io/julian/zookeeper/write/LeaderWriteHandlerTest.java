@@ -96,21 +96,21 @@ public class LeaderWriteHandlerTest extends AbstractServerBase {
 
         CoordinationMessage message = handler.createCoordinationMessage(MessagePhase.ACK, MESSAGE, ID);
         Assert.assertEquals(LeaderWriteHandler.TYPE, message.getMetadata().getType());
-        Assert.assertEquals(MESSAGE_ID, message.getMetadata().getMessageID());
+        Assert.assertEquals(ID.toString(), message.getMetadata().getMessageID());
         Assert.assertEquals(MessagePhase.ACK.toValue(), message.getDefinition().getString(ShortenedExchange.PHASE_KEY));
         Assert.assertEquals(ZxidTest.EPOCH, message.getDefinition().getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.EPOCH_KEY).intValue());
         Assert.assertEquals(ZxidTest.COUNTER, message.getDefinition().getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.COUNTER_KEY).intValue());
 
         message = handler.createCoordinationMessage(MessagePhase.COMMIT, MESSAGE, ID);
         Assert.assertEquals(LeaderWriteHandler.TYPE, message.getMetadata().getType());
-        Assert.assertEquals(MESSAGE_ID, message.getMetadata().getMessageID());
+        Assert.assertEquals(ID.toString(), message.getMetadata().getMessageID());
         Assert.assertEquals(MessagePhase.COMMIT.toValue(), message.getDefinition().getString(ShortenedExchange.PHASE_KEY));
         Assert.assertEquals(ZxidTest.EPOCH, message.getDefinition().getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.EPOCH_KEY).intValue());
         Assert.assertEquals(ZxidTest.COUNTER, message.getDefinition().getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.COUNTER_KEY).intValue());
 
         message = handler.createCoordinationMessage(MessagePhase.ACK, NULL_ID_MESSAGE, ID);
         Assert.assertEquals(LeaderWriteHandler.TYPE, message.getMetadata().getType());
-        Assert.assertEquals(String.format("new-message-%s", ID), message.getMetadata().getMessageID());
+        Assert.assertEquals(ID.toString(), message.getMetadata().getMessageID());
         Assert.assertEquals(MessagePhase.ACK.toValue(), message.getDefinition().getString(ShortenedExchange.PHASE_KEY));
         Assert.assertEquals(ZxidTest.EPOCH, message.getDefinition().getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.EPOCH_KEY).intValue());
         Assert.assertEquals(ZxidTest.COUNTER, message.getDefinition().getJsonObject(ShortenedExchange.TRANSACTIONAL_ID_KEY).getInteger(Zxid.COUNTER_KEY).intValue());

@@ -34,7 +34,7 @@ public class MessageStatusTest {
         Assert.assertEquals(0, status.getFailedMessages());
         Assert.assertEquals(0, status.getTotalMessageSize(), 0);
         Assert.assertEquals(0, status.getSuccessfulMessages());
-        Assert.assertEquals("0 minutes:0 seconds", status.getTimeDifference());
+        Assert.assertEquals("0 minutes:0.0 seconds", status.getTimeDifference());
     }
 
     @Test
@@ -47,7 +47,9 @@ public class MessageStatusTest {
             Assert.assertEquals(0, status.getFailedMessages());
             Assert.assertEquals(SUCCESSFUL_MESSAGE.getMessageSize(), status.getTotalMessageSize(), 0);
             Assert.assertEquals(1, status.getSuccessfulMessages());
-            Assert.assertEquals("0 minutes:1 seconds", status.getTimeDifference());
+            Assert.assertTrue(status.getTimeDifference().contains("0 minutes:1."));
+            Assert.assertTrue(status.getTimeDifference().contains(" seconds"));
+
             async.complete();
         });
         async.awaitSuccess();
@@ -62,7 +64,8 @@ public class MessageStatusTest {
             Assert.assertEquals(1, status.getFailedMessages());
             Assert.assertEquals(FAILED_MESSAGE.getMessageSize(), status.getTotalMessageSize(), 0);
             Assert.assertEquals(0, status.getSuccessfulMessages());
-            Assert.assertEquals("0 minutes:1 seconds", status.getTimeDifference());
+            Assert.assertTrue(status.getTimeDifference().contains("0 minutes:1."));
+            Assert.assertTrue(status.getTimeDifference().contains(" seconds"));
             async.complete();
         });
 

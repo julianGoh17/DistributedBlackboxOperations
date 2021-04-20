@@ -1,5 +1,5 @@
 #!/bin/bash
-SERVER_LIST_FILE="settings/server-list.txt"
+SERVER_LIST_FILE="../settings/server-list.txt"
 CWD="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 SERVER=$(head -n 1 $CWD/$SERVER_LIST_FILE)
 PORT="${SERVER##*:}"

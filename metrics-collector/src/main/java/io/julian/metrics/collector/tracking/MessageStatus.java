@@ -33,7 +33,8 @@ public class MessageStatus {
         log.traceEntry();
         long minute = ChronoUnit.MINUTES.between(startingTime, lastMessageTime.get());
         long seconds = ChronoUnit.SECONDS.between(startingTime, lastMessageTime.get()) % 60;
-        return log.traceExit(String.format("%d minutes:%d seconds", minute, seconds));
+        long milliseconds = ChronoUnit.MILLIS.between(startingTime, lastMessageTime.get()) % 1000;
+        return log.traceExit(String.format("%d minutes:%d.%d seconds", minute, seconds, milliseconds));
     }
 
     public float getTotalMessageSize() {

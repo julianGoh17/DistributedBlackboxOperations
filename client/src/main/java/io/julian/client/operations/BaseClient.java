@@ -96,7 +96,7 @@ public class BaseClient {
         log.traceEntry();
         Promise<ServerOverview> getResponse = Promise.promise();
         log.info(String.format("%s attempting to retrieve overview of server '%s:%d'", BaseClient.class.getSimpleName(), clientConfiguration.getServerHost(), clientConfiguration.getServerPort()));
-        client.get(clientConfiguration.getServerPort(), clientConfiguration.getServerHost(), OVERVIEW_URI)
+        client.get(configuration.getPort(), "localhost", OVERVIEW_URI)
             .send(res -> {
                 if (res.succeeded()) {
                     log.info(String.format("%s successfully retrieved overview of server '%s:%d'", BaseClient.class.getSimpleName(), clientConfiguration.getServerHost(), clientConfiguration.getServerPort()));

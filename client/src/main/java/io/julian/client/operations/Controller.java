@@ -10,9 +10,11 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.julian.client.io.TerminalOutputHandler.EXIT_NUMBER;
+import static io.julian.client.io.TerminalOutputHandler.LOOPED_POST_NUMBER;
 import static io.julian.client.io.TerminalOutputHandler.OPERATION_CHAIN_NUMBER;
 import static io.julian.client.io.TerminalOutputHandler.PRINT_MESSAGES_NUMBER;
 import static io.julian.client.io.TerminalOutputHandler.PRINT_OPERATION_CHAIN_NUMBER;
@@ -30,8 +32,13 @@ public class Controller {
     public final static String NOT_GIVEN_VALID_OPERATION_ERROR_MESSAGE =  "Please give a valid operation number";
     public final static String SUPPLY_VALID_OPERATION_CHAIN_MESSAGE = "Please input the name of the operation chain to run";
     public final static String INVALID_OPERATION_CHAIN_MESSAGE = "Invalid operation chain name '%s', please supply a valid one";
+    public final static String INVALID_LOOPED_MESSAGE_CONFIGURATION_MESSAGE = "Invalid looped message configuration";
     public final static String VALID_OPERATION_CHAIN_MESSAGE = "Running operation chain '%s'";
     public final static String STATE_CHECK = "Checking state of servers";
+    public final static String LOOPED_POST = "Looped POST to server";
+    public final static String RUNNING_LOOPED_POST = "Looped POST for '%d' seconds sending '%d' messages per second";
+    public final static String SUPPLY_NUMBER_OF_SECONDS_MESSAGE = "Please input the seconds to run for";
+    public final static String SUPPLY_MESSAGES_PER_SECOND_MESSAGE = "Please input the messages per second to send";
     public final static String TERMINATING_CLIENT_MESSAGE = "Terminating client and generating report";
 
     public Controller(final TerminalInputHandler input, final TerminalOutputHandler output, final Coordinator coordinator, final Vertx vertx) {
@@ -106,6 +113,14 @@ public class Controller {
                             userWantsToContinue.complete(true);
                             vertx.cancelTimer(id);
                             break;
+                        case LOOPED_POST_NUMBER:
+                            log.info("Running Looped Post");
+                            runLoopedPost()
+                                .onComplete(v -> {
+                                    userWantsToContinue.complete(true);
+                                    vertx.cancelTimer(id);
+                                });
+                            break;
                         case EXIT_NUMBER:
                             log.info("Exiting client");
                             runExit();
@@ -162,6 +177,49 @@ public class Controller {
             }
         });
         return log.traceExit(operationRes.future());
+    }
+
+    private Future<Void> runLoopedPost() {
+        log.traceEntry();
+        output.printHeader(LOOPED_POST);
+        AtomicBoolean inFlight = new AtomicBoolean();
+        AtomicInteger seconds = new AtomicInteger(-1);
+        AtomicInteger messagesPerSecond = new AtomicInteger(-1);
+        Promise<Void> loopedPost = Promise.promise();
+        log.info("Running Infinite Post");
+        vertx.setPeriodic(1000, id -> {
+            if (seconds.get() <= 0 && messagesPerSecond.get() <= 0 && !inFlight.get()) {
+                inFlight.set(true);
+                output.printHeader(SUPPLY_NUMBER_OF_SECONDS_MESSAGE);
+                input.getNumberFromInput()
+                    .compose(secs -> {
+                        seconds.set(secs);
+                        output.printHeader(SUPPLY_MESSAGES_PER_SECOND_MESSAGE);
+                        return input.getNumberFromInput();
+                    })
+                    .onSuccess(messages -> {
+                        messagesPerSecond.set(messages);
+                        if (messagesPerSecond.get() <= 0 || seconds.get() <= 0) {
+                            seconds.set(0);
+                            messagesPerSecond.set(0);
+                            output.println(INVALID_LOOPED_MESSAGE_CONFIGURATION_MESSAGE);
+                        }
+                        inFlight.set(false);
+                    })
+                    .onFailure(cause -> {
+                        output.println(INVALID_LOOPED_MESSAGE_CONFIGURATION_MESSAGE);
+                        inFlight.set(false);
+                    });
+            } else if (seconds.get() > 0 && messagesPerSecond.get() > 0) {
+                vertx.cancelTimer(id);
+                output.println(String.format(RUNNING_LOOPED_POST, seconds.get(), messagesPerSecond.get()));
+                client.sendLoopedPost(seconds.get(), messagesPerSecond.get())
+                    .onSuccess(v -> loopedPost.complete())
+                    .onFailure(loopedPost::fail);
+            }
+        });
+        return log.traceExit(loopedPost.future());
+
     }
 
     private Future<Void> runStateCheck() {

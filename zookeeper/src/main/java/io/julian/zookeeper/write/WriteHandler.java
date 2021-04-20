@@ -32,7 +32,7 @@ public class WriteHandler {
         this.controller = controller;
         this.state = state;
         this.leaderWrite = new LeaderWriteHandler(getMajority(registry), client, manager, deadCoordinationMessages);
-        this.followerWrite = new FollowerWriteHandler(registry, client, deadCoordinationMessages);
+        this.followerWrite = new FollowerWriteHandler(registry, client, state, deadCoordinationMessages);
     }
 
     public Future<Void> handleCoordinationMessage(final CoordinationMessage message) {

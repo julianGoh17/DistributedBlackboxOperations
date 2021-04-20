@@ -17,7 +17,7 @@ public class GenericStatisticsTest {
             String.format("%s: 1\n", GenericStatistics.TOTAL_MESSAGES_KEY) +
             String.format("%s: 0\n", GenericStatistics.TOTAL_FAILED_MESSAGES_KEY) +
             String.format("%s: 1\n", GenericStatistics.TOTAL_SUCCEEDED_MESSAGES_KEY) +
-            String.format("%s: 0 minutes:0 seconds\n", GenericStatistics.TOTAL_TIME_KEY) +
+            String.format("%s: 0 minutes:0.0 seconds\n", GenericStatistics.TOTAL_TIME_KEY) +
             "\n";
 
         GenericStatistics statistics = new GenericStatistics();

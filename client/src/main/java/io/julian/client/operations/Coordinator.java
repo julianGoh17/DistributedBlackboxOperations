@@ -33,8 +33,8 @@ import java.util.stream.Collectors;
 
 @Getter
 public class Coordinator {
-    private static final Logger log = LogManager.getLogger(Coordinator.class.getName());
-    private static final int MAX_RETRIES = 3;
+    private final static Logger log = LogManager.getLogger(Coordinator.class.getName());
+    private final static int MAX_RETRIES = 3;
 
     private final BaseClient client;
     private final MessageMemory memory;
@@ -42,6 +42,8 @@ public class Coordinator {
     private final MetricsCollector collector;
     private final Vertx vertx;
     private final ClientConfiguration configuration;
+    private final AtomicInteger postCounter = new AtomicInteger();
+    private int postOffset = 1000;
 
     public Coordinator(final Vertx vertx, final ClientConfiguration clientConfiguration) {
         this.vertx = vertx;
@@ -54,7 +56,9 @@ public class Coordinator {
 
     public void initialize(final String messageFilePath, final String operationsFilePath) throws NullPointerException, IOException {
         log.traceEntry(() -> messageFilePath, () -> operationsFilePath);
-        memory.readInMessageFiles(messageFilePath);
+        if (configuration.doesUseMessages()) {
+            memory.readInMessageFiles(messageFilePath);
+        }
         readInOperationsFile(operationsFilePath);
         log.traceExit();
     }
@@ -101,6 +105,46 @@ public class Coordinator {
             });
 
         return log.traceExit(isCheckSuccessful.future());
+    }
+
+    public Future<Void> sendLoopedPost(final int seconds, final int messagesPerSecond) {
+        log.traceEntry(() -> seconds, () -> messagesPerSecond);
+        Promise<Void> post = Promise.promise();
+        boolean isValidNumber = false;
+        while (!isValidNumber) {
+            try {
+                memory.getOriginalMessages().get(postOffset);
+                postOffset += 1000;
+            } catch (final IndexOutOfBoundsException e) {
+                isValidNumber = true;
+            }
+        }
+
+        AtomicInteger remainingAttempts = new AtomicInteger(seconds);
+        log.info("Attempting to loop posts");
+        vertx.setPeriodic(1000, id -> {
+            if (remainingAttempts.get() == 0) {
+                post.complete();
+                vertx.cancelTimer(id);
+            } else {
+                remainingAttempts.getAndDecrement();
+                for (int i = 0; i < messagesPerSecond; i++) {
+                    client.POSTMessage(new JsonObject(), new Expected(200))
+                        .onSuccess(messageId -> {
+                            log.info(String.format("Successful POST received id '%s'", messageId));
+                            memory.associateNumberWithID(postOffset + postCounter.getAndIncrement(), messageId);
+                        })
+                        .onFailure(throwable -> {
+                            ClientException exception = (ClientException) throwable;
+                            log.error(String.format("Unsuccessful POST because: %s", exception.getMessage()));
+                            post.fail(exception.getMessage());
+                            vertx.cancelTimer(id);
+                        });
+                }
+            }
+        });
+
+        return log.traceExit(post.future());
     }
 
     public Future<Void> sendPOST(final int messageIndex, final Expected expected) throws ArrayIndexOutOfBoundsException {

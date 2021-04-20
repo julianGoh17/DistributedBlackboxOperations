@@ -32,8 +32,13 @@ import static io.julian.client.io.TerminalOutputHandler.HEADER_CHAR;
 import static io.julian.client.io.TerminalOutputHandler.MESSAGES_HEADER;
 import static io.julian.client.io.TerminalOutputHandler.OPERATION_CHAIN_HEADER;
 import static io.julian.client.metrics.Reporter.REPORT_FILE_NAME;
+import static io.julian.client.operations.Controller.INVALID_LOOPED_MESSAGE_CONFIGURATION_MESSAGE;
 import static io.julian.client.operations.Controller.INVALID_OPERATION_CHAIN_MESSAGE;
+import static io.julian.client.operations.Controller.LOOPED_POST;
+import static io.julian.client.operations.Controller.RUNNING_LOOPED_POST;
 import static io.julian.client.operations.Controller.STATE_CHECK;
+import static io.julian.client.operations.Controller.SUPPLY_MESSAGES_PER_SECOND_MESSAGE;
+import static io.julian.client.operations.Controller.SUPPLY_NUMBER_OF_SECONDS_MESSAGE;
 import static io.julian.client.operations.Controller.SUPPLY_VALID_OPERATION_CHAIN_MESSAGE;
 import static io.julian.client.operations.Controller.TERMINATING_CLIENT_MESSAGE;
 import static io.julian.client.operations.Controller.VALID_OPERATION_CHAIN_MESSAGE;
@@ -90,7 +95,7 @@ public class ControllerTest extends AbstractClientTest {
         when(inputReader.nextLine())
             .thenReturn("1")
             .thenReturn(VALID_OPERATION_CHAIN_NAME)
-            .thenReturn("5");
+            .thenReturn("6");
 
         Async async = context.async();
         controller.run(TEST_REPORT_FILE_PATH)
@@ -121,7 +126,7 @@ public class ControllerTest extends AbstractClientTest {
             .thenReturn("1")
             .thenReturn(VALID_OPERATION_CHAIN_NAME)
             .thenReturn("3")
-            .thenReturn("5");
+            .thenReturn("6");
 
         Async async = context.async();
         controller.run(TEST_REPORT_FILE_PATH)
@@ -159,7 +164,7 @@ public class ControllerTest extends AbstractClientTest {
         when(inputReader.nextLine())
             .thenReturn("1")
             .thenReturn(VALID_OPERATION_CHAIN_NAME)
-            .thenReturn("5");
+            .thenReturn("6");
 
         Async async = context.async();
         controller.run(wrongReportPath)
@@ -187,7 +192,7 @@ public class ControllerTest extends AbstractClientTest {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
             .thenReturn("Not A Number")
-            .thenReturn("5");
+            .thenReturn("6");
         Async async = context.async();
         controller.runOperation().onComplete(wantsToContinue -> {
             Assert.assertFalse(wantsToContinue.result());
@@ -210,7 +215,7 @@ public class ControllerTest extends AbstractClientTest {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
             .thenReturn("7")
-            .thenReturn("5");
+            .thenReturn("6");
 
         Async async = context.async();
         controller.runOperation().onComplete(wantsToContinue -> {
@@ -317,7 +322,7 @@ public class ControllerTest extends AbstractClientTest {
     public void TestControllerRunsExit(final TestContext context) {
         Controller controller = new Controller(input, output, coordinator, vertx);
         when(inputReader.nextLine())
-            .thenReturn("5");
+            .thenReturn("6");
 
         Async async = context.async();
         controller.runOperation().onComplete(wantsToContinue -> {
@@ -339,6 +344,66 @@ public class ControllerTest extends AbstractClientTest {
         order.verify(outputPrinter).println("2. State Check");
         order.verify(outputPrinter).println("3. Print Preconfigured Messages");
         order.verify(outputPrinter).println("4. Print Preconfigured Operation Chains");
-        order.verify(outputPrinter).println("5. Exit");
+        order.verify(outputPrinter).println("5. Looped Post");
+        order.verify(outputPrinter).println("6. Exit");
+    }
+
+    @Test
+    public void TestControllerRunsLoopedPostSuccessfully(final TestContext context) {
+        Controller controller = new Controller(input, output, coordinator, vertx);
+        when(inputReader.nextLine())
+            .thenReturn("5")
+            .thenReturn("1")
+            .thenReturn("1");
+
+        Async async = context.async();
+        controller.runOperation().onComplete(wantsToContinue -> {
+            Assert.assertTrue(wantsToContinue.result());
+            InOrder order = inOrder(inputReader, outputPrinter);
+            testControllerPrintsOperation(order);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(LOOPED_POST);
+            order.verify(outputPrinter).println(SUPPLY_NUMBER_OF_SECONDS_MESSAGE);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(SUPPLY_MESSAGES_PER_SECOND_MESSAGE);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(String.format(RUNNING_LOOPED_POST, 1, 1));
+            order.verifyNoMoreInteractions();
+            async.complete();
+        });
+        async.awaitSuccess();
+    }
+
+    @Test
+    public void TestControllerRunsLoopedPostRetries(final TestContext context) {
+        Controller controller = new Controller(input, output, coordinator, vertx);
+        when(inputReader.nextLine())
+            .thenReturn("5")
+            .thenReturn("0")
+            .thenReturn("1")
+            .thenReturn("1")
+            .thenReturn("1");
+
+        Async async = context.async();
+        controller.runOperation().onComplete(wantsToContinue -> {
+            Assert.assertTrue(wantsToContinue.result());
+            InOrder order = inOrder(inputReader, outputPrinter);
+            testControllerPrintsOperation(order);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(LOOPED_POST);
+            order.verify(outputPrinter).println(SUPPLY_NUMBER_OF_SECONDS_MESSAGE);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(SUPPLY_MESSAGES_PER_SECOND_MESSAGE);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(INVALID_LOOPED_MESSAGE_CONFIGURATION_MESSAGE);
+            order.verify(outputPrinter).println(SUPPLY_NUMBER_OF_SECONDS_MESSAGE);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(SUPPLY_MESSAGES_PER_SECOND_MESSAGE);
+            order.verify(inputReader).nextLine();
+            order.verify(outputPrinter).println(String.format(RUNNING_LOOPED_POST, 1, 1));
+            order.verifyNoMoreInteractions();
+            async.complete();
+        });
+        async.awaitSuccess();
     }
 }

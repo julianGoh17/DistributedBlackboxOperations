@@ -22,7 +22,8 @@ public class TerminalOutputHandler {
     public final static int STATE_CHECK_NUMBER = 2;
     public final static int PRINT_MESSAGES_NUMBER = 3;
     public final static int PRINT_OPERATION_CHAIN_NUMBER = 4;
-    public final static int EXIT_NUMBER = 5;
+    public final static int LOOPED_POST_NUMBER = 5;
+    public final static int EXIT_NUMBER = 6;
 
     public TerminalOutputHandler(final OutputPrinter printer) {
         this.printer = printer;
@@ -35,6 +36,7 @@ public class TerminalOutputHandler {
         printer.println(String.format("%d. State Check", STATE_CHECK_NUMBER));
         printer.println(String.format("%d. Print Preconfigured Messages", PRINT_MESSAGES_NUMBER));
         printer.println(String.format("%d. Print Preconfigured Operation Chains", PRINT_OPERATION_CHAIN_NUMBER));
+        printer.println(String.format("%d. Looped Post", LOOPED_POST_NUMBER));
         printer.println(String.format("%d. Exit", EXIT_NUMBER));
         log.traceExit();
     }

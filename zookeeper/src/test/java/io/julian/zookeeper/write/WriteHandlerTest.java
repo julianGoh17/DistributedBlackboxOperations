@@ -242,7 +242,7 @@ public class WriteHandlerTest extends AbstractServerBase {
                 context.assertEquals(0, handler.getProposalTracker().getCommittedProposals().size());
                 context.assertEquals(0, handler.getState().getMessageStore().getNumberOfMessages());
                 context.assertEquals(0, handler.getState().getLeaderEpoch());
-                context.assertEquals(0, handler.getState().getCounter());
+                context.assertEquals(1, handler.getState().getCounter());
                 async.complete();
             }));
 

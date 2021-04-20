@@ -14,12 +14,13 @@ ENV OPERATIONS_FILE_PATH="/resources/operations"
 ENV MESSAGE_FILE_PATH="/resources/messages"
 ENV REPORT_FILE_PATH="/resources/report"
 ENV LOG_PATH="/resources/logs"
+ENV SERVERS_PATH="/resources/servers"
 
 ARG CLIENT_GENERATED_FOLDER
 COPY ${CLIENT_GENERATED_FOLDER}/operations ${OPERATIONS_FILE_PATH}
 COPY ${CLIENT_GENERATED_FOLDER}/messages ${MESSAGE_FILE_PATH}
 COPY dockerfiles/client-run.sh /client-run.sh
 
-VOLUME [ ${REPORT_FILE_PATH} , ${LOG_PATH}]
+VOLUME [ ${REPORT_FILE_PATH} , ${LOG_PATH}, ${SERVERS_PATH} ]
 
 ENTRYPOINT ["/bin/sh", "-c", "./client-run.sh "]

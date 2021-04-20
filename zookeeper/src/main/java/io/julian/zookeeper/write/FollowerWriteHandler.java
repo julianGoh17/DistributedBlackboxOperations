@@ -6,6 +6,7 @@ import io.julian.server.models.control.ClientMessage;
 import io.julian.server.models.coordination.CoordinationMessage;
 import io.julian.server.models.coordination.CoordinationMetadata;
 import io.julian.zookeeper.AbstractHandler;
+import io.julian.zookeeper.controller.State;
 import io.julian.zookeeper.election.CandidateInformationRegistry;
 import io.julian.zookeeper.models.MessagePhase;
 import io.julian.zookeeper.models.ShortenedExchange;
@@ -21,21 +22,23 @@ public class FollowerWriteHandler extends AbstractHandler  {
     private final static Logger log = LogManager.getLogger(FollowerWriteHandler.class);
     private final CandidateInformationRegistry registry;
     private final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages;
+    private final State state;
 
     public final static String ACK_TYPE = "state_acknowledgement";
     public final static String FORWARD_TYPE = "forward";
 
-    public FollowerWriteHandler(final CandidateInformationRegistry registry, final ServerClient client, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
+    public FollowerWriteHandler(final CandidateInformationRegistry registry, final ServerClient client, final State state, final ConcurrentLinkedQueue<CoordinationMessage> deadCoordinationMessages) {
         super(client);
         this.registry = registry;
         this.deadCoordinationMessages = deadCoordinationMessages;
+        this.state = state;
     }
 
     public Future<Void> forwardRequestToLeader(final ClientMessage message) {
         log.traceEntry(() -> message);
         Promise<Void> forward = Promise.promise();
         log.info(String.format("Attempting to forward %s to leader", message.getRequest()));
-        final CoordinationMessage reply = new CoordinationMessage(new CoordinationMetadata(message.getRequest(), message.getMessageId(), FORWARD_TYPE), message.toJson(), null);
+        final CoordinationMessage reply = new CoordinationMessage(new CoordinationMetadata(message.getRequest(), new Zxid(state.getLeaderEpoch(), state.incrementAndGetCounter()).toString(), FORWARD_TYPE), message.toJson(), null);
         client
             .sendCoordinateMessageToServer(registry.getLeaderServerConfiguration(), reply)
             .onSuccess(res -> {
@@ -89,7 +92,7 @@ public class FollowerWriteHandler extends AbstractHandler  {
     public CoordinationMessage createCoordinationMessage(final MessagePhase phase, final Zxid id) {
         log.traceEntry(() -> phase, () -> id);
         return log.traceExit(new CoordinationMessage(
-            new CoordinationMetadata(HTTPRequest.UNKNOWN, String.format("%s-%s", phase, id.toString()), ACK_TYPE),
+            new CoordinationMetadata(HTTPRequest.UNKNOWN, id.toString(), ACK_TYPE),
             null,
             new ShortenedExchange(phase, id).toJson()
         ));
